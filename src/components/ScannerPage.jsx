@@ -180,21 +180,16 @@ export default function ScannerPage() {
         </div>
         <canvas ref={canvasRef} style={{ display: "none" }} />
 
-        {/* Caméra active — vidéo avec bouton capture overlay */}
-        {camActive && scannerTab === "photo" && (
-          <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
-            <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 320, objectFit: "cover" }} />
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px", display: "flex", justifyContent: "center", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
-              <button onClick={prendrePhoto} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #C9A84C", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
-                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg,#EDD060,#C9A84C)" }} />
-              </button>
-            </div>
-            <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#C9A84C", fontWeight: 700 }}>{"\u{1F4F7}"} Cadrez le problème</div>
+        {/* Vidéo unique — toujours dans le DOM */}
+        <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: 12, display: camActive && scannerTab === "photo" ? "block" : "none" }}>
+          <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 320, objectFit: "cover" }} />
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px", display: "flex", justifyContent: "center", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
+            <button onClick={prendrePhoto} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #C9A84C", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg,#EDD060,#C9A84C)" }} />
+            </button>
           </div>
-        )}
-
-        {/* Vidéo ref cachée quand pas active */}
-        {!(camActive && scannerTab === "photo") && <video ref={videoRef} style={{ display: "none" }} />}
+          <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#C9A84C", fontWeight: 700 }}>{"\u{1F4F7}"} Cadrez le problème</div>
+        </div>
 
         {photoUrl && <img src={photoUrl} alt="photo" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />}
         {!camActive && !photoUrl && (
@@ -299,24 +294,17 @@ export default function ScannerPage() {
 
         <canvas ref={mesureCanvasRef} style={{ display: "none" }} />
 
-        {/* Caméra active — vidéo plein cadre avec bouton capture overlay */}
-        {mesureCam && (
-          <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
-            <video ref={mesureVideoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 360, objectFit: "cover" }} />
-            {/* Overlay avec bouton capture */}
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px", display: "flex", justifyContent: "center", alignItems: "center", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
-              <button onClick={prendreMesurePhoto} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #52C37A", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
-                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg,#52C37A,#3A9B5A)" }} />
-              </button>
-            </div>
-            {/* Indicateur viseur */}
-            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 80, height: 80, border: "1.5px solid rgba(82,195,122,0.5)", borderRadius: 8, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#52C37A", fontWeight: 700 }}>{"\u{1F4D0}"} {mesureTarget === "mur" ? "Cadrez le mur entier" : mesureTarget === "plafond" ? "Cadrez le plafond" : "Cadrez la pièce entière"}</div>
+        {/* Vidéo unique — toujours dans le DOM, visible/cachée via style */}
+        <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: 12, display: mesureCam ? "block" : "none" }}>
+          <video ref={mesureVideoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 360, objectFit: "cover" }} />
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px", display: "flex", justifyContent: "center", alignItems: "center", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
+            <button onClick={prendreMesurePhoto} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #52C37A", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg,#52C37A,#3A9B5A)" }} />
+            </button>
           </div>
-        )}
-
-        {/* Vidéo ref cachée quand pas active */}
-        {!mesureCam && <video ref={mesureVideoRef} style={{ display: "none" }} />}
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 80, height: 80, border: "1.5px solid rgba(82,195,122,0.5)", borderRadius: 8, pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#52C37A", fontWeight: 700 }}>{"\u{1F4D0}"} {mesureTarget === "mur" ? "Cadrez le mur entier" : mesureTarget === "plafond" ? "Cadrez le plafond" : "Cadrez la pièce entière"}</div>
+        </div>
 
         {/* Photo prise — résultat */}
         {mesurePhoto && <img src={mesurePhoto} alt="mesure" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />}
