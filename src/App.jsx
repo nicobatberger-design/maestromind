@@ -38,21 +38,6 @@ function AppContent() {
 
   return (
     <>
-      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
-      <style>{`
-        @keyframes logoGlow { 0%,100% { box-shadow: 0 2px 14px rgba(201,168,76,0.45); } 50% { box-shadow: 0 2px 28px rgba(201,168,76,0.75), 0 0 48px rgba(201,168,76,0.18); } }
-        @keyframes fadeSlideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes orbFloat { 0%,100% { transform:translateY(0) scale(1); } 50% { transform:translateY(-18px) scale(1.06); } }
-        @keyframes pinSuccess { 0% { transform:scale(1); } 40% { transform:scale(1.18); } 100%{ transform:scale(1); } }
-        @keyframes voicePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(224,82,82,0.4); } 50% { box-shadow: 0 0 0 8px rgba(224,82,82,0); } }
-        .bl-msg { animation: fadeSlideUp 0.28s cubic-bezier(0.4,0,0.2,1) both; }
-        .bl-fc:hover { border-color:rgba(201,168,76,0.28) !important; transform:translateY(-2px); box-shadow:0 6px 24px rgba(201,168,76,0.1), inset 0 1px 0 rgba(255,255,255,0.06) !important; }
-        .bl-chip:hover{ background:rgba(201,168,76,0.09) !important; border-color:rgba(201,168,76,0.28) !important; color:#C9A84C !important; }
-        .bl-pin:active { transform:scale(0.91) !important; background:rgba(201,168,76,0.18) !important; }
-        * { -webkit-tap-highlight-color:transparent; }
-        ::-webkit-scrollbar { display:none; }
-      `}</style>
-
       <div style={s.app}>
         <div style={{ position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)", width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle,rgba(201,168,76,0.09) 0%,transparent 70%)", pointerEvents: "none", animation: "orbFloat 7s ease-in-out infinite", zIndex: 0 }} />
         <div style={{ position: "absolute", bottom: 60, right: -80, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle,rgba(82,144,224,0.05) 0%,transparent 70%)", pointerEvents: "none", animation: "orbFloat 9s ease-in-out infinite 1.5s", zIndex: 0 }} />

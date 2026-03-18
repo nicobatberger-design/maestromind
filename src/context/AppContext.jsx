@@ -60,8 +60,6 @@ export function AppProvider({ children }) {
   const [dpeRes, setDpeRes] = useState(null);
 
   // ── Scanner ───────────────────────────────────────────────────
-  const [camActive, setCamActive] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState(null);
   const [scanLoading, setScanLoading] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [scanIA, setScanIA] = useState("diag");
@@ -157,13 +155,6 @@ export function AppProvider({ children }) {
 
   // ── Refs ──────────────────────────────────────────────────────
   const msgsRef = useRef(null);
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const arVideoRef = useRef(null);
-  const arCanvasRef = useRef(null);
-  const arAnimRef = useRef(null);
-  const arFrameRef = useRef(0);
-  const streamRef = useRef(null);
   const arAnchorRef = useRef(null);
   const arModeRef = useRef("etagere");
   const arTiltRef = useRef({ beta: 0, gamma: 0 });
@@ -188,18 +179,6 @@ export function AppProvider({ children }) {
   useEffect(() => { arModeRef.current = arModeType; }, [arModeType]);
   useEffect(() => { arShelfTypeRef.current = arShelfType; }, [arShelfType]);
 
-  useEffect(() => {
-    if (streamRef.current) {
-      if (videoRef.current && !videoRef.current.srcObject) {
-        videoRef.current.srcObject = streamRef.current;
-        videoRef.current.play().catch(() => {});
-      }
-      if (arVideoRef.current && !arVideoRef.current.srcObject) {
-        arVideoRef.current.srcObject = streamRef.current;
-        arVideoRef.current.play().catch(() => {});
-      }
-    }
-  }, [scannerTab, page]);
 
   // ── Memos ─────────────────────────────────────────────────────
   const currentIA = useMemo(() => IAS[curIA], [curIA]);
@@ -247,11 +226,6 @@ export function AppProvider({ children }) {
 
   // ── Navigation ────────────────────────────────────────────────
   const goPage = useCallback((p) => {
-    if (page === "scanner" && p !== "scanner") {
-      streamRef.current?.getTracks?.().forEach(t => t.stop());
-      streamRef.current = null;
-      setCamActive(false);
-    }
     setPage(p);
     const route = PAGE_TO_ROUTE[p] || "/";
     if (location.pathname !== route) navigate(route);
@@ -364,50 +338,6 @@ export function AppProvider({ children }) {
     setMsgs(prev => prev.map((m, i) => i === idx ? { ...m, rated: rating } : m));
   }, [curIA]);
 
-  // ── Camera ────────────────────────────────────────────────────
-  const ouvrirCamera = useCallback(async () => {
-    try {
-      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false
-      });
-      streamRef.current = stream;
-      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play().catch(() => {}); }
-      if (arVideoRef.current) { arVideoRef.current.srcObject = stream; arVideoRef.current.play().catch(() => {}); }
-      setCamActive(true);
-      setPhotoUrl(null);
-      setScanResult(null);
-    } catch (e) {
-      alert("Impossible d'accéder à la caméra. Vérifiez les permissions.");
-    }
-  }, []);
-
-  const prendrePhoto = useCallback(() => {
-    if (!camActive) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-    setPhotoUrl(dataUrl);
-    setCamActive(false);
-    if (scannerTab !== "ar") {
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    analyserPhoto(dataUrl);
-  }, [camActive, scannerTab]);
-
-  const importerPhoto = useCallback((e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => { setPhotoUrl(ev.target.result); analyserPhoto(ev.target.result); };
-    reader.readAsDataURL(file);
-  }, []);
 
   const analyserPhoto = useCallback(async (dataUrl, iaKey) => {
     setScanLoading(true);
@@ -706,7 +636,7 @@ export function AppProvider({ children }) {
     curDiv, setCurDiv, curIA, setCurIA, msgs, setMsgs, hist, setHist, input, setInput, loading, errMsg,
     store, setStore,
     dpeS, setDpeS, dpeT, setDpeT, dpeC, setDpeC, dpeRes,
-    camActive, setCamActive, photoUrl, setPhotoUrl, scanLoading, scanResult, setScanResult, scanIA, setScanIA, scannerTab, setScannerTab,
+    scanLoading, scanResult, setScanResult, scanIA, setScanIA, scannerTab, setScannerTab,
     arModeType, setArModeType, arAnchor, setArAnchor, arTilt, arShelfType, setArShelfType, showArAdvisor, setShowArAdvisor, arAdvInput, setArAdvInput, arAdvResult, arAdvLoading,
     certProjet, setCertProjet, certNorme, setCertNorme, certSurface, setCertSurface, certProp, setCertProp, certArtisan, setCertArtisan,
     rgpdOk, setRgpdOk, msgCount, showPaywall, setShowPaywall, isPremium, setIsPremium, onboardingDone, setOnboardingDone, onboardingStep, setOnboardingStep, userType, setUserType, pdgUnlocked, pinInput, pinError,
@@ -720,12 +650,12 @@ export function AppProvider({ children }) {
     projetChat, setProjetChat, projetChatMsgs, projetChatInput, setProjetChatInput, projetChatLoading, crLoading,
     voiceActive,
     // Refs
-    msgsRef, videoRef, canvasRef, arVideoRef, arCanvasRef, arAnimRef, arFrameRef, streamRef, arAnchorRef, arModeRef, arTiltRef, arShelfTypeRef,
+    msgsRef, arAnchorRef, arModeRef, arTiltRef, arShelfTypeRef,
     // Computed
     currentIA, chips,
     // Functions
     goPage, switchDiv, switchIA, activerIA, send, sendWithPhoto, rateMsg,
-    ouvrirCamera, prendrePhoto, importerPhoto, analyserPhoto,
+    analyserPhoto,
     startVoice, startUrgence, handlePin, handlePinDel,
     analyserDevis, genererContreDevis, calculerMateriaux, calculerPrimes, verifierArtisan,
     planifierChantier, genererDevisPro, calculerRentabilite, calcDPE, suggestShelf,

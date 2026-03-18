@@ -27,7 +27,7 @@ function parseAIJson(text) {
 export default function ScannerPage() {
   const {
     page, goPage, switchIA, apiKey,
-    photoUrl, scanLoading, scanResult, scanIA, setScanIA, scannerTab, setScannerTab,
+    scanLoading, scanResult, scanIA, setScanIA, scannerTab, setScannerTab,
     analyserPhoto, setCalcSurface, setCalcHauteur, setCalcPente, setCalcLongueur,
   } = useApp();
 

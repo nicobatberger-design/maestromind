@@ -64,8 +64,6 @@ const s = {
   keyInp: { width:"100%", background:"rgba(6,8,13,0.85)", border:"0.5px solid rgba(201,168,76,0.2)", borderRadius:10, padding:"12px 14px", color:"#F0EDE6", fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", marginBottom:12 },
   keyBtn: { width:"100%", background:"linear-gradient(135deg,#EDD060,#C9A84C,#7A6030)", border:"none", borderRadius:10, padding:14, fontFamily:"'Syne',sans-serif", fontSize:14, fontWeight:700, color:"#06080D", cursor:"pointer", boxShadow:"0 4px 22px rgba(201,168,76,0.32)" },
   rangBadge: { fontSize:9, padding:"2px 7px", borderRadius:20, fontWeight:700, marginLeft:6 },
-  scanBtn: { flex:1, background:"linear-gradient(135deg,#EDD060,#C9A84C,#9A7228)", border:"none", borderRadius:14, padding:"12px 10px", fontFamily:"'Syne',sans-serif", fontSize:12, fontWeight:700, color:"#06080D", cursor:"pointer", boxShadow:"0 3px 16px rgba(201,168,76,0.3)" },
-  scanBtnGhost: { flex:1, background:"rgba(15,19,28,0.65)", backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)", border:"0.5px solid rgba(201,168,76,0.25)", borderRadius:14, padding:"12px 10px", fontFamily:"'Syne',sans-serif", fontSize:12, fontWeight:700, color:"#C9A84C", cursor:"pointer" },
 };
 
 export default s;

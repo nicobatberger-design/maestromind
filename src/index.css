@@ -2,6 +2,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
@@ -10,6 +11,10 @@ html, body {
   font-family: 'DM Sans', 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+  overscroll-behavior-y: contain;
 }
 
 /* Scrollbar invisible globale */
@@ -66,4 +71,58 @@ html, body {
     min-height: 860px;
     max-height: 860px;
   }
+}
+
+/* ── Keyframes ──────────────────────────────────────────────── */
+@keyframes logoGlow {
+  0%, 100% { box-shadow: 0 2px 14px rgba(201,168,76,0.45); }
+  50% { box-shadow: 0 2px 28px rgba(201,168,76,0.75), 0 0 48px rgba(201,168,76,0.18); }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-18px) scale(1.06); }
+}
+
+@keyframes pinSuccess {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+@keyframes voicePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(224,82,82,0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(224,82,82,0); }
+}
+
+/* ── Utility classes ────────────────────────────────────────── */
+.bl-msg {
+  animation: fadeSlideUp 0.28s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+.bl-fc:hover {
+  border-color: rgba(201,168,76,0.28) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(201,168,76,0.1), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+.bl-chip:hover {
+  background: rgba(201,168,76,0.09) !important;
+  border-color: rgba(201,168,76,0.28) !important;
+  color: #C9A84C !important;
+}
+
+.bl-pin:active {
+  transform: scale(0.91) !important;
+  background: rgba(201,168,76,0.18) !important;
+}
+
+/* ── Scrollbar (redundant with above but explicit for webkit) ── */
+::-webkit-scrollbar {
+  display: none;
 }
