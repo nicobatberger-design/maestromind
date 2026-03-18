@@ -6,6 +6,14 @@ import { exportChatPDF as _exportChatPDF, genererCertificatPDF, genererDevisProP
 
 const IS_DEV = import.meta.env.DEV;
 
+function parseAIJson(text) {
+  const clean = (text || "").replace(/```json|```/g, "").trim();
+  try { return JSON.parse(clean); } catch {}
+  const match = clean.match(/\{[\s\S]*\}/);
+  if (match) return JSON.parse(match[0]);
+  throw new Error("Réponse IA invalide. Réessayez.");
+}
+
 const ROUTE_TO_PAGE = { "/": "home", "/coach": "coach", "/scanner": "scanner", "/shop": "shop", "/cert": "cert", "/outils": "outils", "/projets": "projets", "/dashboard": "dashboard" };
 const PAGE_TO_ROUTE = { home: "/", coach: "/coach", scanner: "/scanner", shop: "/shop", cert: "/cert", outils: "/outils", projets: "/projets", dashboard: "/dashboard" };
 
@@ -421,8 +429,7 @@ export function AppProvider({ children }) {
       });
       const data = await r.json();
       if (data.error) throw new Error(data.error.message);
-      const txt = data.content[0].text.replace(/```json|```/g, "").trim();
-      setScanResult(JSON.parse(txt));
+      setScanResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) {
       setScanResult({ urgence: "ERREUR", titre: "Analyse impossible", etapes: [e.message] });
     } finally { setScanLoading(false); }
@@ -485,7 +492,7 @@ export function AppProvider({ children }) {
           system: `${profilIA()}\nTu es un expert en tarifs de travaux en France 2025. Analyse ce devis et réponds UNIQUEMENT en JSON valide : {"verdict":"CORRECT","resume":"1 phrase synthèse","points":["point 1","point 2","point 3"],"conseil":"conseil pratique"}. Verdict possible : CORRECT, ÉLEVÉ, SUSPECT.`,
           messages: [{ role: "user", content: "Analyse ce devis :\n\n" + devisText }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
-      setDevisResult(JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim()));
+      setDevisResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setDevisResult({ verdict: "ERREUR", resume: e.message, points: [], conseil: "" }); }
     finally { setDevisLoading(false); }
   }, [devisText, apiKey, profilIA]);
@@ -500,7 +507,7 @@ export function AppProvider({ children }) {
           system: `Tu es un expert en négociation de travaux en France. ${profilIA()} Génère un contre-devis argumenté. Réponds UNIQUEMENT en JSON valide : {"lignes":[{"poste":"nom","prix_demande":"X€","prix_negocie":"X€","argument":"court argument"}],"economie_totale":"X€","message_negociation":"message poli à envoyer à l artisan en 2-3 phrases","conseil":"conseil final"}`,
           messages: [{ role: "user", content: "Devis original :\n" + devisText + "\n\nAnalyse :\n" + JSON.stringify(devisResult) + "\n\nGénère le contre-devis." }] })}));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
-      setCounterDevis(JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim()));
+      setCounterDevis(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setCounterDevis({ lignes: [], economie_totale: "0€", message_negociation: e.message, conseil: "" }); }
     finally { setCounterLoading(false); }
   }, [devisResult, devisText, apiKey, profilIA]);
@@ -522,7 +529,7 @@ export function AppProvider({ children }) {
           system: `${profilIA()}\nTu es un expert en quantitatifs matériaux bâtiment France. Tu connais parfaitement les dimensions standard des matériaux (plaques BA13 : 1200x2500, 1200x2600, 1200x2700, 1200x3000 ; rails R48/R70 en 3m ; montants M48/M70 en 2.50/2.60/2.70/3m ; etc.). IMPORTANT : adapte tes recommandations à la HAUTEUR et à la PENTE indiquées. Réponds UNIQUEMENT en JSON valide : {"materiaux":[{"nom":"Produit précis avec dimensions","quantite":"X unités (détail calcul)","prixEstime":"X€","conseil":"marque/ref recommandée"}],"total":"X€","conseil":"conseil pratique incluant mise en oeuvre"}`,
           messages: [{ role: "user", content: `Calcule les matériaux pour ${calcType}. ${dims} Inclus pertes standards (10-15%). Prix marché France 2025. Produits disponibles Leroy Merlin/Castorama. Détaille chaque produit avec ses dimensions exactes.` }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
-      setCalcResult(JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim()));
+      setCalcResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setCalcResult({ materiaux: [], total: "0€", conseil: e.message }); }
     finally { setCalcLoading(false); }
   }, [apiKey, profilIA, calcType, calcSurface, calcHauteur, calcPente, calcLongueur]);
@@ -536,7 +543,7 @@ export function AppProvider({ children }) {
           system: `${profilIA()}\nTu es un expert en aides rénovation France 2025 (MaPrimeRénov', CEE, éco-PTZ, TVA 5.5%, Anah). Réponds UNIQUEMENT en JSON valide : {"aides":[{"nom":"Aide","montant":"X€","condition":"condition courte","demarche":"comment faire en 1 phrase"}],"total":"X€","conseil":"conseil pratique","attention":"point important"}`,
           messages: [{ role: "user", content: `Foyer ${primesRev}, travaux : ${primesTrav}, surface : ${primesSurf}m². Quelles aides suis-je éligible en 2025 ?` }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
-      setPrimesResult(JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim()));
+      setPrimesResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setPrimesResult({ aides: [], total: "0€", conseil: e.message, attention: "" }); }
     finally { setPrimesLoading(false); }
   }, [apiKey, profilIA, primesRev, primesTrav, primesSurf]);
@@ -551,7 +558,7 @@ export function AppProvider({ children }) {
           system: `${profilIA()}\nTu es un expert en vérification d'artisans RGE France. Génère une checklist complète. Réponds UNIQUEMENT en JSON valide : {"checks":[{"label":"Vérification","comment":"comment vérifier","url":"site officiel ou vide"}],"alertes":["alerte 1"],"conseils":"conseil global"}`,
           messages: [{ role: "user", content: `Je veux vérifier l'artisan "${artisanNom}" spécialisé en ${artisanSpec}. Checklist de vérification RGE, assurance décennale, existence légale.` }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
-      setArtisanResult(JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim()));
+      setArtisanResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setArtisanResult({ checks: [], alertes: [e.message], conseils: "" }); }
     finally { setArtisanLoading(false); }
   }, [apiKey, profilIA, artisanNom, artisanSpec]);
@@ -565,7 +572,7 @@ export function AppProvider({ children }) {
           system: `Tu es expert en planification de chantier. ${profilIA()} Réponds UNIQUEMENT en JSON valide : {"duree_totale":"X semaines","semaines":[{"numero":1,"titre":"Titre court","taches":["tâche 1","tâche 2"],"materiaux_a_commander":["matériau 1"],"attention":"point critique"}],"ordre_metiers":["1. Corps de métier"],"conseils":"conseil global","budget_detail":"répartition budget"}`,
           messages: [{ role: "user", content: "Projet : " + planningType + ", budget " + planningBudget + "€. Planning complet semaine par semaine." }] })}));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
-      setPlanningResult(JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim()));
+      setPlanningResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setPlanningResult({ duree_totale: "?", semaines: [], ordre_metiers: [], conseils: e.message, budget_detail: "" }); }
     finally { setPlanningLoading(false); }
   }, [apiKey, profilIA, planningType, planningBudget]);
@@ -580,7 +587,7 @@ export function AppProvider({ children }) {
           system: `Tu es expert en rédaction de devis travaux France 2025. ${profilIA()} Génère un devis professionnel. Réponds UNIQUEMENT en JSON valide : {"lignes":[{"description":"description précise","unite":"m² ou U ou ml ou forfait","quantite":"X","prix_unitaire":"X€","total":"X€","dtu":"DTU ou norme ou vide"}],"sous_total_ht":"X€","tva_taux":"10%","tva":"X€","total_ttc":"X€","validite":"30 jours","garanties":"décennale 10 ans + parfait achèvement 1 an","mentions":"TVA applicable selon art. 279-0 bis du CGI"}`,
           messages: [{ role: "user", content: "Travaux : " + devisProDesc + "\nSurface : " + devisProSurface + "m²\nClient : " + (devisProClient || "À compléter") + "\nGénère le devis complet prix France 2025." }] })}));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
-      setDevisProResult(JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim()));
+      setDevisProResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setDevisProResult({ lignes: [], sous_total_ht: "0€", tva_taux: "10%", tva: "0€", total_ttc: "0€", validite: "30 jours", garanties: "", mentions: "" }); }
     finally { setDevisProLoading(false); }
   }, [apiKey, profilIA, devisProDesc, devisProSurface, devisProClient]);
@@ -614,7 +621,7 @@ export function AppProvider({ children }) {
           system: `Tu es un expert en décoration et aménagement intérieur. L'utilisateur décrit sa pièce ou son mur. Recommande le type d'étagère le plus adapté PARMI : flottante, industrielle, angle, console, cube. Réponds UNIQUEMENT en JSON valide : {"type":"flottante","raison":"courte explication","dimensions":"L x H recommandés","produit":"nom produit précis","prix":"fourchette","ou":"enseigne (Leroy Merlin, IKEA ou Castorama)","url_keyword":"terme de recherche pour trouver le produit","conseils":"1 conseil pratique d'installation"}`,
           messages: [{ role: "user", content: arAdvInput }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
-      const res = JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim());
+      const res = parseAIJson(data?.content?.[0]?.text);
       setArAdvResult(res);
       if (res.type) { setArShelfType(res.type); arShelfTypeRef.current = res.type; }
     } catch (e) { setArAdvResult({ type: "flottante", raison: e.message, dimensions: "", produit: "", prix: "", ou: "", url_keyword: "", conseils: "" }); }
@@ -668,7 +675,7 @@ export function AppProvider({ children }) {
           system: `${profilIA()}\nTu es expert en compte-rendu de chantier. Réponds UNIQUEMENT en JSON valide : {"avancement":"X%","travaux_realises":["travail 1"],"travaux_restants":["travail 1"],"observations":["observation 1"],"prochaine_intervention":"description","reserves":["réserve ou vide"]}`,
           messages: [{ role: "user", content: "Projet : " + p.nom + "\nType : " + p.type + "\nDate : " + p.date + "\nStatut : " + p.statut + "\nNotes : " + (p.notes || "aucune") + "\nGénère le compte-rendu." }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
-      genererCRPDFLocal(p, JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim()));
+      genererCRPDFLocal(p, parseAIJson(data?.content?.[0]?.text));
     } catch (e) { alert("Erreur CR : " + e.message); }
     finally { setCrLoading(false); }
   }, [apiKey, profilIA]);

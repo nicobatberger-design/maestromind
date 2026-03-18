@@ -145,8 +145,11 @@ export default function ScannerPage() {
       }));
       const data = await r.json();
       if (data.error) throw new Error(data.error.message);
-      const txt = data.content[0].text.replace(/```json|```/g, "").trim();
-      const result = JSON.parse(txt);
+      const raw = data?.content?.[0]?.text || "";
+      // Extraire le JSON de la réponse (peut être entouré de texte)
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("L'IA n'a pas pu analyser cette photo. Essayez avec un meilleur cadrage ou utilisez 'Importer photo'.");
+      const result = JSON.parse(jsonMatch[0]);
       result._target = mesureTarget;
       setMesureResult(result);
     } catch (e) {
