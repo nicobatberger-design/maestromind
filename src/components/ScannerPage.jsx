@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import Webcam from "react-webcam";
 import { useApp } from "../context/AppContext";
 import { IAS, SHELF_TYPES } from "../data/constants";
 import { apiURL, apiHeaders, withRetry } from "../utils/api";
@@ -77,51 +78,32 @@ export default function ScannerPage() {
   const [mesureTarget, setMesureTarget] = useState("mur");
   const [mesureRefType, setMesureRefType] = useState("porte");
   const [mesureRefValue, setMesureRefValue] = useState("2.04");
-  const mesureVideoRef = useRef(null);
-  const mesureCanvasRef = useRef(null);
-  const mesureStreamRef = useRef(null);
   const [mesureCam, setMesureCam] = useState(false);
+  const mesureWebcamRef = useRef(null);
 
-  const ouvrirMesureCam = useCallback(async () => {
-    try {
-      if (mesureStreamRef.current) mesureStreamRef.current.getTracks().forEach(t => t.stop());
-      setMesurePhoto(null);
-      setMesureResult(null);
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
-      mesureStreamRef.current = stream;
-      setMesureCam(true);
-    } catch (e) { setMesureCam(false); alert("Impossible d'accéder à la caméra : " + e.message); }
-  }, []);
+  // Photo IA camera state
+  const [photoCam, setPhotoCam] = useState(false);
+  const photoWebcamRef = useRef(null);
 
-  // Attach stream to video element after render when mesureCam becomes true
-  useEffect(() => {
-    if (mesureCam && mesureStreamRef.current && mesureVideoRef.current) {
-      mesureVideoRef.current.srcObject = mesureStreamRef.current;
-      mesureVideoRef.current.play().catch(() => {});
-    }
-  }, [mesureCam]);
+  const webcamConstraints = { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } };
 
-  // Cleanup mesure stream when changing scanner tab
-  useEffect(() => {
-    if (scannerTab !== "mesure" && mesureStreamRef.current) {
-      mesureStreamRef.current.getTracks().forEach(t => t.stop());
-      mesureStreamRef.current = null;
-      setMesureCam(false);
-    }
-  }, [scannerTab]);
-
-  const prendreMesurePhoto = useCallback(() => {
-    const v = mesureVideoRef.current, c = mesureCanvasRef.current;
-    if (!v || !c || !v.videoWidth) return;
-    c.width = v.videoWidth; c.height = v.videoHeight;
-    c.getContext("2d").drawImage(v, 0, 0);
-    const dataUrl = c.toDataURL("image/jpeg", 0.85);
+  const captureMesure = useCallback(() => {
+    if (!mesureWebcamRef.current) return;
+    const dataUrl = mesureWebcamRef.current.getScreenshot();
+    if (!dataUrl) return;
     setMesurePhoto(dataUrl);
     setMesureCam(false);
-    mesureStreamRef.current?.getTracks().forEach(t => t.stop());
-    mesureStreamRef.current = null;
     analyserMesure(dataUrl);
   }, []);
+
+  const capturePhoto = useCallback(() => {
+    if (!photoWebcamRef.current) return;
+    const dataUrl = photoWebcamRef.current.getScreenshot();
+    if (!dataUrl) return;
+    setPhotoCam(false);
+    // Use the existing AppContext photo analysis
+    analyserPhoto(dataUrl);
+  }, [analyserPhoto]);
 
   const importerMesurePhoto = useCallback((e) => {
     const file = e.target.files[0];
@@ -194,35 +176,34 @@ export default function ScannerPage() {
             </button>
           ))}
         </div>
-        <canvas ref={canvasRef} style={{ position: "absolute", left: -9999 }} />
-
-        {/* Fullscreen camera overlay for photo tab */}
-        {camActive && scannerTab === "photo" && (
+        {/* Fullscreen camera overlay — react-webcam */}
+        {photoCam && (
           <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 9999, display: "flex", flexDirection: "column" }}>
-            <video ref={videoRef} autoPlay playsInline muted style={{ flex: 1, width: "100%", height: "100%", objectFit: "cover" }} />
+            <Webcam ref={photoWebcamRef} audio={false} screenshotFormat="image/jpeg" screenshotQuality={0.85} videoConstraints={webcamConstraints} style={{ flex: 1, width: "100%", height: "100%", objectFit: "cover" }} />
             <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#C9A84C", fontWeight: 700 }}>{"\u{1F4F7}"} Cadrez le problème</div>
             <div style={{ position: "absolute", bottom: 40, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-              <button onClick={prendrePhoto} style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #C9A84C", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+              <button onClick={capturePhoto} style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #C9A84C", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
                 <div style={{ width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg,#EDD060,#C9A84C)" }} />
               </button>
             </div>
+            <button onClick={() => setPhotoCam(false)} style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.5)", border: "none", color: "#F0EDE6", fontSize: 22, cursor: "pointer", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>{"\u00D7"}</button>
           </div>
         )}
 
         {photoUrl && <img src={photoUrl} alt="photo" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />}
-        {!camActive && !photoUrl && (
+        {!photoUrl && (
           <div style={{ width: "100%", aspectRatio: "4/3", background: "#0D1018", border: "1.5px dashed rgba(201,168,76,0.18)", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
             <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" style={{ opacity: 0.6, marginBottom: 10 }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
             <p style={{ fontSize: 12, color: "rgba(240,237,230,0.5)" }}>Caméra non activée</p>
           </div>
         )}
-        {!camActive && <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-          <button style={s.scanBtn} onClick={ouvrirCamera}>{photoUrl ? "Reprendre" : "Activer caméra"}</button>
+        <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+          <button style={s.scanBtn} onClick={() => setPhotoCam(true)}>{photoUrl ? "Reprendre" : "Prendre photo"}</button>
           <label style={{ flex: 1, background: "#181D28", border: "0.5px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", textAlign: "center", fontSize: 12, color: "rgba(240,237,230,0.5)", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>
             Importer photo
             <input type="file" accept="image/*" style={{ display: "none" }} onChange={importerPhoto} />
           </label>
-        </div>}
+        </div>
         {scanLoading && <div style={{ background: "#181D28", borderRadius: 12, padding: 14, textAlign: "center", fontSize: 12, color: "rgba(240,237,230,0.5)", marginBottom: 12 }}>L'IA analyse votre photo...</div>}
         {scanResult && (
           <div style={{ background: "#181D28", border: "0.5px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
@@ -310,43 +291,36 @@ export default function ScannerPage() {
           <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", marginTop: 4 }}>{mesureRefType === "porte" ? "Hauteur de la porte visible (standard 2.04m)" : mesureRefType === "fenetre" ? "Largeur de la fenêtre visible (standard 1.15m)" : mesureRefType === "carreau" ? "Côté d'un carreau visible (30, 45 ou 60cm)" : mesureRefType === "hauteur" ? "Hauteur sous plafond si vous la connaissez" : "Taille d'un élément visible que vous connaissez (en m)"}</div>
         </div>
 
-        <canvas ref={mesureCanvasRef} style={{ position: "absolute", left: -9999 }} />
-
-        {/* Fullscreen camera overlay for mesure */}
+        {/* Fullscreen camera overlay — react-webcam */}
         {mesureCam && (
           <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 9999, display: "flex", flexDirection: "column" }}>
-            <video ref={mesureVideoRef} autoPlay playsInline muted style={{ flex: 1, width: "100%", height: "100%", objectFit: "cover" }} />
+            <Webcam ref={mesureWebcamRef} audio={false} screenshotFormat="image/jpeg" screenshotQuality={0.85} videoConstraints={webcamConstraints} style={{ flex: 1, width: "100%", height: "100%", objectFit: "cover" }} />
             <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 80, height: 80, border: "1.5px solid rgba(82,195,122,0.5)", borderRadius: 8, pointerEvents: "none" }} />
             <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#52C37A", fontWeight: 700 }}>{"\u{1F4D0}"} {mesureTarget === "mur" ? "Cadrez le mur entier" : mesureTarget === "plafond" ? "Cadrez le plafond" : "Cadrez la pièce entière"}</div>
             <div style={{ position: "absolute", bottom: 40, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-              <button onClick={prendreMesurePhoto} style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #52C37A", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+              <button onClick={captureMesure} style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #52C37A", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
                 <div style={{ width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg,#52C37A,#3A9B5A)" }} />
               </button>
             </div>
-            <button onClick={() => { setMesureCam(false); mesureStreamRef.current?.getTracks().forEach(t => t.stop()); mesureStreamRef.current = null; }} style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.5)", border: "none", color: "#F0EDE6", fontSize: 22, cursor: "pointer", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>{"\u00D7"}</button>
+            <button onClick={() => setMesureCam(false)} style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.5)", border: "none", color: "#F0EDE6", fontSize: 22, cursor: "pointer", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>{"\u00D7"}</button>
           </div>
         )}
 
-        {/* Photo prise — résultat */}
         {mesurePhoto && <img src={mesurePhoto} alt="mesure" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />}
-
-        {/* État initial — pas de caméra, pas de photo */}
-        {!mesureCam && !mesurePhoto && (
+        {!mesurePhoto && (
           <div style={{ width: "100%", aspectRatio: "4/3", background: "#0D1018", border: "1.5px dashed rgba(82,195,122,0.25)", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#52C37A" strokeWidth="1.2" strokeLinecap="round" style={{ opacity: 0.5, marginBottom: 10 }}><path d="M2 2l5 5M2 2v4M2 2h4" /><path d="M22 22l-5-5M22 22v-4M22 22h-4" /><path d="M22 2l-5 5M22 2v4M22 2h-4" /><path d="M2 22l5-5M2 22v-4M2 22h4" /></svg>
             <p style={{ fontSize: 12, color: "rgba(240,237,230,0.5)" }}>Photographiez votre pièce ou mur</p>
             <p style={{ fontSize: 10, color: "rgba(240,237,230,0.3)", marginTop: 4 }}>L'IA utilise les repères visibles (portes, prises, carrelage)</p>
           </div>
         )}
-
-        {/* Boutons d'action (visibles quand caméra PAS active) */}
-        {!mesureCam && <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-          <button style={{ ...s.scanBtn, background: "linear-gradient(135deg,#52C37A,#3A9B5A)", borderColor: "rgba(82,195,122,0.5)" }} onClick={ouvrirMesureCam}>{mesurePhoto ? "Reprendre" : "Activer caméra"}</button>
+        <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+          <button style={{ ...s.scanBtn, background: "linear-gradient(135deg,#52C37A,#3A9B5A)", borderColor: "rgba(82,195,122,0.5)" }} onClick={() => { setMesurePhoto(null); setMesureResult(null); setMesureCam(true); }}>{mesurePhoto ? "Reprendre" : "Prendre photo"}</button>
           <label style={{ flex: 1, background: "#181D28", border: "0.5px solid rgba(82,195,122,0.2)", borderRadius: 12, padding: "12px", textAlign: "center", fontSize: 12, color: "#52C37A", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>
             Importer photo
             <input type="file" accept="image/*" style={{ display: "none" }} onChange={importerMesurePhoto} />
           </label>
-        </div>}
+        </div>
 
         {mesureLoading && <div style={{ background: "#181D28", borderRadius: 12, padding: 14, textAlign: "center", fontSize: 12, color: "#52C37A", marginBottom: 12 }}>{"\u{1F4D0}"} Le Métreur IA analyse les dimensions...</div>}
 
