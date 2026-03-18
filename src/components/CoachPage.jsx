@@ -15,17 +15,17 @@ export default function CoachPage() {
     <div style={{ ...s.page, ...(page === "coach" ? s.pageActive : {}) }}>
       <div style={s.wrap}>
         <div style={s.aiHdr}>
-          <div style={{ ...s.aiAv, background: IAS[curIA].color + "33", border: "0.5px solid " + IAS[curIA].color + "66" }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IAS[curIA].color} strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+          <div style={{ ...s.aiAv, background: IAS[curIA]?.color + "33", border: "0.5px solid " + IAS[curIA]?.color + "66" }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IAS[curIA]?.color} strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center" }}>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700 }}>{IAS[curIA].name}</div>
-              <span style={{ ...s.rangBadge, background: rangColor(IAS[curIA].rang) + "22", color: rangColor(IAS[curIA].rang), border: "0.5px solid " + rangColor(IAS[curIA].rang) + "66" }}>{IAS[curIA].rang}</span>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700 }}>{IAS[curIA]?.name}</div>
+              <span style={{ ...s.rangBadge, background: rangColor(IAS[curIA]?.rang) + "22", color: rangColor(IAS[curIA]?.rang), border: "0.5px solid " + rangColor(IAS[curIA]?.rang) + "66" }}>{IAS[curIA]?.rang}</span>
             </div>
-            <div style={{ fontSize: 10, color: IAS[curIA].color, display: "flex", alignItems: "center", gap: 3, marginTop: 2 }}>
-              <div style={{ width: 4, height: 4, borderRadius: "50%", background: IAS[curIA].color }}></div>
-              {IAS[curIA].st}
+            <div style={{ fontSize: 10, color: IAS[curIA]?.color, display: "flex", alignItems: "center", gap: 3, marginTop: 2 }}>
+              <div style={{ width: 4, height: 4, borderRadius: "50%", background: IAS[curIA]?.color }}></div>
+              {IAS[curIA]?.st}
             </div>
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -72,7 +72,7 @@ export default function CoachPage() {
         </div>
         {errMsg && <div style={s.errBox}>{errMsg}</div>}
         <div style={s.inputBar}>
-          <textarea style={s.ci} value={input} onChange={e => setInput(e.target.value)} placeholder={"Demandez à " + IAS[curIA].name + "..."} rows={1} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
+          <textarea style={s.ci} value={input} onChange={e => setInput(e.target.value)} placeholder={"Demandez à " + IAS[curIA]?.name + "..."} rows={1} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
           <button onClick={startVoice} title="Parler à l'IA" style={{ width: 38, height: 38, borderRadius: "50%", border: "0.5px solid " + (voiceActive ? "rgba(224,82,82,0.6)" : "rgba(201,168,76,0.22)"), background: voiceActive ? "rgba(224,82,82,0.15)" : "rgba(201,168,76,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, animation: voiceActive ? "voicePulse 0.8s ease-in-out infinite" : "none" }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={voiceActive ? "#E05252" : "#C9A84C"} strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
           </button>

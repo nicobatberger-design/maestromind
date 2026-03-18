@@ -58,7 +58,7 @@ export default function OutilsPage() {
         {toolTab === "mat" && <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Dimensions</div>
-            <MesureAssistant context={calcType} onResult={(m) => { if (m.surface) setCalcSurface(m.surface); if (m.hauteur) setCalcHauteur(m.hauteur); if (m.pente) setCalcPente(m.pente); if (m.longueur) setCalcLongueur(m.longueur); }} />
+            <MesureAssistant context={calcType} onResult={(m) => { if (m.surface && !isNaN(parseFloat(m.surface))) setCalcSurface(m.surface); if (m.hauteur && !isNaN(parseFloat(m.hauteur))) setCalcHauteur(m.hauteur); if (m.pente && !isNaN(parseFloat(m.pente))) setCalcPente(m.pente); if (m.longueur && !isNaN(parseFloat(m.longueur))) setCalcLongueur(m.longueur); }} />
             <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", flex: 1 }}>Pas sûr des mesures ? Le Métreur IA vous guide</div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>

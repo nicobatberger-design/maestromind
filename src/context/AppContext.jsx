@@ -240,7 +240,7 @@ export function AppProvider({ children }) {
   // ── Navigation ────────────────────────────────────────────────
   const goPage = useCallback((p) => {
     if (page === "scanner" && p !== "scanner") {
-      streamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current?.getTracks?.().forEach(t => t.stop());
       streamRef.current = null;
       setCamActive(false);
     }
@@ -305,7 +305,7 @@ export function AppProvider({ children }) {
       }));
       const data = await r.json();
       if (data.error) throw new Error(data.error.message);
-      const rep = data.content[0].text || "Désolé, réessayez.";
+      const rep = data?.content?.[0]?.text || "Désolé, réessayez.";
       setHist([...newHist, { role: "assistant", content: rep }]);
       const finalMsgs = [...newMsgs, { role: "ai", text: rep }];
       setMsgs(finalMsgs);
@@ -338,7 +338,7 @@ export function AppProvider({ children }) {
       }));
       const data = await r.json();
       if (data.error) throw new Error(data.error.message);
-      const rep = data.content[0].text || "Désolé, réessayez.";
+      const rep = data?.content?.[0]?.text || "Désolé, réessayez.";
       setHist([...newHist, { role: "assistant", content: rep }]);
       const finalMsgs2 = [...newMsgs, { role: "ai", text: rep }];
       setMsgs(finalMsgs2);
@@ -597,9 +597,10 @@ export function AppProvider({ children }) {
   }, [rentaSurface, rentaTaux, rentaMat, rentaDep]);
 
   const calcDPE = useCallback(() => {
-    const prime = Math.round(dpeS * 45 + 2000);
-    const cee = Math.round(dpeS * 18);
-    setDpeRes({ prime, cee, total: prime + cee, eco: Math.round(dpeS * 4.2) });
+    const s = parseFloat(dpeS) || 75;
+    const prime = Math.round(s * 45 + 2000);
+    const cee = Math.round(s * 18);
+    setDpeRes({ prime, cee, total: prime + cee, eco: Math.round(s * 4.2) });
   }, [dpeS]);
 
   // ── AR advisor ────────────────────────────────────────────────
@@ -701,7 +702,7 @@ export function AppProvider({ children }) {
     camActive, setCamActive, photoUrl, setPhotoUrl, scanLoading, scanResult, setScanResult, scanIA, setScanIA, scannerTab, setScannerTab,
     arModeType, setArModeType, arAnchor, setArAnchor, arTilt, arShelfType, setArShelfType, showArAdvisor, setShowArAdvisor, arAdvInput, setArAdvInput, arAdvResult, arAdvLoading,
     certProjet, setCertProjet, certNorme, setCertNorme, certSurface, setCertSurface, certProp, setCertProp, certArtisan, setCertArtisan,
-    rgpdOk, setRgpdOk, msgCount, showPaywall, setShowPaywall, isPremium, onboardingDone, setOnboardingDone, onboardingStep, setOnboardingStep, userType, setUserType, pdgUnlocked, pinInput, pinError,
+    rgpdOk, setRgpdOk, msgCount, showPaywall, setShowPaywall, isPremium, setIsPremium, onboardingDone, setOnboardingDone, onboardingStep, setOnboardingStep, userType, setUserType, pdgUnlocked, pinInput, pinError,
     toolTab, setToolTab, devisText, setDevisText, devisResult, devisLoading, calcType, setCalcType, calcSurface, setCalcSurface, calcHauteur, setCalcHauteur, calcPente, setCalcPente, calcLongueur, setCalcLongueur, calcResult, calcLoading,
     artisanNom, setArtisanNom, artisanSpec, setArtisanSpec, artisanResult, artisanLoading,
     primesRev, setPrimesRev, primesTrav, setPrimesTrav, primesSurf, setPrimesSurf, primesResult, primesLoading,

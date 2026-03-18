@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem("pwa_dismissed") === "1");
+  const [dismissed, setDismissed] = useState(() => { try { return sessionStorage.getItem("pwa_dismissed") === "1"; } catch { return false; } });
 
   useEffect(() => {
     const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
@@ -18,7 +18,7 @@ export default function InstallPrompt() {
     if (outcome === "accepted") setDeferredPrompt(null);
   };
 
-  const dismiss = () => { setDismissed(true); sessionStorage.setItem("pwa_dismissed", "1"); };
+  const dismiss = () => { setDismissed(true); try { sessionStorage.setItem("pwa_dismissed", "1"); } catch {} };
 
   return (
     <div style={{ position: "fixed", bottom: 70, left: "50%", transform: "translateX(-50%)", width: "calc(100% - 32px)", maxWidth: 400, background: "rgba(10,14,22,0.97)", backdropFilter: "blur(20px)", border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 16, padding: "14px 16px", zIndex: 9990, display: "flex", alignItems: "center", gap: 12 }}>

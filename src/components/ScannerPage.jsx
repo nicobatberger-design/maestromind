@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { IAS, SHELF_TYPES } from "../data/constants";
 import { apiURL, apiHeaders, withRetry } from "../utils/api";
@@ -87,21 +87,28 @@ export default function ScannerPage() {
       if (mesureStreamRef.current) mesureStreamRef.current.getTracks().forEach(t => t.stop());
       setMesurePhoto(null);
       setMesureResult(null);
-      setMesureCam(true); // Rendre visible AVANT d'assigner le stream
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
       mesureStreamRef.current = stream;
-      // Attendre que le ref soit disponible après re-render
-      const tryAttach = () => {
-        if (mesureVideoRef.current) {
-          mesureVideoRef.current.srcObject = stream;
-          mesureVideoRef.current.play().catch(() => {});
-        } else {
-          setTimeout(tryAttach, 50);
-        }
-      };
-      tryAttach();
+      setMesureCam(true);
     } catch (e) { setMesureCam(false); alert("Impossible d'accéder à la caméra : " + e.message); }
   }, []);
+
+  // Attach stream to video element after render when mesureCam becomes true
+  useEffect(() => {
+    if (mesureCam && mesureStreamRef.current && mesureVideoRef.current) {
+      mesureVideoRef.current.srcObject = mesureStreamRef.current;
+      mesureVideoRef.current.play().catch(() => {});
+    }
+  }, [mesureCam]);
+
+  // Cleanup mesure stream when changing scanner tab
+  useEffect(() => {
+    if (scannerTab !== "mesure" && mesureStreamRef.current) {
+      mesureStreamRef.current.getTracks().forEach(t => t.stop());
+      mesureStreamRef.current = null;
+      setMesureCam(false);
+    }
+  }, [scannerTab]);
 
   const prendreMesurePhoto = useCallback(() => {
     const v = mesureVideoRef.current, c = mesureCanvasRef.current;
@@ -189,16 +196,18 @@ export default function ScannerPage() {
         </div>
         <canvas ref={canvasRef} style={{ position: "absolute", left: -9999 }} />
 
-        {/* Vidéo — height:0 quand inactive (pas display:none pour iOS) */}
-        <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: camActive && scannerTab === "photo" ? 12 : 0, height: camActive && scannerTab === "photo" ? "auto" : 0 }}>
-          <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 320, objectFit: "cover" }} />
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px", display: "flex", justifyContent: "center", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
-            <button onClick={prendrePhoto} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #C9A84C", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
-              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg,#EDD060,#C9A84C)" }} />
-            </button>
+        {/* Fullscreen camera overlay for photo tab */}
+        {camActive && scannerTab === "photo" && (
+          <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 9999, display: "flex", flexDirection: "column" }}>
+            <video ref={videoRef} autoPlay playsInline muted style={{ flex: 1, width: "100%", height: "100%", objectFit: "cover" }} />
+            <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#C9A84C", fontWeight: 700 }}>{"\u{1F4F7}"} Cadrez le problème</div>
+            <div style={{ position: "absolute", bottom: 40, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
+              <button onClick={prendrePhoto} style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #C9A84C", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+                <div style={{ width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg,#EDD060,#C9A84C)" }} />
+              </button>
+            </div>
           </div>
-          <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#C9A84C", fontWeight: 700 }}>{"\u{1F4F7}"} Cadrez le problème</div>
-        </div>
+        )}
 
         {photoUrl && <img src={photoUrl} alt="photo" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />}
         {!camActive && !photoUrl && (
@@ -303,17 +312,20 @@ export default function ScannerPage() {
 
         <canvas ref={mesureCanvasRef} style={{ position: "absolute", left: -9999 }} />
 
-        {/* Vidéo — visible quand caméra active, caché avec height:0 sinon (pas display:none pour iOS) */}
-        <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: mesureCam ? 12 : 0, height: mesureCam ? "auto" : 0 }}>
-          <video ref={mesureVideoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 360, objectFit: "cover" }} />
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px", display: "flex", justifyContent: "center", alignItems: "center", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
-            <button onClick={prendreMesurePhoto} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #52C37A", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
-              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg,#52C37A,#3A9B5A)" }} />
-            </button>
+        {/* Fullscreen camera overlay for mesure */}
+        {mesureCam && (
+          <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 9999, display: "flex", flexDirection: "column" }}>
+            <video ref={mesureVideoRef} autoPlay playsInline muted style={{ flex: 1, width: "100%", height: "100%", objectFit: "cover" }} />
+            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 80, height: 80, border: "1.5px solid rgba(82,195,122,0.5)", borderRadius: 8, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#52C37A", fontWeight: 700 }}>{"\u{1F4D0}"} {mesureTarget === "mur" ? "Cadrez le mur entier" : mesureTarget === "plafond" ? "Cadrez le plafond" : "Cadrez la pièce entière"}</div>
+            <div style={{ position: "absolute", bottom: 40, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
+              <button onClick={prendreMesurePhoto} style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #52C37A", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+                <div style={{ width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg,#52C37A,#3A9B5A)" }} />
+              </button>
+            </div>
+            <button onClick={() => { setMesureCam(false); mesureStreamRef.current?.getTracks().forEach(t => t.stop()); mesureStreamRef.current = null; }} style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.5)", border: "none", color: "#F0EDE6", fontSize: 22, cursor: "pointer", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>{"\u00D7"}</button>
           </div>
-          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 80, height: 80, border: "1.5px solid rgba(82,195,122,0.5)", borderRadius: 8, pointerEvents: "none" }} />
-          <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#52C37A", fontWeight: 700 }}>{"\u{1F4D0}"} {mesureTarget === "mur" ? "Cadrez le mur entier" : mesureTarget === "plafond" ? "Cadrez le plafond" : "Cadrez la pièce entière"}</div>
-        </div>
+        )}
 
         {/* Photo prise — résultat */}
         {mesurePhoto && <img src={mesurePhoto} alt="mesure" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />}

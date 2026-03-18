@@ -1,8 +1,14 @@
+import { useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import s from "../styles/index";
 
 export default function ProjetChatOverlay() {
   const { projetChat, setProjetChat, projetChatMsgs, projetChatInput, setProjetChatInput, projetChatLoading, sendProjetChat } = useApp();
+  const msgsEndRef = useRef(null);
+
+  useEffect(() => {
+    msgsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [projetChatMsgs]);
 
   if (!projetChat) return null;
 
@@ -20,6 +26,7 @@ export default function ProjetChatOverlay() {
             <div style={m.role === "ai" ? s.bubA : s.bubU} dangerouslySetInnerHTML={{ __html: m.text === "..." ? "<span>...</span>" : m.text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br/>") }} />
           </div>
         ))}
+        <div ref={msgsEndRef} />
       </div>
       <div style={{ padding: "10px 16px 16px", borderTop: "0.5px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
         <div style={s.inputBar}>
