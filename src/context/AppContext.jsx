@@ -6,8 +6,8 @@ import { exportChatPDF as _exportChatPDF, genererCertificatPDF, genererDevisProP
 
 const IS_DEV = import.meta.env.DEV;
 
-const ROUTE_TO_PAGE = { "/": "home", "/coach": "coach", "/scanner": "scanner", "/shop": "shop", "/cert": "cert", "/outils": "outils", "/projets": "projets" };
-const PAGE_TO_ROUTE = { home: "/", coach: "/coach", scanner: "/scanner", shop: "/shop", cert: "/cert", outils: "/outils", projets: "/projets" };
+const ROUTE_TO_PAGE = { "/": "home", "/coach": "coach", "/scanner": "scanner", "/shop": "shop", "/cert": "cert", "/outils": "outils", "/projets": "projets", "/dashboard": "dashboard" };
+const PAGE_TO_ROUTE = { home: "/", coach: "/coach", scanner: "/scanner", shop: "/shop", cert: "/cert", outils: "/outils", projets: "/projets", dashboard: "/dashboard" };
 
 const AppContext = createContext(null);
 
@@ -33,7 +33,10 @@ export function AppProvider({ children }) {
   // ── IA / Chat ─────────────────────────────────────────────────
   const [curDiv, setCurDiv] = useState("Métier");
   const [curIA, setCurIA] = useState("coach");
-  const [msgs, setMsgs] = useState([{ role: "ai", text: "Bonjour ! Je suis votre Coach Expert Bâtiment. Quel est votre projet ?" }]);
+  const [msgs, setMsgs] = useState(() => {
+    try { const s = localStorage.getItem("mm_chat_coach"); if (s) { const p = JSON.parse(s); if (p.length) return p; } } catch {}
+    return [{ role: "ai", text: "Bonjour ! Je suis votre Coach Expert Bâtiment. Quel est votre projet ?" }];
+  });
   const [hist, setHist] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -77,7 +80,11 @@ export function AppProvider({ children }) {
   const [rgpdOk, setRgpdOk] = useState(() => localStorage.getItem("rgpd_accepted") === "1");
   const [msgCount, setMsgCount] = useState(() => parseInt(localStorage.getItem("bl_msg_count") || "0"));
   const [showPaywall, setShowPaywall] = useState(false);
-  const [isPremium] = useState(() => localStorage.getItem("bl_premium") === "1");
+  const [isPremium, setIsPremium] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("premium") === "1") { localStorage.setItem("bl_premium", "1"); window.history.replaceState({}, "", window.location.pathname); return true; }
+    return localStorage.getItem("bl_premium") === "1";
+  });
   const [onboardingDone, setOnboardingDone] = useState(() => localStorage.getItem("bl_onboarded") === "1");
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [userType, setUserType] = useState(() => localStorage.getItem("bl_user_type") || "Particulier");

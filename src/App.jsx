@@ -16,9 +16,11 @@ const ShopPage = lazy(() => import("./components/ShopPage"));
 const CertPage = lazy(() => import("./components/CertPage"));
 const OutilsPage = lazy(() => import("./components/OutilsPage"));
 const ProjetsPage = lazy(() => import("./components/ProjetsPage"));
+const DashboardPage = lazy(() => import("./components/DashboardPage"));
 const ProjetChatOverlay = lazy(() => import("./components/ProjetChatOverlay"));
 const PaywallOverlay = lazy(() => import("./components/PaywallOverlay"));
 const RgpdBanner = lazy(() => import("./components/RgpdBanner"));
+const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
 
 function LazyFallback() {
   return (
@@ -66,6 +68,7 @@ function AppContent() {
             <CertPage />
             <OutilsPage />
             <ProjetsPage />
+            <DashboardPage />
           </Suspense>
         </div>
 
@@ -76,6 +79,7 @@ function AppContent() {
         <ProjetChatOverlay />
         <PaywallOverlay />
         <RgpdBanner />
+        <InstallPrompt />
       </Suspense>
     </>
   );

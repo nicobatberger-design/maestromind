@@ -32,3 +32,6 @@ dist-ssr
 .agents/
 .claude/skills/
 skills-lock.json
+
+.vercel
+.netlify/
