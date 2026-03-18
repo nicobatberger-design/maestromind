@@ -1,19 +1,32 @@
+import { lazy, Suspense } from "react";
 import { AppProvider, useApp } from "./context/AppContext";
 import s from "./styles/index";
+
+// Chargés immédiatement (écrans d'entrée)
 import OnboardingScreen from "./components/OnboardingScreen";
 import PinScreen from "./components/PinScreen";
 import Header from "./components/Header";
-import HomePage from "./components/HomePage";
-import CoachPage from "./components/CoachPage";
-import ScannerPage from "./components/ScannerPage";
-import ShopPage from "./components/ShopPage";
-import CertPage from "./components/CertPage";
-import OutilsPage from "./components/OutilsPage";
-import ProjetsPage from "./components/ProjetsPage";
 import NavBar from "./components/NavBar";
-import ProjetChatOverlay from "./components/ProjetChatOverlay";
-import PaywallOverlay from "./components/PaywallOverlay";
-import RgpdBanner from "./components/RgpdBanner";
+
+// Chargés à la demande (code splitting)
+const HomePage = lazy(() => import("./components/HomePage"));
+const CoachPage = lazy(() => import("./components/CoachPage"));
+const ScannerPage = lazy(() => import("./components/ScannerPage"));
+const ShopPage = lazy(() => import("./components/ShopPage"));
+const CertPage = lazy(() => import("./components/CertPage"));
+const OutilsPage = lazy(() => import("./components/OutilsPage"));
+const ProjetsPage = lazy(() => import("./components/ProjetsPage"));
+const ProjetChatOverlay = lazy(() => import("./components/ProjetChatOverlay"));
+const PaywallOverlay = lazy(() => import("./components/PaywallOverlay"));
+const RgpdBanner = lazy(() => import("./components/RgpdBanner"));
+
+function LazyFallback() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "rgba(201,168,76,0.5)", fontSize: 12 }}>
+      Chargement...
+    </div>
+  );
+}
 
 function AppContent() {
   const { onboardingDone, pdgUnlocked } = useApp();
@@ -39,28 +52,31 @@ function AppContent() {
       `}</style>
 
       <div style={s.app}>
-        {/* Ambient glow orbs */}
         <div style={{ position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)", width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle,rgba(201,168,76,0.09) 0%,transparent 70%)", pointerEvents: "none", animation: "orbFloat 7s ease-in-out infinite", zIndex: 0 }} />
         <div style={{ position: "absolute", bottom: 60, right: -80, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle,rgba(82,144,224,0.05) 0%,transparent 70%)", pointerEvents: "none", animation: "orbFloat 9s ease-in-out infinite 1.5s", zIndex: 0 }} />
 
         <Header />
 
         <div style={s.pages}>
-          <HomePage />
-          <CoachPage />
-          <ScannerPage />
-          <ShopPage />
-          <CertPage />
-          <OutilsPage />
-          <ProjetsPage />
+          <Suspense fallback={<LazyFallback />}>
+            <HomePage />
+            <CoachPage />
+            <ScannerPage />
+            <ShopPage />
+            <CertPage />
+            <OutilsPage />
+            <ProjetsPage />
+          </Suspense>
         </div>
 
         <NavBar />
       </div>
 
-      <ProjetChatOverlay />
-      <PaywallOverlay />
-      <RgpdBanner />
+      <Suspense fallback={null}>
+        <ProjetChatOverlay />
+        <PaywallOverlay />
+        <RgpdBanner />
+      </Suspense>
     </>
   );
 }
