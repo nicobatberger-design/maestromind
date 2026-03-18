@@ -1,0 +1,474 @@
+{
+  "version": "0.9.0",
+  "lastUpdated": "2026-03-17",
+  "features": [
+    {
+      "id": "S1-01",
+      "sprint": 1,
+      "priority": "P0",
+      "title": "Hachage PIN PDG",
+      "description": "Remplacer PDG_PIN='123456' en clair par un hash SHA-256 stocké en variable d'environnement VITE_PDG_PIN_HASH.",
+      "complexity": "facile",
+      "impact": "critique",
+      "status": "done",
+      "autoPatch": true,
+      "files": [
+        "src/App.jsx",
+        ".env.example"
+      ],
+      "appliedAt": "2026-03-17T20:58:08.236Z"
+    },
+    {
+      "id": "S1-02",
+      "sprint": 1,
+      "priority": "P0",
+      "title": "Variables d'environnement",
+      "description": "Créer .env.example et migrer les secrets vers VITE_* variables. Ajouter .env au .gitignore.",
+      "complexity": "facile",
+      "impact": "critique",
+      "status": "done",
+      "autoPatch": true,
+      "files": [
+        ".env.example",
+        ".gitignore"
+      ],
+      "appliedAt": "2026-03-17T20:58:08.237Z"
+    },
+    {
+      "id": "S1-03",
+      "sprint": 1,
+      "priority": "P0",
+      "title": "Backend API Node.js",
+      "description": "Créer un serveur Express qui proxifie les appels Anthropic. Routes: POST /api/chat, POST /api/scan.",
+      "complexity": "complexe",
+      "impact": "critique",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "api/server.js",
+        "api/routes/chat.js",
+        "api/routes/scan.js"
+      ]
+    },
+    {
+      "id": "S1-04",
+      "sprint": 1,
+      "priority": "P0",
+      "title": "Authentification utilisateurs",
+      "description": "Intégrer Supabase Auth. Email/password + OAuth Google. Remplacer la saisie de clé API.",
+      "complexity": "complexe",
+      "impact": "critique",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/lib/supabase.js",
+        "src/hooks/useAuth.js",
+        "src/components/AuthScreen.jsx"
+      ]
+    },
+    {
+      "id": "S1-05",
+      "sprint": 1,
+      "priority": "P0",
+      "title": "Rate limiting & quota IA",
+      "description": "Limiter les appels API par utilisateur: 20 msg/jour gratuit, illimité Premium. Stockage quota Supabase.",
+      "complexity": "moyen",
+      "impact": "critique",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "api/middleware/rateLimit.js",
+        "src/hooks/useQuota.js"
+      ]
+    },
+    {
+      "id": "S1-06",
+      "sprint": 1,
+      "priority": "P0",
+      "title": "RGPD — Mentions légales",
+      "description": "Page CGU/Mentions légales/Politique cookies. Bandeau consentement CNIL au premier lancement.",
+      "complexity": "facile",
+      "impact": "critique",
+      "status": "done",
+      "autoPatch": true,
+      "files": [
+        "src/App.jsx"
+      ],
+      "appliedAt": "2026-03-17T20:58:08.239Z"
+    },
+    {
+      "id": "S2-01",
+      "sprint": 2,
+      "priority": "P0",
+      "title": "Abonnement Stripe Premium",
+      "description": "Stripe Checkout pour abonnement 9.99€/mois. Webhook Supabase. Plan gratuit vs Premium.",
+      "complexity": "complexe",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "api/webhook-stripe.js",
+        "src/lib/stripe.js",
+        "src/components/PaywallModal.jsx"
+      ]
+    },
+    {
+      "id": "S2-02",
+      "sprint": 2,
+      "priority": "P0",
+      "title": "Paywall doux",
+      "description": "Banner 'Passez Premium' après 3 messages gratuits. Modal avec avantages et CTA Stripe.",
+      "complexity": "facile",
+      "impact": "fort",
+      "status": "done",
+      "autoPatch": true,
+      "files": [
+        "src/App.jsx"
+      ],
+      "appliedAt": "2026-03-17T20:58:08.241Z"
+    },
+    {
+      "id": "S2-03",
+      "sprint": 2,
+      "priority": "P0",
+      "title": "Liens d'affiliation réels",
+      "description": "Remplacer les liens boutique génériques par des URLs d'affiliation avec tracking UTM.",
+      "complexity": "facile",
+      "impact": "fort",
+      "status": "done",
+      "autoPatch": true,
+      "files": [
+        "src/App.jsx"
+      ],
+      "appliedAt": "2026-03-17T20:58:08.242Z"
+    },
+    {
+      "id": "S2-04",
+      "sprint": 2,
+      "priority": "P1",
+      "title": "API Boutique réelle",
+      "description": "Remplacer les 9 produits mockés par des appels API Google Shopping ou partenaires.",
+      "complexity": "complexe",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "api/routes/products.js",
+        "src/hooks/useProducts.js"
+      ]
+    },
+    {
+      "id": "S2-05",
+      "sprint": 2,
+      "priority": "P1",
+      "title": "Leads artisans RGE",
+      "description": "Formulaire 'Trouver un artisan' → lead qualifié envoyé à réseau partenaires RGE (CPL 5-15€/lead).",
+      "complexity": "moyen",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/components/ArtisanLeadForm.jsx"
+      ]
+    },
+    {
+      "id": "S2-06",
+      "sprint": 2,
+      "priority": "P1",
+      "title": "Dashboard revenus PDG",
+      "description": "Page analytics PDG: MRR, ARR, nb abonnés, churn, leads. Données Stripe + Supabase.",
+      "complexity": "moyen",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/components/PdgDashboard.jsx"
+      ]
+    },
+    {
+      "id": "S3-01",
+      "sprint": 3,
+      "priority": "P1",
+      "title": "Onboarding 3 écrans",
+      "description": "Splash animé premier lancement: Bienvenue, Profil utilisateur, Activer notifications. Stocké localStorage.",
+      "complexity": "facile",
+      "impact": "fort",
+      "status": "done",
+      "autoPatch": true,
+      "files": [
+        "src/App.jsx"
+      ],
+      "appliedAt": "2026-03-17T20:58:08.245Z"
+    },
+    {
+      "id": "S3-02",
+      "sprint": 3,
+      "priority": "P1",
+      "title": "Profil utilisateur",
+      "description": "Page profil: nom, type logement, région, niveau bricolage. Personnalise les system prompts IA.",
+      "complexity": "moyen",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/components/ProfilePage.jsx",
+        "src/hooks/useProfile.js"
+      ]
+    },
+    {
+      "id": "S3-03",
+      "sprint": 3,
+      "priority": "P1",
+      "title": "Historique conversations persistant",
+      "description": "Sauvegarder toutes les conversations Supabase par user. Page Historique avec recherche fulltext.",
+      "complexity": "moyen",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/components/HistoryPage.jsx",
+        "src/hooks/useHistory.js"
+      ]
+    },
+    {
+      "id": "S3-04",
+      "sprint": 3,
+      "priority": "P1",
+      "title": "Projets chantier sauvegardés",
+      "description": "Créer un Projet avec nom, type, adresse, photos, conversations liées, certificats. Liste projets.",
+      "complexity": "moyen",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/components/ProjectsPage.jsx"
+      ]
+    },
+    {
+      "id": "S3-05",
+      "sprint": 3,
+      "priority": "P1",
+      "title": "Notifications push PWA",
+      "description": "Service Worker + Web Push API. Notifications: rappel séchage, alerte artisan, rappel norme.",
+      "complexity": "moyen",
+      "impact": "moyen",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "public/sw.js",
+        "src/lib/notifications.js"
+      ]
+    },
+    {
+      "id": "S3-06",
+      "sprint": 3,
+      "priority": "P1",
+      "title": "Mode PWA hors-ligne",
+      "description": "Service Worker avec cache UI et system prompts. Fonctionnement partiel sans internet.",
+      "complexity": "moyen",
+      "impact": "moyen",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "public/sw.js",
+        "vite.config.js"
+      ]
+    },
+    {
+      "id": "S3-07",
+      "sprint": 3,
+      "priority": "P1",
+      "title": "Rating réponses IA",
+      "description": "Boutons 👍/👎 sous chaque réponse IA. Feedbacks stockés en base. Dashboard notes par IA.",
+      "complexity": "facile",
+      "impact": "moyen",
+      "status": "done",
+      "autoPatch": true,
+      "files": [
+        "src/App.jsx"
+      ],
+      "appliedAt": "2026-03-17T20:58:08.247Z"
+    },
+    {
+      "id": "S4-01",
+      "sprint": 4,
+      "priority": "P1",
+      "title": "Calculateur matériaux automatique",
+      "description": "IA génère liste matériaux + quantités depuis surface. Export liste de courses PDF.",
+      "complexity": "moyen",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/components/MaterialsCalculator.jsx"
+      ]
+    },
+    {
+      "id": "S4-02",
+      "sprint": 4,
+      "priority": "P2",
+      "title": "Galerie photos chantier",
+      "description": "Stockage photos par projet (Supabase Storage). Upload multi-photos, tag étape, timeline.",
+      "complexity": "moyen",
+      "impact": "moyen",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/components/GalleryPage.jsx"
+      ]
+    },
+    {
+      "id": "S4-03",
+      "sprint": 4,
+      "priority": "P1",
+      "title": "Partage de certificats",
+      "description": "URL unique par certificat. Vérification authenticité via QR code. Page publique lecture.",
+      "complexity": "moyen",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "api/routes/certificates.js",
+        "src/components/CertVerify.jsx"
+      ]
+    },
+    {
+      "id": "S4-04",
+      "sprint": 4,
+      "priority": "P2",
+      "title": "Simulateur DPE réel",
+      "description": "Remplacer formule linéaire par calcul RE2020 conforme. Intégration API ADEME si disponible.",
+      "complexity": "complexe",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/lib/dpe-engine.js"
+      ]
+    },
+    {
+      "id": "S4-05",
+      "sprint": 4,
+      "priority": "P2",
+      "title": "Rapport chantier PDF complet",
+      "description": "PDF multi-pages: conversations IA, photos, matériaux, certificat, estimatif coûts.",
+      "complexity": "moyen",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/lib/report-generator.js"
+      ]
+    },
+    {
+      "id": "S4-06",
+      "sprint": 4,
+      "priority": "P2",
+      "title": "Erreurs réseau & retry",
+      "description": "Gestion d'erreurs réseau avec retry automatique (3 tentatives, backoff exponentiel). UX feedback.",
+      "complexity": "facile",
+      "impact": "moyen",
+      "status": "done",
+      "autoPatch": true,
+      "files": [
+        "src/App.jsx"
+      ],
+      "appliedAt": "2026-03-17T20:58:08.248Z"
+    },
+    {
+      "id": "S5-01",
+      "sprint": 5,
+      "priority": "P2",
+      "title": "Géolocalisation artisans RGE",
+      "description": "Carte interactive artisans RGE certifiés dans un rayon de 30km. Données Qualibat/ADEME.",
+      "complexity": "complexe",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/components/MapPage.jsx"
+      ]
+    },
+    {
+      "id": "S5-02",
+      "sprint": 5,
+      "priority": "P2",
+      "title": "Espace Artisan Pro",
+      "description": "Compte artisan: profil, certifications, devis IA, leads. Abonnement Pro 29.99€/mois.",
+      "complexity": "complexe",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/components/ArtisanPortal.jsx"
+      ]
+    },
+    {
+      "id": "S5-03",
+      "sprint": 5,
+      "priority": "P2",
+      "title": "Multi-langue EN/ES/DE",
+      "description": "i18n complet. Adaptation normes (Building Regs UK, DIN, CTE). Détection langue navigateur.",
+      "complexity": "complexe",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/i18n/",
+        "src/lib/i18n.js"
+      ]
+    },
+    {
+      "id": "S6-01",
+      "sprint": 6,
+      "priority": "P3",
+      "title": "IA Vocale",
+      "description": "Web Speech API pour dicter questions. TTS pour réponses. Mode mains-libres chantier.",
+      "complexity": "complexe",
+      "impact": "moyen",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/hooks/useSpeech.js"
+      ]
+    },
+    {
+      "id": "S6-02",
+      "sprint": 6,
+      "priority": "P2",
+      "title": "Fine-tuning system prompts PDG",
+      "description": "Interface PDG pour modifier les 32 system prompts en temps réel. Versioning + rollback.",
+      "complexity": "moyen",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": [
+        "src/components/PromptEditor.jsx"
+      ]
+    },
+    {
+      "id": "S7-01",
+      "sprint": 7,
+      "priority": "P3",
+      "title": "Application mobile native",
+      "description": "React Native ou Flutter. App Store + Google Play. Notifications natives, widget.",
+      "complexity": "complexe",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": []
+    },
+    {
+      "id": "S7-02",
+      "sprint": 7,
+      "priority": "P3",
+      "title": "Marketplace artisans complète",
+      "description": "Place de marché projets/devis. Commission MAESTROMIND sur chaque transaction.",
+      "complexity": "complexe",
+      "impact": "fort",
+      "status": "pending",
+      "autoPatch": false,
+      "files": []
+    }
+  ]
+}

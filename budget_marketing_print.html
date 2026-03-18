@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Budget Marketing Automatisé — MAESTROMIND</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #06080D;
+    color: #F0EDE6;
+    padding: 40px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  @media print {
+    body { background: #fff; color: #111; padding: 20px; }
+    .no-print { display: none; }
+    .page-break { page-break-before: always; }
+    table { page-break-inside: avoid; }
+    h2 { page-break-after: avoid; }
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0D1018, #12161F);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo-box {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, #EDD060, #C9A84C, #7A6030);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin-right: 16px;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.4);
+    flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; }
+  .header-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+  .header-title span { color: #C9A84C; }
+  .header-sub { font-size: 12px; color: rgba(240,237,230,0.5); margin-top: 4px; letter-spacing: 1px; }
+  .header-date { text-align: right; }
+  .header-date .date-label { font-size: 10px; color: rgba(240,237,230,0.4); text-transform: uppercase; letter-spacing: 1.5px; }
+  .header-date .date-val { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: #C9A84C; }
+
+  /* RÉSUMÉ EXÉCUTIF */
+  .exec-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .exec-card {
+    background: rgba(15,19,28,0.8);
+    border: 0.5px solid rgba(201,168,76,0.25);
+    border-radius: 12px;
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .exec-card .phase { font-size: 10px; color: #C9A84C; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .exec-card .amount { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: #EDD060; }
+  .exec-card .period { font-size: 11px; color: rgba(240,237,230,0.5); margin-top: 4px; }
+  .exec-card.highlight { background: rgba(201,168,76,0.08); border-color: #C9A84C; }
+
+  /* SECTIONS */
+  h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: #C9A84C;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 32px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 0.5px solid rgba(201,168,76,0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #F0EDE6;
+    margin: 20px 0 10px;
+  }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 12px;
+  }
+  thead tr {
+    background: rgba(201,168,76,0.1);
+  }
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: #C9A84C;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 0.5px solid rgba(201,168,76,0.25);
+  }
+  tbody tr {
+    border-bottom: 0.5px solid rgba(255,255,255,0.05);
+    transition: background 0.2s;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody td {
+    padding: 10px 14px;
+    color: rgba(240,237,230,0.85);
+  }
+  tbody td:first-child { font-weight: 500; color: #F0EDE6; }
+  .total-row td {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    color: #EDD060 !important;
+    background: rgba(201,168,76,0.08);
+    border-top: 1px solid rgba(201,168,76,0.3);
+    font-size: 13px;
+  }
+  .green { color: #52C37A !important; font-weight: 700; }
+  .red { color: #E05252 !important; }
+  .gold { color: #C9A84C !important; font-weight: 700; }
+
+  /* BLOC OUTILS */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .tool-card {
+    background: rgba(15,19,28,0.7);
+    border: 0.5px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .tool-icon {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .tool-name { font-weight: 700; font-size: 12px; color: #F0EDE6; margin-bottom: 3px; }
+  .tool-role { font-size: 10px; color: rgba(240,237,230,0.45); line-height: 1.4; }
+  .tool-price {
+    margin-left: auto;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: #C9A84C;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* PROJECTION ROI */
+  .roi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .roi-card {
+    background: rgba(15,19,28,0.7);
+    border: 0.5px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 12px 8px;
+    text-align: center;
+  }
+  .roi-card .mois { font-size: 9px; color: #C9A84C; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .roi-card .invest { font-size: 11px; color: rgba(240,237,230,0.5); margin-bottom: 4px; }
+  .roi-card .mrr { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+  .roi-card .result { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 20px; display: inline-block; }
+  .roi-card .result.pos { background: rgba(82,195,122,0.15); color: #52C37A; border: 0.5px solid #52C37A; }
+  .roi-card .result.neg { background: rgba(224,82,82,0.1); color: #E05252; border: 0.5px solid rgba(224,82,82,0.4); }
+
+  /* PIPELINE SCHÉMA */
+  .pipeline {
+    background: rgba(15,19,28,0.7);
+    border: 0.5px solid rgba(201,168,76,0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    font-family: 'DM Sans', monospace;
+    font-size: 11px;
+    line-height: 1.8;
+    color: rgba(240,237,230,0.7);
+    white-space: pre-line;
+  }
+  .pipeline .highlight { color: #C9A84C; font-weight: 700; }
+  .pipeline .arrow { color: #52C37A; }
+
+  /* BILAN FINAL */
+  .bilan {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .bilan-card {
+    background: rgba(15,19,28,0.8);
+    border: 0.5px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+  }
+  .bilan-card.accent { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.06); }
+  .bilan-card .label { font-size: 9px; color: rgba(240,237,230,0.4); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+  .bilan-card .value { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+  .bilan-card .sub { font-size: 10px; color: rgba(240,237,230,0.4); margin-top: 4px; }
+
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(15,19,28,0.6);
+    border: 0.5px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .step-num {
+    width: 24px; height: 24px;
+    background: linear-gradient(135deg, #EDD060, #C9A84C);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 800;
+    color: #06080D;
+    flex-shrink: 0;
+  }
+  .step-text { font-size: 12px; color: rgba(240,237,230,0.8); line-height: 1.5; }
+  .step-text strong { color: #F0EDE6; }
+
+  /* NOTE BAS */
+  .footer {
+    border-top: 0.5px solid rgba(255,255,255,0.07);
+    padding-top: 20px;
+    margin-top: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-left { font-size: 10px; color: rgba(240,237,230,0.3); line-height: 1.7; }
+  .footer-right { text-align: right; font-size: 10px; color: rgba(240,237,230,0.3); }
+
+  /* PRINT BUTTON */
+  .print-btn {
+    position: fixed;
+    top: 20px; right: 20px;
+    background: linear-gradient(135deg, #EDD060, #C9A84C);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: #06080D;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.4);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* PRINT OVERRIDES */
+  @media print {
+    body { background: #fff; color: #111; }
+    .header { background: #f5f0e8; border-color: #C9A84C; color: #111; }
+    .header-title { color: #111; }
+    .header-sub, .header-date .date-label { color: #666; }
+    .exec-card, .tool-card, .bilan-card, .roi-card, .step { background: #f9f7f2; border-color: #ddd; }
+    table { border: 1px solid #ddd; }
+    thead tr { background: #f0ead8; }
+    thead th { color: #8A6820; }
+    tbody tr { border-color: #eee; }
+    tbody td { color: #333; }
+    tbody td:first-child { color: #111; }
+    .total-row td { background: #f0ead8; }
+    .pipeline { background: #f5f0e8; color: #444; }
+    h2 { color: #8A6820; border-color: #ddd; }
+    h3 { color: #111; }
+    .tool-name, .exec-card .phase, .roi-card .mois { color: #8A6820; }
+    .amount, .tool-price, .bilan-card .value, .roi-card .mrr, .total-row td { color: #8A6820 !important; }
+    .green { color: #276B3B !important; }
+    .red { color: #B91C1C !important; }
+    .step-num { background: #C9A84C; }
+    .roi-card .result.pos { background: #d1fae5; color: #065f46; border-color: #10b981; }
+    .roi-card .result.neg { background: #fee2e2; color: #991b1b; border-color: #f87171; }
+    .footer { border-color: #ddd; }
+    .footer-left, .footer-right { color: #999; }
+    .header-date .date-val { color: #8A6820; }
+    .bilan-card.accent { background: #f0ead8; border-color: #C9A84C; }
+  }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">
+  🖨️ Imprimer / PDF
+</button>
+
+<!-- EN-TÊTE -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-box">🏗️</div>
+    <div>
+      <div class="header-title">BRICO<span>LENS</span>AI</div>
+      <div class="header-sub">Budget Marketing Automatisé — Rapport Complet</div>
+    </div>
+  </div>
+  <div class="header-date">
+    <div class="date-label">Date du rapport</div>
+    <div class="date-val">Mars 2026</div>
+  </div>
+</div>
+
+<!-- RÉSUMÉ EXÉCUTIF -->
+<h2>📊 Résumé Exécutif</h2>
+<div class="exec-summary">
+  <div class="exec-card">
+    <div class="phase">Phase 1 — Lancement</div>
+    <div class="amount">847€</div>
+    <div class="period">Mois 1 · Setup complet</div>
+  </div>
+  <div class="exec-card">
+    <div class="phase">Phase 2 — Croissance</div>
+    <div class="amount">1 124€</div>
+    <div class="period">Mois 2-3 · Acquisition</div>
+  </div>
+  <div class="exec-card highlight">
+    <div class="phase">Phase 3 — Scale</div>
+    <div class="amount">2 200€</div>
+    <div class="period">Mois 4-6 · Rentable M3 ✅</div>
+  </div>
+</div>
+
+<!-- OUTILS D'AUTOMATION -->
+<h2>🔧 Stack Outils Automatisés — 217€/mois</h2>
+<div class="tools-grid">
+  <div class="tool-card">
+    <div class="tool-icon" style="background:rgba(201,168,76,0.12);">⚙️</div>
+    <div>
+      <div class="tool-name">Make.com</div>
+      <div class="tool-role">Cerveau — connecte tous les outils entre eux, déclenche les automatisations</div>
+    </div>
+    <div class="tool-price">16€</div>
+  </div>
+  <div class="tool-card">
+    <div class="tool-icon" style="background:rgba(82,195,122,0.12);">📱</div>
+    <div>
+      <div class="tool-name">Buffer</div>
+      <div class="tool-role">Publication automatique sur Instagram, Facebook, LinkedIn, TikTok, Twitter</div>
+    </div>
+    <div class="tool-price">15€</div>
+  </div>
+  <div class="tool-card">
+    <div class="tool-icon" style="background:rgba(82,144,224,0.12);">📧</div>
+    <div>
+      <div class="tool-name">Brevo</div>
+      <div class="tool-role">5 emails automatiques (J0 → J+20) · RGPD français · 20 000 envois/mois</div>
+    </div>
+    <div class="tool-price">25€</div>
+  </div>
+  <div class="tool-card">
+    <div class="tool-icon" style="background:rgba(201,168,76,0.12);">🤖</div>
+    <div>
+      <div class="tool-name">Claude API</div>
+      <div class="tool-role">Génère 7 posts/semaine + 2 scripts TikTok chaque dimanche automatiquement</div>
+    </div>
+    <div class="tool-price">30€</div>
+  </div>
+  <div class="tool-card">
+    <div class="tool-icon" style="background:rgba(232,135,58,0.12);">🎨</div>
+    <div>
+      <div class="tool-name">Canva Pro</div>
+      <div class="tool-role">Templates MAESTROMIND, Brand Kit, resize automatique tous formats</div>
+    </div>
+    <div class="tool-price">13€</div>
+  </div>
+  <div class="tool-card">
+    <div class="tool-icon" style="background:rgba(224,82,82,0.12);">💬</div>
+    <div>
+      <div class="tool-name">ManyChat</div>
+      <div class="tool-role">Chatbot Instagram/Facebook — répond aux commentaires "lien" automatiquement</div>
+    </div>
+    <div class="tool-price">15€</div>
+  </div>
+  <div class="tool-card">
+    <div class="tool-icon" style="background:rgba(139,92,246,0.12);">👻</div>
+    <div>
+      <div class="tool-name">Phantom Buster</div>
+      <div class="tool-role">Prospection influenceurs automatique — 10 DM/jour, extraction contacts</div>
+    </div>
+    <div class="tool-price">56€</div>
+  </div>
+  <div class="tool-card">
+    <div class="tool-icon" style="background:rgba(82,195,122,0.12);">🔍</div>
+    <div>
+      <div class="tool-name">Ubersuggest Pro</div>
+      <div class="tool-role">Suivi 30 mots-clés SEO, alertes concurrence, audit mensuel automatique</div>
+    </div>
+    <div class="tool-price">29€</div>
+  </div>
+  <div class="tool-card">
+    <div class="tool-icon" style="background:rgba(82,144,224,0.12);">🎬</div>
+    <div>
+      <div class="tool-name">CapCut Pro</div>
+      <div class="tool-role">Montage vidéo TikTok/Reels, sous-titrage automatique français</div>
+    </div>
+    <div class="tool-price">8€</div>
+  </div>
+  <div class="tool-card">
+    <div class="tool-icon" style="background:rgba(201,168,76,0.12);">🖼️</div>
+    <div>
+      <div class="tool-name">Midjourney</div>
+      <div class="tool-role">Génération visuels IA pour les posts (maison, chantier, intérieur)</div>
+    </div>
+    <div class="tool-price">10€</div>
+  </div>
+</div>
+
+<!-- PUBLICITÉ -->
+<h2>📢 Budget Publicitaire Automatisé — 500€/mois</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Canal</th>
+      <th>Budget/mois</th>
+      <th>Système d'automation</th>
+      <th>Audience cible</th>
+      <th>KPI cible</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Meta Ads (Facebook + Instagram)</td>
+      <td class="gold">300€</td>
+      <td>Meta Advantage+ (100% auto)</td>
+      <td>Propriétaires 35-60 ans, France</td>
+      <td>CPC &lt; 0,45€</td>
+    </tr>
+    <tr>
+      <td>TikTok Ads</td>
+      <td class="gold">100€</td>
+      <td>Smart Campaign (100% auto)</td>
+      <td>25-45 ans bricolage/déco</td>
+      <td>CPM &lt; 5€</td>
+    </tr>
+    <tr>
+      <td>Google Ads Search</td>
+      <td class="gold">100€</td>
+      <td>Smart Bidding (100% auto)</td>
+      <td>Recherches actives "devis artisan"</td>
+      <td>CPC &lt; 0,70€</td>
+    </tr>
+    <tr class="total-row">
+      <td>TOTAL PUBLICITÉ</td>
+      <td>500€/mois</td>
+      <td colspan="3">100% automatisé — zéro gestion manuelle</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- BUDGET PAR MOIS -->
+<h2>📅 Budget Détaillé par Mois</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Poste</th>
+      <th>Mois 1 — Lancement</th>
+      <th>Mois 2-3 — Croissance</th>
+      <th>Mois 4-6 — Scale</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Outils automation</td>
+      <td>217€</td>
+      <td>217€</td>
+      <td>217€</td>
+    </tr>
+    <tr>
+      <td>Meta Ads</td>
+      <td>300€</td>
+      <td>400€</td>
+      <td>800€</td>
+    </tr>
+    <tr>
+      <td>TikTok Ads</td>
+      <td>100€</td>
+      <td>150€</td>
+      <td>300€</td>
+    </tr>
+    <tr>
+      <td>Google Ads</td>
+      <td>—</td>
+      <td>100€</td>
+      <td>300€</td>
+    </tr>
+    <tr>
+      <td>YouTube Ads</td>
+      <td>—</td>
+      <td>—</td>
+      <td>150€</td>
+    </tr>
+    <tr>
+      <td>Semrush Guru (upgrade SEO)</td>
+      <td>—</td>
+      <td>—</td>
+      <td>117€</td>
+    </tr>
+    <tr>
+      <td>Vidéo pro mensuelle</td>
+      <td>—</td>
+      <td>—</td>
+      <td>200€</td>
+    </tr>
+    <tr>
+      <td>Commissions influenceurs</td>
+      <td>—</td>
+      <td>57€</td>
+      <td>116€</td>
+    </tr>
+    <tr>
+      <td>Setup initial (one-shot)</td>
+      <td>230€</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr class="total-row">
+      <td>TOTAL</td>
+      <td>847€</td>
+      <td>924€ → 1 124€</td>
+      <td>2 200€</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- PROJECTION ROI -->
+<h2>📈 Projection ROI — 6 Mois</h2>
+<div class="roi-grid">
+  <div class="roi-card">
+    <div class="mois">Mois 1</div>
+    <div class="invest">Investissement<br><strong style="color:#F0EDE6">847€</strong></div>
+    <div class="mrr" style="color:#5290E0">160€</div>
+    <div class="invest" style="font-size:9px">MRR</div>
+    <div class="result neg">-687€</div>
+  </div>
+  <div class="roi-card">
+    <div class="mois">Mois 2</div>
+    <div class="invest">Investissement<br><strong style="color:#F0EDE6">924€</strong></div>
+    <div class="mrr" style="color:#5290E0">549€</div>
+    <div class="invest" style="font-size:9px">MRR</div>
+    <div class="result neg">-375€</div>
+  </div>
+  <div class="roi-card" style="border-color:rgba(82,195,122,0.4)">
+    <div class="mois">Mois 3 ✅</div>
+    <div class="invest">Investissement<br><strong style="color:#F0EDE6">1 124€</strong></div>
+    <div class="mrr" style="color:#52C37A">1 348€</div>
+    <div class="invest" style="font-size:9px">MRR</div>
+    <div class="result pos">+224€</div>
+  </div>
+  <div class="roi-card" style="border-color:rgba(82,195,122,0.4)">
+    <div class="mois">Mois 4</div>
+    <div class="invest">Investissement<br><strong style="color:#F0EDE6">2 200€</strong></div>
+    <div class="mrr" style="color:#52C37A">2 395€</div>
+    <div class="invest" style="font-size:9px">MRR</div>
+    <div class="result pos">+195€</div>
+  </div>
+  <div class="roi-card" style="border-color:rgba(82,195,122,0.4)">
+    <div class="mois">Mois 5</div>
+    <div class="invest">Investissement<br><strong style="color:#F0EDE6">2 200€</strong></div>
+    <div class="mrr" style="color:#52C37A">3 892€</div>
+    <div class="invest" style="font-size:9px">MRR</div>
+    <div class="result pos">+1 692€</div>
+  </div>
+  <div class="roi-card" style="border-color:rgba(201,168,76,0.5); background:rgba(201,168,76,0.06)">
+    <div class="mois">Mois 6</div>
+    <div class="invest">Investissement<br><strong style="color:#F0EDE6">2 200€</strong></div>
+    <div class="mrr" style="color:#EDD060">5 988€</div>
+    <div class="invest" style="font-size:9px">MRR</div>
+    <div class="result pos">+3 788€</div>
+  </div>
+</div>
+
+<!-- BILAN 6 MOIS -->
+<h2>💰 Bilan Total 6 Mois</h2>
+<div class="bilan">
+  <div class="bilan-card">
+    <div class="label">Total investi</div>
+    <div class="value" style="color:#E05252">4 482€</div>
+    <div class="sub">Sur 6 mois</div>
+  </div>
+  <div class="bilan-card">
+    <div class="label">MRR Mois 6</div>
+    <div class="value" style="color:#52C37A">5 988€</div>
+    <div class="sub">Mensuel récurrent</div>
+  </div>
+  <div class="bilan-card">
+    <div class="label">Payback period</div>
+    <div class="value" style="color:#C9A84C">Mois 3</div>
+    <div class="sub">Rentabilité atteinte</div>
+  </div>
+  <div class="bilan-card accent">
+    <div class="label">ROI 6 mois</div>
+    <div class="value" style="color:#EDD060">+34%</div>
+    <div class="sub">Croissance continue</div>
+  </div>
+</div>
+
+<!-- PIPELINE -->
+<h2 class="page-break">🔄 Pipeline Automation — Ce qui tourne sans vous</h2>
+<div class="pipeline">
+<span class="highlight">DIMANCHE 22H (automatique chaque semaine)</span>
+<span class="arrow">→</span> Claude API génère 7 captions Instagram + hashtags
+<span class="arrow">→</span> Claude API génère 2 scripts TikTok
+<span class="arrow">→</span> Make.com envoie tout vers Buffer
+<span class="arrow">→</span> Canva génère les visuels depuis les templates
+<span class="arrow">→</span> Buffer programme la semaine complète
+
+<span class="highlight">CHAQUE MATIN (publication automatique)</span>
+<span class="arrow">→</span> Buffer publie le post Instagram à l'heure optimale détectée
+<span class="arrow">→</span> Make.com adapte + republié sur Facebook et LinkedIn
+<span class="arrow">→</span> TikTok Ads boostent automatiquement les posts qui performent
+
+<span class="highlight">NOUVEAU UTILISATEUR (déclenché à l'inscription)</span>
+<span class="arrow">→</span> Brevo : Email bienvenue J0 → Découverte J+2 → AR Tutorial J+5
+<span class="arrow">→</span> Si pas Premium à J+10 : email offre + remarketing Meta Ads activé
+<span class="arrow">→</span> J+20 : email preuve sociale
+
+<span class="highlight">POST VIRAL DÉTECTÉ (+500 likes)</span>
+<span class="arrow">→</span> Make.com détecte via API Instagram
+<span class="arrow">→</span> Budget Ads augmenté automatiquement de 20€ pour booster ce post
+<span class="arrow">→</span> Notification PDG envoyée
+
+<span class="highlight">CHAQUE LUNDI 8H (rapport PDG automatique)</span>
+<span class="arrow">→</span> Looker Studio génère le PDF du rapport hebdo
+<span class="arrow">→</span> Make.com envoie par email : utilisateurs, MRR, meilleurs posts, coût acquisition
+</div>
+
+<!-- ORDRE D'INSTALLATION -->
+<h2>🚀 Ordre d'Installation — 4 Semaines</h2>
+<div class="steps">
+  <div class="step">
+    <div class="step-num">S1</div>
+    <div class="step-text"><strong>Semaine 1 — Infrastructure (3h, one-shot) :</strong> Créer compte Brevo + importer 5 emails automatiques · Canva Pro Brand Kit MAESTROMIND (couleurs #C9A84C, Syne) · Buffer connecter les 5 réseaux · Make.com scénario inscription → email bienvenue</div>
+  </div>
+  <div class="step">
+    <div class="step-num">S2</div>
+    <div class="step-text"><strong>Semaine 2 — Contenu automatique (2h, puis 0h) :</strong> Claude API prompt génération contenu hebdomadaire · Make.com scénario dimanche 22h (Claude → Buffer) · ManyChat trigger "lien" → DM automatique · Phantom Buster liste influenceurs bricolage</div>
+  </div>
+  <div class="step">
+    <div class="step-num">S3</div>
+    <div class="step-text"><strong>Semaine 3 — Publicité (1h, puis 0h) :</strong> Meta Business Manager → Campagne Advantage+ (3 visuels A/B) · TikTok Ads Manager → Smart Campaign · Google Ads Search → Smart Bidding sur 5 mots-clés prioritaires</div>
+  </div>
+  <div class="step">
+    <div class="step-num">S4</div>
+    <div class="step-text"><strong>Semaine 4 — Analytics et optimisation (1h) :</strong> Looker Studio dashboard PDG (GA4 + Meta + Buffer + Brevo) · Rapport PDF hebdo automatique lundi 8h · Ubersuggest suivi 30 mots-clés · Make.com scénario post viral → boost auto</div>
+  </div>
+</div>
+
+<!-- VERSION BUDGET SERRÉ -->
+<h2>💡 Version Budget Serré — 264€/mois</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Outil</th>
+      <th>Prix</th>
+      <th>Statut</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Make.com</td>
+      <td class="gold">16€</td>
+      <td class="green">✅ Essentiel — gardé</td>
+    </tr>
+    <tr>
+      <td>Buffer</td>
+      <td class="gold">15€</td>
+      <td class="green">✅ Essentiel — gardé</td>
+    </tr>
+    <tr>
+      <td>Brevo</td>
+      <td class="gold">25€</td>
+      <td class="green">✅ Essentiel — gardé</td>
+    </tr>
+    <tr>
+      <td>Claude API</td>
+      <td class="gold">30€</td>
+      <td class="green">✅ Essentiel — gardé</td>
+    </tr>
+    <tr>
+      <td>Canva Pro</td>
+      <td class="gold">13€</td>
+      <td class="green">✅ Essentiel — gardé</td>
+    </tr>
+    <tr>
+      <td>Meta Ads (minimal)</td>
+      <td class="gold">150€</td>
+      <td class="green">✅ 1 campagne minimale</td>
+    </tr>
+    <tr>
+      <td>Phantom Buster</td>
+      <td style="color:rgba(240,237,230,0.4)">—</td>
+      <td class="red">⏳ Reporter — prospection manuelle</td>
+    </tr>
+    <tr>
+      <td>CapCut Pro</td>
+      <td style="color:rgba(240,237,230,0.4)">—</td>
+      <td class="red">⏳ Version gratuite</td>
+    </tr>
+    <tr>
+      <td>ManyChat</td>
+      <td style="color:rgba(240,237,230,0.4)">—</td>
+      <td class="red">⏳ Réponses manuelles</td>
+    </tr>
+    <tr>
+      <td>Ubersuggest</td>
+      <td style="color:rgba(240,237,230,0.4)">—</td>
+      <td class="red">⏳ Google Search Console (gratuit)</td>
+    </tr>
+    <tr class="total-row">
+      <td>TOTAL VERSION STARTER</td>
+      <td>264€/mois</td>
+      <td>Croissance organique prioritaire</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- KPIs -->
+<h2>🎯 KPIs Hebdomadaires à Suivre</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Indicateur</th>
+      <th>Semaine 1</th>
+      <th>Semaine 2</th>
+      <th>Mois 1</th>
+      <th>Mois 3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Utilisateurs actifs</td>
+      <td>200</td>
+      <td>500</td>
+      <td>800</td>
+      <td>4 500</td>
+    </tr>
+    <tr>
+      <td>Abonnés Premium</td>
+      <td>8</td>
+      <td>20</td>
+      <td>32</td>
+      <td>270</td>
+    </tr>
+    <tr>
+      <td>Artisans Pro</td>
+      <td>1</td>
+      <td>3</td>
+      <td>5</td>
+      <td>22</td>
+    </tr>
+    <tr>
+      <td>MRR</td>
+      <td>49€</td>
+      <td>120€</td>
+      <td>160€</td>
+      <td>1 348€</td>
+    </tr>
+    <tr>
+      <td>Coût acquisition (CAC)</td>
+      <td>—</td>
+      <td>1,40€</td>
+      <td>1,10€</td>
+      <td>0,70€</td>
+    </tr>
+    <tr>
+      <td>Taux conversion Free→Premium</td>
+      <td>4%</td>
+      <td>4%</td>
+      <td>4%</td>
+      <td>6%</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-left">
+    Budget Marketing Automatisé — MAESTROMIND<br>
+    Mars 2026 · Préparé par Claude Code<br>
+    Mise à jour recommandée : chaque trimestre
+  </div>
+  <div class="footer-right">
+    Confidentiel — Usage interne PDG<br>
+    maestromind.fr<br>
+    © 2026 MAESTROMIND
+  </div>
+</div>
+
+</body>
+</html>
