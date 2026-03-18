@@ -7,7 +7,7 @@ export default function OutilsPage() {
     toolTab, setToolTab,
     devisText, setDevisText, devisResult, devisLoading,
     counterDevis, setCounterDevis, counterLoading,
-    calcType, setCalcType, calcSurface, setCalcSurface, calcResult, calcLoading,
+    calcType, setCalcType, calcSurface, setCalcSurface, calcHauteur, setCalcHauteur, calcPente, setCalcPente, calcLongueur, setCalcLongueur, calcResult, calcLoading,
     primesRev, setPrimesRev, primesTrav, setPrimesTrav, primesSurf, setPrimesSurf, primesResult, primesLoading,
     artisanNom, setArtisanNom, artisanSpec, setArtisanSpec, artisanResult, artisanLoading,
     dpeS, setDpeS, dpeT, setDpeT, dpeC, setDpeC, dpeRes,
@@ -55,10 +55,17 @@ export default function OutilsPage() {
         </div>}
 
         {toolTab === "mat" && <div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Type de travaux</div><select style={s.inp} value={calcType} onChange={e => setCalcType(e.target.value)}>{["Peinture", "Carrelage", "Parquet", "Placo BA13", "Enduit", "Isolation murs", "Isolation combles", "Toiture", "Béton dalle", "Ragréage"].map(t => <option key={t}>{t}</option>)}</select></div>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Surface m²</div><input style={s.inp} type="number" value={calcSurface} onChange={e => setCalcSurface(e.target.value)} /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Type de travaux</div><select style={s.inp} value={calcType} onChange={e => setCalcType(e.target.value)}>{["Peinture", "Carrelage", "Parquet", "Placo BA13", "Cloison BA13", "Doublage BA13+isolant", "Faux plafond BA13", "Enduit", "Isolation murs", "Isolation combles", "Isolation rampants", "Toiture", "Béton dalle", "Ragréage", "Charpente", "Bardage"].map(t => <option key={t}>{t}</option>)}</select></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Surface m²</div><input style={s.inp} type="number" value={calcSurface} onChange={e => setCalcSurface(e.target.value)} placeholder="20" /></div>
           </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Hauteur m</div><input style={s.inp} type="number" step="0.01" value={calcHauteur} onChange={e => setCalcHauteur(e.target.value)} placeholder="2.50" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Pente °</div><input style={s.inp} type="number" value={calcPente} onChange={e => setCalcPente(e.target.value)} placeholder="0" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Longueur ml</div><input style={s.inp} type="number" value={calcLongueur} onChange={e => setCalcLongueur(e.target.value)} placeholder="—" /></div>
+          </div>
+          {parseFloat(calcPente) > 0 && <div style={{ background: "rgba(232,135,58,0.08)", border: "0.5px solid rgba(232,135,58,0.25)", borderRadius: 10, padding: "8px 12px", marginBottom: 10, fontSize: 10, color: "#E8873A", lineHeight: 1.6 }}>{"\u26A0\uFE0F"} Pente {calcPente}° — l'IA calculera la surface réelle en rampant et adaptera les dimensions des matériaux.</div>}
+          {parseFloat(calcHauteur) > 2.5 && ["Placo BA13", "Cloison BA13", "Doublage BA13+isolant"].includes(calcType) && <div style={{ background: "rgba(82,144,224,0.08)", border: "0.5px solid rgba(82,144,224,0.25)", borderRadius: 10, padding: "8px 12px", marginBottom: 10, fontSize: 10, color: "#5290E0", lineHeight: 1.6 }}>{"\u2139\uFE0F"} Hauteur {calcHauteur}m — plaques et montants adaptés (hors standard 2.50m).</div>}
           <button style={calcLoading ? { ...s.greenBtn, opacity: 0.5 } : s.greenBtn} onClick={calculerMateriaux} disabled={calcLoading}>{calcLoading ? "Calcul en cours..." : "\u{1F4D0} Calculer les matériaux"}</button>
           {calcResult && <div style={{ marginTop: 12 }}>
             {calcResult.materiaux.map((m, i) => <div key={i} style={{ ...s.pi, marginBottom: 8 }}><div style={s.piw}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2" /></svg></div><div style={{ flex: 1 }}><div style={{ fontSize: 12, fontWeight: 500 }}>{m.nom}</div><div style={{ fontSize: 10, color: "rgba(240,237,230,0.45)" }}>{m.quantite} · {m.conseil}</div></div><div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: "#C9A84C" }}>{m.prixEstime}</div></div>)}

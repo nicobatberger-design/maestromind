@@ -102,6 +102,9 @@ export function AppProvider({ children }) {
   const [devisLoading, setDevisLoading] = useState(false);
   const [calcType, setCalcType] = useState("Peinture");
   const [calcSurface, setCalcSurface] = useState("20");
+  const [calcHauteur, setCalcHauteur] = useState("2.50");
+  const [calcPente, setCalcPente] = useState("");
+  const [calcLongueur, setCalcLongueur] = useState("");
   const [calcResult, setCalcResult] = useState(null);
   const [calcLoading, setCalcLoading] = useState(false);
   const [artisanNom, setArtisanNom] = useState("");
@@ -504,17 +507,25 @@ export function AppProvider({ children }) {
 
   const calculerMateriaux = useCallback(async () => {
     setCalcLoading(true); setCalcResult(null);
+    const hauteur = parseFloat(calcHauteur) || 2.5;
+    const pente = parseFloat(calcPente) || 0;
+    const longueur = parseFloat(calcLongueur) || 0;
+    let dims = `Surface : ${calcSurface}m². Hauteur sous plafond : ${hauteur}m.`;
+    if (pente > 0) dims += ` ATTENTION : toit/plafond en pente à ${pente}° — la hauteur varie. Calcule la surface réelle en tenant compte de la pente (surface rampant = surface au sol / cos(pente)). Adapte les longueurs de plaques/rails en conséquence.`;
+    if (longueur > 0) dims += ` Longueur linéaire de la cloison/mur : ${longueur}m.`;
+    const typesAvecHauteur = ["Placo BA13", "Peinture", "Carrelage", "Enduit", "Isolation murs"];
+    if (typesAvecHauteur.includes(calcType)) dims += ` La hauteur impacte le choix des plaques (standard 2.50m, haute 2.60m, 2.70m, 3m). Si hauteur > 2.50m, précise qu'il faut des plaques plus grandes et adapte les quantités de rails/montants.`;
     try {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 900,
-          system: `${profilIA()}\nTu es un expert en quantitatifs matériaux France. Réponds UNIQUEMENT en JSON valide : {"materiaux":[{"nom":"Produit","quantite":"X unités","prixEstime":"X€","conseil":"marque/ref"}],"total":"X€","conseil":"conseil pratique"}`,
-          messages: [{ role: "user", content: `Calcule les matériaux pour ${calcType} sur ${calcSurface}m². Inclus pertes standards. Prix marché France 2025. Produits disponibles Leroy Merlin/Castorama.` }] }) }));
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1200,
+          system: `${profilIA()}\nTu es un expert en quantitatifs matériaux bâtiment France. Tu connais parfaitement les dimensions standard des matériaux (plaques BA13 : 1200x2500, 1200x2600, 1200x2700, 1200x3000 ; rails R48/R70 en 3m ; montants M48/M70 en 2.50/2.60/2.70/3m ; etc.). IMPORTANT : adapte tes recommandations à la HAUTEUR et à la PENTE indiquées. Réponds UNIQUEMENT en JSON valide : {"materiaux":[{"nom":"Produit précis avec dimensions","quantite":"X unités (détail calcul)","prixEstime":"X€","conseil":"marque/ref recommandée"}],"total":"X€","conseil":"conseil pratique incluant mise en oeuvre"}`,
+          messages: [{ role: "user", content: `Calcule les matériaux pour ${calcType}. ${dims} Inclus pertes standards (10-15%). Prix marché France 2025. Produits disponibles Leroy Merlin/Castorama. Détaille chaque produit avec ses dimensions exactes.` }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setCalcResult(JSON.parse(data.content[0].text.replace(/```json|```/g, "").trim()));
     } catch (e) { setCalcResult({ materiaux: [], total: "0€", conseil: e.message }); }
     finally { setCalcLoading(false); }
-  }, [apiKey, profilIA, calcType, calcSurface]);
+  }, [apiKey, profilIA, calcType, calcSurface, calcHauteur, calcPente, calcLongueur]);
 
   const calculerPrimes = useCallback(async () => {
     setPrimesLoading(true); setPrimesResult(null);
@@ -691,7 +702,7 @@ export function AppProvider({ children }) {
     arModeType, setArModeType, arAnchor, setArAnchor, arTilt, arShelfType, setArShelfType, showArAdvisor, setShowArAdvisor, arAdvInput, setArAdvInput, arAdvResult, arAdvLoading,
     certProjet, setCertProjet, certNorme, setCertNorme, certSurface, setCertSurface, certProp, setCertProp, certArtisan, setCertArtisan,
     rgpdOk, setRgpdOk, msgCount, showPaywall, setShowPaywall, isPremium, onboardingDone, setOnboardingDone, onboardingStep, setOnboardingStep, userType, setUserType, pdgUnlocked, pinInput, pinError,
-    toolTab, setToolTab, devisText, setDevisText, devisResult, devisLoading, calcType, setCalcType, calcSurface, setCalcSurface, calcResult, calcLoading,
+    toolTab, setToolTab, devisText, setDevisText, devisResult, devisLoading, calcType, setCalcType, calcSurface, setCalcSurface, calcHauteur, setCalcHauteur, calcPente, setCalcPente, calcLongueur, setCalcLongueur, calcResult, calcLoading,
     artisanNom, setArtisanNom, artisanSpec, setArtisanSpec, artisanResult, artisanLoading,
     primesRev, setPrimesRev, primesTrav, setPrimesTrav, primesSurf, setPrimesSurf, primesResult, primesLoading,
     counterDevis, setCounterDevis, counterLoading, planningType, setPlanningType, planningBudget, setPlanningBudget, planningResult, planningLoading,
