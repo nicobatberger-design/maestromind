@@ -84,8 +84,21 @@ export default function ScannerPage() {
   // Photo IA camera state
   const [photoCam, setPhotoCam] = useState(false);
   const photoWebcamRef = useRef(null);
+  const [camReady, setCamReady] = useState(false);
+  const [camError, setCamError] = useState("");
 
-  const webcamConstraints = { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } };
+  const webcamConstraints = { facingMode: { exact: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } };
+  const webcamFallback = { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } };
+  const [useFallbackCam, setUseFallbackCam] = useState(false);
+
+  const onCamReady = useCallback(() => { setCamReady(true); setCamError(""); }, []);
+  const onCamError = useCallback((err) => {
+    console.error("Webcam error:", err);
+    if (!useFallbackCam) { setUseFallbackCam(true); return; }
+    setCamError("Caméra inaccessible. Vérifiez les permissions ou utilisez 'Importer photo'.");
+  }, [useFallbackCam]);
+
+  const activeConstraints = useFallbackCam ? webcamFallback : webcamConstraints;
 
   const captureMesure = useCallback(() => {
     if (!mesureWebcamRef.current) return;
@@ -179,7 +192,9 @@ export default function ScannerPage() {
         {/* Fullscreen camera overlay — react-webcam */}
         {photoCam && (
           <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 9999, display: "flex", flexDirection: "column" }}>
-            <Webcam ref={photoWebcamRef} audio={false} screenshotFormat="image/jpeg" screenshotQuality={0.85} videoConstraints={webcamConstraints} style={{ flex: 1, width: "100%", height: "100%", objectFit: "cover" }} />
+            <Webcam ref={photoWebcamRef} audio={false} screenshotFormat="image/jpeg" screenshotQuality={0.85} videoConstraints={activeConstraints} onUserMedia={onCamReady} onUserMediaError={onCamError} style={{ flex: 1, width: "100%", height: "100%", objectFit: "cover" }} />
+            {!camReady && !camError && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#000" }}><div style={{ color: "#C9A84C", fontSize: 12 }}>Activation caméra...</div></div>}
+            {camError && <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#000", padding: 32 }}><div style={{ color: "#E05252", fontSize: 12, textAlign: "center", marginBottom: 12 }}>{camError}</div><button onClick={() => setPhotoCam(false)} style={{ padding: "10px 20px", borderRadius: 10, background: "#C9A84C", border: "none", color: "#06080D", fontWeight: 700, cursor: "pointer" }}>Fermer</button></div>}
             <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#C9A84C", fontWeight: 700 }}>{"\u{1F4F7}"} Cadrez le problème</div>
             <div style={{ position: "absolute", bottom: 40, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
               <button onClick={capturePhoto} style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #C9A84C", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
@@ -198,7 +213,7 @@ export default function ScannerPage() {
           </div>
         )}
         <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-          <button style={s.scanBtn} onClick={() => setPhotoCam(true)}>{photoUrl ? "Reprendre" : "Prendre photo"}</button>
+          <button style={s.scanBtn} onClick={() => { setCamReady(false); setCamError(""); setPhotoCam(true); }}>{photoUrl ? "Reprendre" : "Prendre photo"}</button>
           <label style={{ flex: 1, background: "#181D28", border: "0.5px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", textAlign: "center", fontSize: 12, color: "rgba(240,237,230,0.5)", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>
             Importer photo
             <input type="file" accept="image/*" style={{ display: "none" }} onChange={importerPhoto} />
@@ -294,7 +309,9 @@ export default function ScannerPage() {
         {/* Fullscreen camera overlay — react-webcam */}
         {mesureCam && (
           <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 9999, display: "flex", flexDirection: "column" }}>
-            <Webcam ref={mesureWebcamRef} audio={false} screenshotFormat="image/jpeg" screenshotQuality={0.85} videoConstraints={webcamConstraints} style={{ flex: 1, width: "100%", height: "100%", objectFit: "cover" }} />
+            <Webcam ref={mesureWebcamRef} audio={false} screenshotFormat="image/jpeg" screenshotQuality={0.85} videoConstraints={activeConstraints} onUserMedia={onCamReady} onUserMediaError={onCamError} style={{ flex: 1, width: "100%", height: "100%", objectFit: "cover" }} />
+            {!camReady && !camError && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#000" }}><div style={{ color: "#52C37A", fontSize: 12 }}>Activation caméra...</div></div>}
+            {camError && <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#000", padding: 32 }}><div style={{ color: "#E05252", fontSize: 12, textAlign: "center", marginBottom: 12 }}>{camError}</div><button onClick={() => setMesureCam(false)} style={{ padding: "10px 20px", borderRadius: 10, background: "#52C37A", border: "none", color: "#F0EDE6", fontWeight: 700, cursor: "pointer" }}>Fermer</button></div>}
             <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 80, height: 80, border: "1.5px solid rgba(82,195,122,0.5)", borderRadius: 8, pointerEvents: "none" }} />
             <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#52C37A", fontWeight: 700 }}>{"\u{1F4D0}"} {mesureTarget === "mur" ? "Cadrez le mur entier" : mesureTarget === "plafond" ? "Cadrez le plafond" : "Cadrez la pièce entière"}</div>
             <div style={{ position: "absolute", bottom: 40, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
@@ -315,7 +332,7 @@ export default function ScannerPage() {
           </div>
         )}
         <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-          <button style={{ ...s.scanBtn, background: "linear-gradient(135deg,#52C37A,#3A9B5A)", borderColor: "rgba(82,195,122,0.5)" }} onClick={() => { setMesurePhoto(null); setMesureResult(null); setMesureCam(true); }}>{mesurePhoto ? "Reprendre" : "Prendre photo"}</button>
+          <button style={{ ...s.scanBtn, background: "linear-gradient(135deg,#52C37A,#3A9B5A)", borderColor: "rgba(82,195,122,0.5)" }} onClick={() => { setMesurePhoto(null); setMesureResult(null); setCamReady(false); setCamError(""); setMesureCam(true); }}>{mesurePhoto ? "Reprendre" : "Prendre photo"}</button>
           <label style={{ flex: 1, background: "#181D28", border: "0.5px solid rgba(82,195,122,0.2)", borderRadius: 12, padding: "12px", textAlign: "center", fontSize: 12, color: "#52C37A", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>
             Importer photo
             <input type="file" accept="image/*" style={{ display: "none" }} onChange={importerMesurePhoto} />
