@@ -1,4 +1,5 @@
 import { useApp } from "../context/AppContext";
+import MesureAssistant from "./MesureAssistant";
 import s from "../styles/index";
 
 export default function OutilsPage() {
@@ -55,6 +56,11 @@ export default function OutilsPage() {
         </div>}
 
         {toolTab === "mat" && <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Dimensions</div>
+            <MesureAssistant context={calcType} onResult={(m) => { if (m.surface) setCalcSurface(m.surface); if (m.hauteur) setCalcHauteur(m.hauteur); if (m.pente) setCalcPente(m.pente); if (m.longueur) setCalcLongueur(m.longueur); }} />
+            <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", flex: 1 }}>Pas sûr des mesures ? Le Métreur IA vous guide</div>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
             <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Type de travaux</div><select style={s.inp} value={calcType} onChange={e => setCalcType(e.target.value)}>{["Peinture", "Carrelage", "Parquet", "Placo BA13", "Cloison BA13", "Doublage BA13+isolant", "Faux plafond BA13", "Enduit", "Isolation murs", "Isolation combles", "Isolation rampants", "Toiture", "Béton dalle", "Ragréage", "Charpente", "Bardage"].map(t => <option key={t}>{t}</option>)}</select></div>
             <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Surface m²</div><input style={s.inp} type="number" value={calcSurface} onChange={e => setCalcSurface(e.target.value)} placeholder="20" /></div>
@@ -75,6 +81,10 @@ export default function OutilsPage() {
         </div>}
 
         {toolTab === "primes" && <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <MesureAssistant context="calcul des aides/primes" onResult={(m) => { if (m.surface) setPrimesSurf(m.surface); }} />
+            <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)" }}>Métreur IA</div>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
             <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Revenus du foyer</div><select style={s.inp} value={primesRev} onChange={e => setPrimesRev(e.target.value)}>{["Très modeste", "Modeste", "Intermédiaire", "Supérieur"].map(r => <option key={r}>{r}</option>)}</select></div>
             <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Surface m²</div><input style={s.inp} type="number" value={primesSurf} onChange={e => setPrimesSurf(e.target.value)} /></div>
