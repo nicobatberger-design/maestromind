@@ -3,6 +3,7 @@ import Webcam from "react-webcam";
 import { useApp } from "../context/AppContext";
 import { IAS, SHELF_TYPES } from "../data/constants";
 import { apiURL, apiHeaders, withRetry } from "../utils/api";
+import { drawARScene } from "../utils/ar";
 import s from "../styles/index";
 
 function buildMesurePrompt(target, refType, refValue) {
@@ -88,6 +89,38 @@ export default function ScannerPage() {
   const [camError, setCamError] = useState("");
 
   const webcamConstraints = { facingMode: { exact: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } };
+
+  // AR animation loop
+  const arAnimRef = useRef(null);
+  const arFrameRef = useRef(0);
+  const arTiltRef = useRef({ beta: 0, gamma: 0 });
+
+  useEffect(() => {
+    const handler = (e) => { arTiltRef.current = { beta: e.beta || 0, gamma: e.gamma || 0 }; };
+    window.addEventListener("deviceorientation", handler);
+    return () => window.removeEventListener("deviceorientation", handler);
+  }, []);
+
+  useEffect(() => {
+    if (scannerTab !== "ar" || !camActive) {
+      if (arAnimRef.current) { cancelAnimationFrame(arAnimRef.current); arAnimRef.current = null; }
+      return;
+    }
+    const canvas = arCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    const loop = () => {
+      const parent = canvas.parentElement;
+      if (parent) { canvas.width = parent.clientWidth; canvas.height = parent.clientHeight; }
+      arFrameRef.current++;
+      drawARScene(ctx, canvas.width, canvas.height, arAnchorRef.current, arModeRef.current, arTiltRef.current, arFrameRef.current, arShelfTypeRef.current);
+      arAnimRef.current = requestAnimationFrame(loop);
+    };
+    arAnimRef.current = requestAnimationFrame(loop);
+
+    return () => { if (arAnimRef.current) { cancelAnimationFrame(arAnimRef.current); arAnimRef.current = null; } };
+  }, [scannerTab, camActive]);
   const webcamFallback = { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } };
   const [useFallbackCam, setUseFallbackCam] = useState(false);
 
