@@ -4,17 +4,62 @@ import { IAS, SHELF_TYPES } from "../data/constants";
 import { apiURL, apiHeaders, withRetry } from "../utils/api";
 import s from "../styles/index";
 
-const METREUR_VISION_PROMPT = `Tu es l'IA MÉTREUR EXPERT de MAESTROMIND. Analyse cette photo d'un espace intérieur/extérieur et ESTIME les dimensions.
+function buildMesurePrompt(target) {
+  const common = `Tu es l'IA MÉTREUR EXPERT de MAESTROMIND.
 
-MÉTHODE D'ESTIMATION :
-- Utilise les éléments de référence visibles (portes standard 2.04m, prises à 30cm du sol, plinthes ~8cm, interrupteurs à 1.10m, carreaux standard 30x30/45x45/60x60cm, parpaings 20x50cm)
-- Si toit en pente visible, estime l'angle et les hauteurs min/max
-- Détecte la forme de la pièce (rectangulaire, L, sous combles, etc.)
+RÈGLES DE CALIBRATION — utilise ces repères pour estimer les distances :
+- Porte standard intérieure : 2.04m haut × 0.83m large (bloc-porte avec huisserie : 0.93m)
+- Porte d'entrée : 2.15m haut × 0.90m large
+- Prise électrique : centre à 30cm du sol fini
+- Interrupteur : centre à 1.10m du sol fini
+- Plinthe standard : 8cm de haut
+- Carreau de carrelage courants : 30×30cm, 45×45cm, 60×60cm
+- Parpaing standard : 20cm haut × 50cm long (avec joint)
+- Brique standard : 6.5cm haut × 22cm long
+- Fenêtre standard : 1.15m large × 1.00m haut (appui à 0.90m du sol)
+- Plaque BA13 : 1.20m large × 2.50m haut
+
+MÉTHODE : Identifie AU MOINS 2 repères visibles sur la photo. Compare les proportions entre les repères et les zones à mesurer. Explique dans "details" quels repères tu as utilisés et pourquoi.
+
+SI TU NE VOIS AUCUN REPÈRE FIABLE, mets confiance "basse" et explique pourquoi.`;
+
+  if (target === "mur") return common + `
+
+L'utilisateur photographie UN MUR. Mesure :
+- HAUTEUR du mur (du sol au plafond)
+- LARGEUR du mur (d'un angle à l'autre)
+- Surface du mur = hauteur × largeur - ouvertures
+- Ouvertures visibles (portes, fenêtres) avec leurs dimensions
 
 Réponds UNIQUEMENT en JSON valide :
-{"largeur":"X.Xm","longueur":"X.Xm","hauteur":"X.Xm","hauteur_min":"X.Xm si pente","hauteur_max":"X.Xm si pente","pente":"X° si applicable","surface_sol":"X.Xm²","surface_murs":"X.Xm²","surface_rampant":"X.Xm² si pente","perimetre":"X.Xml","forme":"rectangulaire/L/sous combles/etc","ouvertures":[{"type":"porte/fenêtre","largeur":"Xm","hauteur":"Xm"}],"confiance":"haute/moyenne/basse","details":"explication des repères utilisés pour l'estimation"}
+{"hauteur":"X.Xm","largeur":"X.Xm","surface_mur":"X.Xm²","ouvertures":[{"type":"porte/fenêtre","largeur":"X.Xm","hauteur":"X.Xm"}],"surface_nette":"X.Xm² (après déduction ouvertures)","confiance":"haute/moyenne/basse","details":"repères utilisés"}`;
 
-Ne mets que les champs pertinents. Sois précis dans tes estimations.`;
+  if (target === "plafond") return common + `
+
+L'utilisateur photographie UN PLAFOND (vu d'en bas ou en angle). Mesure :
+- Si PLAT : longueur et largeur visibles, surface
+- Si EN PENTE / RAMPANT : angle de pente en degrés, hauteur au point bas (sablière), hauteur au point haut (faîtage), surface au sol ET surface rampant (= surface sol / cos(pente))
+
+Réponds UNIQUEMENT en JSON valide :
+{"type":"plat/pente","longueur":"X.Xm","largeur":"X.Xm","surface_sol":"X.Xm²","pente":"X°","hauteur_min":"X.Xm","hauteur_max":"X.Xm","surface_rampant":"X.Xm²","confiance":"haute/moyenne/basse","details":"repères utilisés"}`;
+
+  // pièce (default)
+  return common + `
+
+L'utilisateur photographie UNE PIÈCE ENTIÈRE. Mesure :
+- Longueur et largeur de la pièce (vue au sol)
+- Hauteur sous plafond
+- Surface au sol
+- Périmètre (pour plinthes/corniches)
+- Forme (rectangulaire, en L, trapèze...)
+- Si plafond en pente visible : pente en degrés + hauteurs min/max
+- Ouvertures visibles
+
+Réponds UNIQUEMENT en JSON valide :
+{"longueur":"X.Xm","largeur":"X.Xm","hauteur":"X.Xm","surface_sol":"X.Xm²","perimetre":"X.Xml","forme":"rectangulaire/L/trapèze/sous combles","pente":"X°","hauteur_min":"X.Xm","hauteur_max":"X.Xm","surface_rampant":"X.Xm²","surface_murs":"X.Xm²","ouvertures":[{"type":"porte/fenêtre","largeur":"X.Xm","hauteur":"X.Xm"}],"confiance":"haute/moyenne/basse","details":"repères utilisés"}
+
+Ne mets que les champs pertinents.`;
+}
 
 export default function ScannerPage() {
   const {
@@ -29,6 +74,7 @@ export default function ScannerPage() {
   const [mesureLoading, setMesureLoading] = useState(false);
   const [mesureResult, setMesureResult] = useState(null);
   const [mesurePhoto, setMesurePhoto] = useState(null);
+  const [mesureTarget, setMesureTarget] = useState("mur");
   const mesureVideoRef = useRef(null);
   const mesureCanvasRef = useRef(null);
   const mesureStreamRef = useRef(null);
@@ -72,32 +118,43 @@ export default function ScannerPage() {
     setMesureResult(null);
     const base64 = dataUrl.split(",")[1];
     const mediaType = dataUrl.split(";")[0].split(":")[1] || "image/jpeg";
+    const targetLabels = { mur: "un mur", piece: "une pièce entière", plafond: "un plafond" };
     try {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST",
         headers: apiHeaders(apiKey),
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 900,
-          system: METREUR_VISION_PROMPT,
-          messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: base64 } }, { type: "text", text: "Analyse cette photo et estime les dimensions de l'espace visible." }] }]
+          system: buildMesurePrompt(mesureTarget),
+          messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: base64 } }, { type: "text", text: "Cette photo montre " + targetLabels[mesureTarget] + ". Identifie les repères de calibration visibles et estime les dimensions." }] }]
         }),
       }));
       const data = await r.json();
       if (data.error) throw new Error(data.error.message);
       const txt = data.content[0].text.replace(/```json|```/g, "").trim();
-      setMesureResult(JSON.parse(txt));
+      const result = JSON.parse(txt);
+      result._target = mesureTarget;
+      setMesureResult(result);
     } catch (e) {
       setMesureResult({ erreur: e.message });
     } finally { setMesureLoading(false); }
-  }, [apiKey]);
+  }, [apiKey, mesureTarget]);
 
   const injecterMesures = useCallback(() => {
     if (!mesureResult) return;
-    if (mesureResult.surface_sol) setCalcSurface(parseFloat(mesureResult.surface_sol));
-    if (mesureResult.hauteur) setCalcHauteur(parseFloat(mesureResult.hauteur));
-    if (mesureResult.hauteur_max) setCalcHauteur(parseFloat(mesureResult.hauteur_max));
-    if (mesureResult.pente) setCalcPente(parseFloat(mesureResult.pente));
-    if (mesureResult.perimetre) setCalcLongueur(parseFloat(mesureResult.perimetre));
+    const r = mesureResult;
+    // Surface : prendre surface_nette (mur) ou surface_sol (pièce) ou surface_rampant (plafond pente) ou surface_mur
+    const surface = parseFloat(r.surface_nette || r.surface_sol || r.surface_mur || r.surface_rampant || "0");
+    if (surface > 0) setCalcSurface(String(surface));
+    // Hauteur
+    const hauteur = parseFloat(r.hauteur || r.hauteur_max || "0");
+    if (hauteur > 0) setCalcHauteur(String(hauteur));
+    // Pente
+    const pente = parseFloat(r.pente || "0");
+    if (pente > 0) setCalcPente(String(pente));
+    // Longueur : périmètre (pièce) ou largeur (mur)
+    const longueur = parseFloat(r.perimetre || r.largeur || "0");
+    if (longueur > 0) setCalcLongueur(String(longueur));
     goPage("outils");
   }, [mesureResult, setCalcSurface, setCalcHauteur, setCalcPente, setCalcLongueur, goPage]);
 
@@ -216,6 +273,13 @@ export default function ScannerPage() {
           </div>
         </div>
 
+        <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Je photographie</div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+          {[["mur", "\u{1F9F1} Un mur"], ["piece", "\u{1F3E0} Une pièce"], ["plafond", "\u2B06\uFE0F Un plafond"]].map(([k, l]) => (
+            <button key={k} onClick={() => setMesureTarget(k)} style={{ flex: 1, padding: "10px 6px", borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: "pointer", border: "0.5px solid " + (mesureTarget === k ? "#52C37A" : "rgba(255,255,255,0.08)"), background: mesureTarget === k ? "rgba(82,195,122,0.12)" : "rgba(15,19,28,0.6)", color: mesureTarget === k ? "#52C37A" : "rgba(240,237,230,0.5)", transition: "all 0.2s", fontFamily: "'Syne',sans-serif" }}>{l}</button>
+          ))}
+        </div>
+
         <canvas ref={mesureCanvasRef} style={{ display: "none" }} />
 
         {/* Caméra active — vidéo plein cadre avec bouton capture overlay */}
@@ -230,7 +294,7 @@ export default function ScannerPage() {
             </div>
             {/* Indicateur viseur */}
             <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 80, height: 80, border: "1.5px solid rgba(82,195,122,0.5)", borderRadius: 8, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#52C37A", fontWeight: 700 }}>{"\u{1F4D0}"} Cadrez la pièce entière</div>
+            <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#52C37A", fontWeight: 700 }}>{"\u{1F4D0}"} {mesureTarget === "mur" ? "Cadrez le mur entier" : mesureTarget === "plafond" ? "Cadrez le plafond" : "Cadrez la pièce entière"}</div>
           </div>
         )}
 
@@ -267,19 +331,61 @@ export default function ScannerPage() {
               <strong style={{ fontFamily: "'Syne',sans-serif", fontSize: 13 }}>{mesureResult.forme || "Espace analysé"}</strong>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 }}>
-              {mesureResult.largeur && <div style={{ background: "rgba(82,195,122,0.06)", border: "0.5px solid rgba(82,195,122,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Largeur</div><div style={{ fontSize: 14, fontWeight: 700, color: "#52C37A" }}>{mesureResult.largeur}</div></div>}
-              {mesureResult.longueur && <div style={{ background: "rgba(82,195,122,0.06)", border: "0.5px solid rgba(82,195,122,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Longueur</div><div style={{ fontSize: 14, fontWeight: 700, color: "#52C37A" }}>{mesureResult.longueur}</div></div>}
-              {mesureResult.hauteur && <div style={{ background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Hauteur</div><div style={{ fontSize: 14, fontWeight: 700, color: "#5290E0" }}>{mesureResult.hauteur}</div></div>}
-              {mesureResult.surface_sol && <div style={{ background: "rgba(201,168,76,0.06)", border: "0.5px solid rgba(201,168,76,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Surface sol</div><div style={{ fontSize: 14, fontWeight: 700, color: "#C9A84C" }}>{mesureResult.surface_sol}</div></div>}
-            </div>
+            {/* Mesures adaptées au type */}
+            {(() => {
+              const r = mesureResult;
+              const MCard = ({ label, value, color = "#52C37A" }) => value ? (
+                <div style={{ background: color + "0F", border: "0.5px solid " + color + "33", borderRadius: 8, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color }}>{value}</div>
+                </div>
+              ) : null;
 
-            {(mesureResult.pente || mesureResult.hauteur_min) && <div style={{ display: "flex", gap: 7, marginBottom: 10 }}>
-              {mesureResult.pente && <div style={{ flex: 1, background: "rgba(232,135,58,0.06)", border: "0.5px solid rgba(232,135,58,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Pente</div><div style={{ fontSize: 14, fontWeight: 700, color: "#E8873A" }}>{mesureResult.pente}</div></div>}
-              {mesureResult.hauteur_min && <div style={{ flex: 1, background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>H. min</div><div style={{ fontSize: 14, fontWeight: 700, color: "#5290E0" }}>{mesureResult.hauteur_min}</div></div>}
-              {mesureResult.hauteur_max && <div style={{ flex: 1, background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>H. max</div><div style={{ fontSize: 14, fontWeight: 700, color: "#5290E0" }}>{mesureResult.hauteur_max}</div></div>}
-              {mesureResult.surface_rampant && <div style={{ flex: 1, background: "rgba(232,135,58,0.06)", border: "0.5px solid rgba(232,135,58,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Surface rampant</div><div style={{ fontSize: 14, fontWeight: 700, color: "#E8873A" }}>{mesureResult.surface_rampant}</div></div>}
-            </div>}
+              if (r._target === "mur") return (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 }}>
+                  <MCard label="Hauteur" value={r.hauteur} color="#5290E0" />
+                  <MCard label="Largeur" value={r.largeur} />
+                  <MCard label="Surface brute" value={r.surface_mur} color="#C9A84C" />
+                  <MCard label="Surface nette" value={r.surface_nette} color="#52C37A" />
+                </div>
+              );
+
+              if (r._target === "plafond") return (<>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 }}>
+                  <MCard label="Longueur" value={r.longueur} />
+                  <MCard label="Largeur" value={r.largeur} />
+                  <MCard label="Surface sol" value={r.surface_sol} color="#C9A84C" />
+                  <MCard label="Type" value={r.type} color="#5290E0" />
+                </div>
+                {(r.pente || r.hauteur_min) && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 7, marginBottom: 10 }}>
+                  <MCard label="Pente" value={r.pente} color="#E8873A" />
+                  <MCard label="H. min" value={r.hauteur_min} color="#5290E0" />
+                  <MCard label="H. max" value={r.hauteur_max} color="#5290E0" />
+                </div>}
+                {r.surface_rampant && <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 7, marginBottom: 10 }}>
+                  <MCard label="Surface rampant (réelle)" value={r.surface_rampant} color="#E8873A" />
+                </div>}
+              </>);
+
+              // pièce (default)
+              return (<>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 }}>
+                  <MCard label="Longueur" value={r.longueur} />
+                  <MCard label="Largeur" value={r.largeur} />
+                  <MCard label="Hauteur" value={r.hauteur} color="#5290E0" />
+                  <MCard label="Surface sol" value={r.surface_sol} color="#C9A84C" />
+                </div>
+                {r.perimetre && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 }}>
+                  <MCard label="Périmètre" value={r.perimetre} color="#C9A84C" />
+                  <MCard label="Surface murs" value={r.surface_murs} color="#5290E0" />
+                </div>}
+                {(r.pente || r.hauteur_min) && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 7, marginBottom: 10 }}>
+                  <MCard label="Pente" value={r.pente} color="#E8873A" />
+                  <MCard label="H. min" value={r.hauteur_min} color="#5290E0" />
+                  <MCard label="H. max" value={r.hauteur_max} color="#5290E0" />
+                </div>}
+              </>);
+            })()}
 
             {mesureResult.ouvertures?.length > 0 && <div style={{ marginBottom: 10 }}>
               <div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 5 }}>Ouvertures détectées</div>
