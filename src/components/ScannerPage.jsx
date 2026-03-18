@@ -85,18 +85,27 @@ export default function ScannerPage() {
   const ouvrirMesureCam = useCallback(async () => {
     try {
       if (mesureStreamRef.current) mesureStreamRef.current.getTracks().forEach(t => t.stop());
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
-      mesureStreamRef.current = stream;
-      if (mesureVideoRef.current) { mesureVideoRef.current.srcObject = stream; mesureVideoRef.current.play().catch(() => {}); }
-      setMesureCam(true);
       setMesurePhoto(null);
       setMesureResult(null);
-    } catch { alert("Impossible d'accéder à la caméra."); }
+      setMesureCam(true); // Rendre visible AVANT d'assigner le stream
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      mesureStreamRef.current = stream;
+      // Attendre que le ref soit disponible après re-render
+      const tryAttach = () => {
+        if (mesureVideoRef.current) {
+          mesureVideoRef.current.srcObject = stream;
+          mesureVideoRef.current.play().catch(() => {});
+        } else {
+          setTimeout(tryAttach, 50);
+        }
+      };
+      tryAttach();
+    } catch (e) { setMesureCam(false); alert("Impossible d'accéder à la caméra : " + e.message); }
   }, []);
 
   const prendreMesurePhoto = useCallback(() => {
-    if (!mesureCam || !mesureVideoRef.current || !mesureCanvasRef.current) return;
     const v = mesureVideoRef.current, c = mesureCanvasRef.current;
+    if (!v || !c || !v.videoWidth) return;
     c.width = v.videoWidth; c.height = v.videoHeight;
     c.getContext("2d").drawImage(v, 0, 0);
     const dataUrl = c.toDataURL("image/jpeg", 0.85);
@@ -105,7 +114,7 @@ export default function ScannerPage() {
     mesureStreamRef.current?.getTracks().forEach(t => t.stop());
     mesureStreamRef.current = null;
     analyserMesure(dataUrl);
-  }, [mesureCam]);
+  }, []);
 
   const importerMesurePhoto = useCallback((e) => {
     const file = e.target.files[0];
@@ -178,10 +187,10 @@ export default function ScannerPage() {
             </button>
           ))}
         </div>
-        <canvas ref={canvasRef} style={{ display: "none" }} />
+        <canvas ref={canvasRef} style={{ position: "absolute", left: -9999 }} />
 
-        {/* Vidéo unique — toujours dans le DOM */}
-        <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: 12, display: camActive && scannerTab === "photo" ? "block" : "none" }}>
+        {/* Vidéo — height:0 quand inactive (pas display:none pour iOS) */}
+        <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: camActive && scannerTab === "photo" ? 12 : 0, height: camActive && scannerTab === "photo" ? "auto" : 0 }}>
           <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 320, objectFit: "cover" }} />
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px", display: "flex", justifyContent: "center", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
             <button onClick={prendrePhoto} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #C9A84C", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
@@ -292,10 +301,10 @@ export default function ScannerPage() {
           <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", marginTop: 4 }}>{mesureRefType === "porte" ? "Hauteur de la porte visible (standard 2.04m)" : mesureRefType === "fenetre" ? "Largeur de la fenêtre visible (standard 1.15m)" : mesureRefType === "carreau" ? "Côté d'un carreau visible (30, 45 ou 60cm)" : mesureRefType === "hauteur" ? "Hauteur sous plafond si vous la connaissez" : "Taille d'un élément visible que vous connaissez (en m)"}</div>
         </div>
 
-        <canvas ref={mesureCanvasRef} style={{ display: "none" }} />
+        <canvas ref={mesureCanvasRef} style={{ position: "absolute", left: -9999 }} />
 
-        {/* Vidéo unique — toujours dans le DOM, visible/cachée via style */}
-        <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: 12, display: mesureCam ? "block" : "none" }}>
+        {/* Vidéo — visible quand caméra active, caché avec height:0 sinon (pas display:none pour iOS) */}
+        <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: mesureCam ? 12 : 0, height: mesureCam ? "auto" : 0 }}>
           <video ref={mesureVideoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 360, objectFit: "cover" }} />
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px", display: "flex", justifyContent: "center", alignItems: "center", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
             <button onClick={prendreMesurePhoto} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #52C37A", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
