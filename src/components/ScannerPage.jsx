@@ -4,61 +4,61 @@ import { IAS, SHELF_TYPES } from "../data/constants";
 import { apiURL, apiHeaders, withRetry } from "../utils/api";
 import s from "../styles/index";
 
-function buildMesurePrompt(target) {
-  const common = `Tu es l'IA MÉTREUR EXPERT de MAESTROMIND.
+function buildMesurePrompt(target, refType, refValue) {
+  const refInfo = refType && refValue ? `
 
-RÈGLES DE CALIBRATION — utilise ces repères pour estimer les distances :
-- Porte standard intérieure : 2.04m haut × 0.83m large (bloc-porte avec huisserie : 0.93m)
-- Porte d'entrée : 2.15m haut × 0.90m large
-- Prise électrique : centre à 30cm du sol fini
-- Interrupteur : centre à 1.10m du sol fini
-- Plinthe standard : 8cm de haut
-- Carreau de carrelage courants : 30×30cm, 45×45cm, 60×60cm
-- Parpaing standard : 20cm haut × 50cm long (avec joint)
-- Brique standard : 6.5cm haut × 22cm long
-- Fenêtre standard : 1.15m large × 1.00m haut (appui à 0.90m du sol)
-- Plaque BA13 : 1.20m large × 2.50m haut
+CALIBRATION UTILISATEUR : L'utilisateur indique que ${refType === "porte" ? "la porte visible mesure " + refValue + "m de haut" : refType === "fenetre" ? "la fenêtre visible mesure " + refValue + "m de large" : refType === "carreau" ? "un carreau mesure " + refValue + "cm de côté" : refType === "custom" ? "un élément visible mesure " + refValue + "m" : "la hauteur sous plafond est " + refValue + "m"}.
+UTILISE CE REPÈRE COMME RÉFÉRENCE ABSOLUE. Calcule toutes les autres dimensions PAR PROPORTION à partir de ce repère. C'est la donnée la plus fiable que tu as.` : `
 
-MÉTHODE : Identifie AU MOINS 2 repères visibles sur la photo. Compare les proportions entre les repères et les zones à mesurer. Explique dans "details" quels repères tu as utilisés et pourquoi.
+ATTENTION : Aucune mesure de référence fournie. Utilise les repères standards visibles (porte ~2.04m, prise ~30cm du sol, interrupteur ~1.10m, plinthe ~8cm, carreaux courants 30/45/60cm). Indique confiance "basse" si aucun repère fiable visible.`;
 
-SI TU NE VOIS AUCUN REPÈRE FIABLE, mets confiance "basse" et explique pourquoi.`;
+  const common = `Tu es l'IA MÉTREUR EXPERT de MAESTROMIND. Tu mesures des espaces bâtiment à partir de photos.
+
+MÉTHODE OBLIGATOIRE :
+1. Identifie le repère de calibration (fourni par l'utilisateur OU visible sur la photo)
+2. Mesure en pixels la taille du repère sur la photo
+3. Calcule le ratio pixels/mètres
+4. Applique ce ratio à TOUTES les autres dimensions
+5. Corrige la perspective (les objets plus loin paraissent plus petits)
+${refInfo}
+
+REPÈRES STANDARDS si besoin :
+- Porte intérieure : 2.04m haut × 0.83m large
+- Prise : 30cm du sol | Interrupteur : 1.10m du sol
+- Plinthe : 8cm | Carreaux : 30/45/60cm
+- Parpaing : 20×50cm | BA13 : 120×250cm`;
 
   if (target === "mur") return common + `
 
-L'utilisateur photographie UN MUR. Mesure :
-- HAUTEUR du mur (du sol au plafond)
-- LARGEUR du mur (d'un angle à l'autre)
-- Surface du mur = hauteur × largeur - ouvertures
-- Ouvertures visibles (portes, fenêtres) avec leurs dimensions
+PHOTO D'UN MUR. Mesure :
+- HAUTEUR (sol → plafond)
+- LARGEUR (angle → angle)
+- Surface brute = H × L
+- Ouvertures avec dimensions → Surface nette = brute - ouvertures
 
-Réponds UNIQUEMENT en JSON valide :
-{"hauteur":"X.Xm","largeur":"X.Xm","surface_mur":"X.Xm²","ouvertures":[{"type":"porte/fenêtre","largeur":"X.Xm","hauteur":"X.Xm"}],"surface_nette":"X.Xm² (après déduction ouvertures)","confiance":"haute/moyenne/basse","details":"repères utilisés"}`;
+JSON UNIQUEMENT :
+{"hauteur":"X.Xm","largeur":"X.Xm","surface_mur":"X.Xm²","ouvertures":[{"type":"porte/fenêtre","largeur":"X.Xm","hauteur":"X.Xm"}],"surface_nette":"X.Xm²","confiance":"haute/moyenne/basse","methode":"repère utilisé + ratio calculé"}`;
 
   if (target === "plafond") return common + `
 
-L'utilisateur photographie UN PLAFOND (vu d'en bas ou en angle). Mesure :
-- Si PLAT : longueur et largeur visibles, surface
-- Si EN PENTE / RAMPANT : angle de pente en degrés, hauteur au point bas (sablière), hauteur au point haut (faîtage), surface au sol ET surface rampant (= surface sol / cos(pente))
+PHOTO D'UN PLAFOND. Mesure :
+- Si PLAT : L × l, surface
+- Si PENTE : angle en degrés, H min (sablière), H max (faîtage), surface sol, surface rampant = sol / cos(pente)
 
-Réponds UNIQUEMENT en JSON valide :
-{"type":"plat/pente","longueur":"X.Xm","largeur":"X.Xm","surface_sol":"X.Xm²","pente":"X°","hauteur_min":"X.Xm","hauteur_max":"X.Xm","surface_rampant":"X.Xm²","confiance":"haute/moyenne/basse","details":"repères utilisés"}`;
+JSON UNIQUEMENT :
+{"type":"plat/pente","longueur":"X.Xm","largeur":"X.Xm","surface_sol":"X.Xm²","pente":"X°","hauteur_min":"X.Xm","hauteur_max":"X.Xm","surface_rampant":"X.Xm²","confiance":"haute/moyenne/basse","methode":"repère utilisé + ratio calculé"}`;
 
-  // pièce (default)
   return common + `
 
-L'utilisateur photographie UNE PIÈCE ENTIÈRE. Mesure :
-- Longueur et largeur de la pièce (vue au sol)
-- Hauteur sous plafond
-- Surface au sol
-- Périmètre (pour plinthes/corniches)
-- Forme (rectangulaire, en L, trapèze...)
-- Si plafond en pente visible : pente en degrés + hauteurs min/max
-- Ouvertures visibles
+PHOTO D'UNE PIÈCE. Mesure :
+- Longueur, largeur, hauteur
+- Surface sol, périmètre, surface murs
+- Forme (rectangulaire, L, trapèze, sous combles)
+- Pente si visible
 
-Réponds UNIQUEMENT en JSON valide :
-{"longueur":"X.Xm","largeur":"X.Xm","hauteur":"X.Xm","surface_sol":"X.Xm²","perimetre":"X.Xml","forme":"rectangulaire/L/trapèze/sous combles","pente":"X°","hauteur_min":"X.Xm","hauteur_max":"X.Xm","surface_rampant":"X.Xm²","surface_murs":"X.Xm²","ouvertures":[{"type":"porte/fenêtre","largeur":"X.Xm","hauteur":"X.Xm"}],"confiance":"haute/moyenne/basse","details":"repères utilisés"}
-
-Ne mets que les champs pertinents.`;
+JSON UNIQUEMENT :
+{"longueur":"X.Xm","largeur":"X.Xm","hauteur":"X.Xm","surface_sol":"X.Xm²","perimetre":"X.Xml","surface_murs":"X.Xm²","forme":"rectangulaire/L/sous combles","pente":"X°","hauteur_min":"X.Xm","hauteur_max":"X.Xm","surface_rampant":"X.Xm²","ouvertures":[{"type":"porte/fenêtre","largeur":"X.Xm","hauteur":"X.Xm"}],"confiance":"haute/moyenne/basse","methode":"repère utilisé + ratio calculé"}
+Champs pertinents uniquement.`;
 }
 
 export default function ScannerPage() {
@@ -75,6 +75,8 @@ export default function ScannerPage() {
   const [mesureResult, setMesureResult] = useState(null);
   const [mesurePhoto, setMesurePhoto] = useState(null);
   const [mesureTarget, setMesureTarget] = useState("mur");
+  const [mesureRefType, setMesureRefType] = useState("porte");
+  const [mesureRefValue, setMesureRefValue] = useState("2.04");
   const mesureVideoRef = useRef(null);
   const mesureCanvasRef = useRef(null);
   const mesureStreamRef = useRef(null);
@@ -119,14 +121,15 @@ export default function ScannerPage() {
     const base64 = dataUrl.split(",")[1];
     const mediaType = dataUrl.split(";")[0].split(":")[1] || "image/jpeg";
     const targetLabels = { mur: "un mur", piece: "une pièce entière", plafond: "un plafond" };
+    const refLabels = { porte: "une porte", fenetre: "une fenêtre", carreau: "un carreau", hauteur: "la hauteur sous plafond", custom: "un élément" };
     try {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST",
         headers: apiHeaders(apiKey),
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 900,
-          system: buildMesurePrompt(mesureTarget),
-          messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: base64 } }, { type: "text", text: "Cette photo montre " + targetLabels[mesureTarget] + ". Identifie les repères de calibration visibles et estime les dimensions." }] }]
+          system: buildMesurePrompt(mesureTarget, mesureRefType, mesureRefValue),
+          messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: base64 } }, { type: "text", text: "Cette photo montre " + targetLabels[mesureTarget] + ". Mon repère de calibration : " + refLabels[mesureRefType] + " mesure " + mesureRefValue + (mesureRefType === "carreau" ? "cm" : "m") + ". Utilise ce repère comme référence absolue et calcule toutes les dimensions par proportion." }] }]
         }),
       }));
       const data = await r.json();
@@ -138,7 +141,7 @@ export default function ScannerPage() {
     } catch (e) {
       setMesureResult({ erreur: e.message });
     } finally { setMesureLoading(false); }
-  }, [apiKey, mesureTarget]);
+  }, [apiKey, mesureTarget, mesureRefType, mesureRefValue]);
 
   const injecterMesures = useCallback(() => {
     if (!mesureResult) return;
@@ -274,10 +277,24 @@ export default function ScannerPage() {
         </div>
 
         <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Je photographie</div>
-        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
           {[["mur", "\u{1F9F1} Un mur"], ["piece", "\u{1F3E0} Une pièce"], ["plafond", "\u2B06\uFE0F Un plafond"]].map(([k, l]) => (
             <button key={k} onClick={() => setMesureTarget(k)} style={{ flex: 1, padding: "10px 6px", borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: "pointer", border: "0.5px solid " + (mesureTarget === k ? "#52C37A" : "rgba(255,255,255,0.08)"), background: mesureTarget === k ? "rgba(82,195,122,0.12)" : "rgba(15,19,28,0.6)", color: mesureTarget === k ? "#52C37A" : "rgba(240,237,230,0.5)", transition: "all 0.2s", fontFamily: "'Syne',sans-serif" }}>{l}</button>
           ))}
+        </div>
+
+        <div style={{ background: "rgba(82,195,122,0.05)", border: "0.5px solid rgba(82,195,122,0.15)", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
+          <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Repère de calibration (visible sur la photo)</div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+            {[["porte", "Porte"], ["fenetre", "Fenêtre"], ["carreau", "Carreau"], ["hauteur", "Hauteur"], ["custom", "Autre"]].map(([k, l]) => (
+              <button key={k} onClick={() => { setMesureRefType(k); setMesureRefValue(k === "porte" ? "2.04" : k === "fenetre" ? "1.15" : k === "carreau" ? "30" : k === "hauteur" ? "2.50" : ""); }} style={{ flex: 1, padding: "5px 2px", borderRadius: 8, fontSize: 9, fontWeight: 600, cursor: "pointer", border: "0.5px solid " + (mesureRefType === k ? "#52C37A" : "rgba(255,255,255,0.08)"), background: mesureRefType === k ? "rgba(82,195,122,0.12)" : "transparent", color: mesureRefType === k ? "#52C37A" : "rgba(240,237,230,0.4)", whiteSpace: "nowrap" }}>{l}</button>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input style={{ ...s.inp, flex: 1 }} type="number" step="0.01" value={mesureRefValue} onChange={e => setMesureRefValue(e.target.value)} placeholder={mesureRefType === "carreau" ? "30" : "2.04"} />
+            <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", flexShrink: 0 }}>{mesureRefType === "carreau" ? "cm" : "m"}</div>
+          </div>
+          <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", marginTop: 4 }}>{mesureRefType === "porte" ? "Hauteur de la porte visible (standard 2.04m)" : mesureRefType === "fenetre" ? "Largeur de la fenêtre visible (standard 1.15m)" : mesureRefType === "carreau" ? "Côté d'un carreau visible (30, 45 ou 60cm)" : mesureRefType === "hauteur" ? "Hauteur sous plafond si vous la connaissez" : "Taille d'un élément visible que vous connaissez (en m)"}</div>
         </div>
 
         <canvas ref={mesureCanvasRef} style={{ display: "none" }} />

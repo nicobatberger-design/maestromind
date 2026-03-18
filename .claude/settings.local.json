@@ -1,8 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cp scripts/dev-auto.js scripts/dev-auto.cjs)",
-      "Bash(cp scripts/build-feature.js scripts/build-feature.cjs)"
-    ]
+      "Bash(*)",
+      "Edit(*)",
+      "Write(*)",
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Agent(*)"
+    ],
+    "deny": []
   }
 }
