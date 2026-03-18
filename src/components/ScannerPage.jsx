@@ -118,23 +118,38 @@ export default function ScannerPage() {
             </button>
           ))}
         </div>
-        <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", borderRadius: 12, display: camActive && scannerTab === "photo" ? "block" : "none", marginBottom: 12, maxHeight: 220, objectFit: "cover" }} />
         <canvas ref={canvasRef} style={{ display: "none" }} />
-        {photoUrl && <img src={photoUrl} alt="photo" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 220, objectFit: "cover" }} />}
+
+        {/* Caméra active — vidéo avec bouton capture overlay */}
+        {camActive && scannerTab === "photo" && (
+          <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
+            <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 320, objectFit: "cover" }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px", display: "flex", justifyContent: "center", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
+              <button onClick={prendrePhoto} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #C9A84C", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg,#EDD060,#C9A84C)" }} />
+              </button>
+            </div>
+            <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#C9A84C", fontWeight: 700 }}>{"\u{1F4F7}"} Cadrez le problème</div>
+          </div>
+        )}
+
+        {/* Vidéo ref cachée quand pas active */}
+        {!(camActive && scannerTab === "photo") && <video ref={videoRef} style={{ display: "none" }} />}
+
+        {photoUrl && <img src={photoUrl} alt="photo" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />}
         {!camActive && !photoUrl && (
           <div style={{ width: "100%", aspectRatio: "4/3", background: "#0D1018", border: "1.5px dashed rgba(201,168,76,0.18)", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
             <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.4" strokeLinecap="round" style={{ opacity: 0.6, marginBottom: 10 }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
             <p style={{ fontSize: 12, color: "rgba(240,237,230,0.5)" }}>Caméra non activée</p>
           </div>
         )}
-        <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-          <button style={s.scanBtn} onClick={ouvrirCamera}>Activer caméra</button>
-          <button style={{ ...s.scanBtnGhost, opacity: camActive ? 1 : 0.4 }} onClick={prendrePhoto}>Prendre photo</button>
-        </div>
-        <label style={{ display: "block", width: "100%", background: "#181D28", border: "0.5px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "12px", textAlign: "center", fontSize: 12, color: "rgba(240,237,230,0.5)", cursor: "pointer", marginBottom: 12 }}>
-          Importer depuis la galerie
-          <input type="file" accept="image/*" style={{ display: "none" }} onChange={importerPhoto} />
-        </label>
+        {!camActive && <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+          <button style={s.scanBtn} onClick={ouvrirCamera}>{photoUrl ? "Reprendre" : "Activer caméra"}</button>
+          <label style={{ flex: 1, background: "#181D28", border: "0.5px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", textAlign: "center", fontSize: 12, color: "rgba(240,237,230,0.5)", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            Importer photo
+            <input type="file" accept="image/*" style={{ display: "none" }} onChange={importerPhoto} />
+          </label>
+        </div>}
         {scanLoading && <div style={{ background: "#181D28", borderRadius: 12, padding: 14, textAlign: "center", fontSize: 12, color: "rgba(240,237,230,0.5)", marginBottom: 12 }}>L'IA analyse votre photo...</div>}
         {scanResult && (
           <div style={{ background: "#181D28", border: "0.5px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
@@ -201,11 +216,31 @@ export default function ScannerPage() {
           </div>
         </div>
 
-        <video ref={mesureVideoRef} autoPlay playsInline muted style={{ width: "100%", borderRadius: 12, display: mesureCam ? "block" : "none", marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />
         <canvas ref={mesureCanvasRef} style={{ display: "none" }} />
 
+        {/* Caméra active — vidéo plein cadre avec bouton capture overlay */}
+        {mesureCam && (
+          <div style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
+            <video ref={mesureVideoRef} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: 360, objectFit: "cover" }} />
+            {/* Overlay avec bouton capture */}
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px", display: "flex", justifyContent: "center", alignItems: "center", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
+              <button onClick={prendreMesurePhoto} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "3px solid #52C37A", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg,#52C37A,#3A9B5A)" }} />
+              </button>
+            </div>
+            {/* Indicateur viseur */}
+            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 80, height: 80, border: "1.5px solid rgba(82,195,122,0.5)", borderRadius: 8, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: 20, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", fontSize: 10, color: "#52C37A", fontWeight: 700 }}>{"\u{1F4D0}"} Cadrez la pièce entière</div>
+          </div>
+        )}
+
+        {/* Vidéo ref cachée quand pas active */}
+        {!mesureCam && <video ref={mesureVideoRef} style={{ display: "none" }} />}
+
+        {/* Photo prise — résultat */}
         {mesurePhoto && <img src={mesurePhoto} alt="mesure" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />}
 
+        {/* État initial — pas de caméra, pas de photo */}
         {!mesureCam && !mesurePhoto && (
           <div style={{ width: "100%", aspectRatio: "4/3", background: "#0D1018", border: "1.5px dashed rgba(82,195,122,0.25)", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#52C37A" strokeWidth="1.2" strokeLinecap="round" style={{ opacity: 0.5, marginBottom: 10 }}><path d="M2 2l5 5M2 2v4M2 2h4" /><path d="M22 22l-5-5M22 22v-4M22 22h-4" /><path d="M22 2l-5 5M22 2v4M22 2h-4" /><path d="M2 22l5-5M2 22v-4M2 22h4" /></svg>
@@ -214,15 +249,14 @@ export default function ScannerPage() {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-          <button style={{ ...s.scanBtn, background: "linear-gradient(135deg,#52C37A,#3A9B5A)", borderColor: "rgba(82,195,122,0.5)" }} onClick={ouvrirMesureCam}>Activer caméra</button>
-          <button style={{ ...s.scanBtnGhost, borderColor: "rgba(82,195,122,0.3)", color: "#52C37A", opacity: mesureCam ? 1 : 0.4 }} onClick={prendreMesurePhoto}>Mesurer</button>
-        </div>
-
-        <label style={{ display: "block", width: "100%", background: "#181D28", border: "0.5px solid rgba(82,195,122,0.15)", borderRadius: 12, padding: "12px", textAlign: "center", fontSize: 12, color: "rgba(240,237,230,0.5)", cursor: "pointer", marginBottom: 12 }}>
-          Importer une photo depuis la galerie
-          <input type="file" accept="image/*" style={{ display: "none" }} onChange={importerMesurePhoto} />
-        </label>
+        {/* Boutons d'action (visibles quand caméra PAS active) */}
+        {!mesureCam && <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+          <button style={{ ...s.scanBtn, background: "linear-gradient(135deg,#52C37A,#3A9B5A)", borderColor: "rgba(82,195,122,0.5)" }} onClick={ouvrirMesureCam}>{mesurePhoto ? "Reprendre" : "Activer caméra"}</button>
+          <label style={{ flex: 1, background: "#181D28", border: "0.5px solid rgba(82,195,122,0.2)", borderRadius: 12, padding: "12px", textAlign: "center", fontSize: 12, color: "#52C37A", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            Importer photo
+            <input type="file" accept="image/*" style={{ display: "none" }} onChange={importerMesurePhoto} />
+          </label>
+        </div>}
 
         {mesureLoading && <div style={{ background: "#181D28", borderRadius: 12, padding: 14, textAlign: "center", fontSize: 12, color: "#52C37A", marginBottom: 12 }}>{"\u{1F4D0}"} Le Métreur IA analyse les dimensions...</div>}
 
