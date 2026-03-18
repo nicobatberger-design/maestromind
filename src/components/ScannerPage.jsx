@@ -1,21 +1,111 @@
+import { useState, useCallback, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { IAS, SHELF_TYPES } from "../data/constants";
+import { apiURL, apiHeaders, withRetry } from "../utils/api";
 import s from "../styles/index";
+
+const METREUR_VISION_PROMPT = `Tu es l'IA MÉTREUR EXPERT de MAESTROMIND. Analyse cette photo d'un espace intérieur/extérieur et ESTIME les dimensions.
+
+MÉTHODE D'ESTIMATION :
+- Utilise les éléments de référence visibles (portes standard 2.04m, prises à 30cm du sol, plinthes ~8cm, interrupteurs à 1.10m, carreaux standard 30x30/45x45/60x60cm, parpaings 20x50cm)
+- Si toit en pente visible, estime l'angle et les hauteurs min/max
+- Détecte la forme de la pièce (rectangulaire, L, sous combles, etc.)
+
+Réponds UNIQUEMENT en JSON valide :
+{"largeur":"X.Xm","longueur":"X.Xm","hauteur":"X.Xm","hauteur_min":"X.Xm si pente","hauteur_max":"X.Xm si pente","pente":"X° si applicable","surface_sol":"X.Xm²","surface_murs":"X.Xm²","surface_rampant":"X.Xm² si pente","perimetre":"X.Xml","forme":"rectangulaire/L/sous combles/etc","ouvertures":[{"type":"porte/fenêtre","largeur":"Xm","hauteur":"Xm"}],"confiance":"haute/moyenne/basse","details":"explication des repères utilisés pour l'estimation"}
+
+Ne mets que les champs pertinents. Sois précis dans tes estimations.`;
 
 export default function ScannerPage() {
   const {
-    page, goPage, switchIA,
+    page, goPage, switchIA, apiKey,
     camActive, photoUrl, scanLoading, scanResult, scanIA, setScanIA, scannerTab, setScannerTab,
     arModeType, setArModeType, arAnchor, setArAnchor, arShelfType, setArShelfType, showArAdvisor, setShowArAdvisor, arAdvInput, setArAdvInput, arAdvResult, arAdvLoading,
     videoRef, canvasRef, arVideoRef, arCanvasRef, arAnchorRef, arModeRef, arShelfTypeRef,
     ouvrirCamera, prendrePhoto, importerPhoto, analyserPhoto, suggestShelf,
+    setCalcSurface, setCalcHauteur, setCalcPente, setCalcLongueur,
   } = useApp();
+
+  const [mesureLoading, setMesureLoading] = useState(false);
+  const [mesureResult, setMesureResult] = useState(null);
+  const [mesurePhoto, setMesurePhoto] = useState(null);
+  const mesureVideoRef = useRef(null);
+  const mesureCanvasRef = useRef(null);
+  const mesureStreamRef = useRef(null);
+  const [mesureCam, setMesureCam] = useState(false);
+
+  const ouvrirMesureCam = useCallback(async () => {
+    try {
+      if (mesureStreamRef.current) mesureStreamRef.current.getTracks().forEach(t => t.stop());
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      mesureStreamRef.current = stream;
+      if (mesureVideoRef.current) { mesureVideoRef.current.srcObject = stream; mesureVideoRef.current.play().catch(() => {}); }
+      setMesureCam(true);
+      setMesurePhoto(null);
+      setMesureResult(null);
+    } catch { alert("Impossible d'accéder à la caméra."); }
+  }, []);
+
+  const prendreMesurePhoto = useCallback(() => {
+    if (!mesureCam || !mesureVideoRef.current || !mesureCanvasRef.current) return;
+    const v = mesureVideoRef.current, c = mesureCanvasRef.current;
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext("2d").drawImage(v, 0, 0);
+    const dataUrl = c.toDataURL("image/jpeg", 0.85);
+    setMesurePhoto(dataUrl);
+    setMesureCam(false);
+    mesureStreamRef.current?.getTracks().forEach(t => t.stop());
+    mesureStreamRef.current = null;
+    analyserMesure(dataUrl);
+  }, [mesureCam]);
+
+  const importerMesurePhoto = useCallback((e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { setMesurePhoto(ev.target.result); analyserMesure(ev.target.result); };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const analyserMesure = useCallback(async (dataUrl) => {
+    setMesureLoading(true);
+    setMesureResult(null);
+    const base64 = dataUrl.split(",")[1];
+    const mediaType = dataUrl.split(";")[0].split(":")[1] || "image/jpeg";
+    try {
+      const r = await withRetry(() => fetch(apiURL(), {
+        method: "POST",
+        headers: apiHeaders(apiKey),
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514", max_tokens: 900,
+          system: METREUR_VISION_PROMPT,
+          messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: base64 } }, { type: "text", text: "Analyse cette photo et estime les dimensions de l'espace visible." }] }]
+        }),
+      }));
+      const data = await r.json();
+      if (data.error) throw new Error(data.error.message);
+      const txt = data.content[0].text.replace(/```json|```/g, "").trim();
+      setMesureResult(JSON.parse(txt));
+    } catch (e) {
+      setMesureResult({ erreur: e.message });
+    } finally { setMesureLoading(false); }
+  }, [apiKey]);
+
+  const injecterMesures = useCallback(() => {
+    if (!mesureResult) return;
+    if (mesureResult.surface_sol) setCalcSurface(parseFloat(mesureResult.surface_sol));
+    if (mesureResult.hauteur) setCalcHauteur(parseFloat(mesureResult.hauteur));
+    if (mesureResult.hauteur_max) setCalcHauteur(parseFloat(mesureResult.hauteur_max));
+    if (mesureResult.pente) setCalcPente(parseFloat(mesureResult.pente));
+    if (mesureResult.perimetre) setCalcLongueur(parseFloat(mesureResult.perimetre));
+    goPage("outils");
+  }, [mesureResult, setCalcSurface, setCalcHauteur, setCalcPente, setCalcLongueur, goPage]);
 
   return (
     <div style={{ ...s.page, ...(page === "scanner" ? s.pageActive : {}) }}>
       <div style={{ display: "flex", gap: 0, borderBottom: "0.5px solid rgba(201,168,76,0.12)", flexShrink: 0 }}>
-        {[["photo", "\u{1F4F7}  Photo IA"], ["ar", "\u{1F3AF}  AR Live 3D"]].map(([k, l]) => (
-          <button key={k} onClick={() => { setScannerTab(k); if (k === "ar" && !camActive) ouvrirCamera(); }} style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", background: "transparent", color: scannerTab === k ? "#C9A84C" : "rgba(240,237,230,0.3)", borderBottom: scannerTab === k ? "2px solid #C9A84C" : "2px solid transparent", transition: "all 0.2s", fontFamily: "'Syne',sans-serif" }}>{l}</button>
+        {[["photo", "\u{1F4F7}  Photo IA"], ["mesure", "\u{1F4D0}  Mesurer"], ["ar", "\u{1F3AF}  AR Live 3D"]].map(([k, l]) => (
+          <button key={k} onClick={() => { setScannerTab(k); if (k === "ar" && !camActive) ouvrirCamera(); }} style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", background: "transparent", color: scannerTab === k ? (k === "mesure" ? "#52C37A" : "#C9A84C") : "rgba(240,237,230,0.3)", borderBottom: scannerTab === k ? ("2px solid " + (k === "mesure" ? "#52C37A" : "#C9A84C")) : "2px solid transparent", transition: "all 0.2s", fontFamily: "'Syne',sans-serif" }}>{l}</button>
         ))}
       </div>
 
@@ -97,6 +187,80 @@ export default function ScannerPage() {
             </div>
           </div>
         )}
+      </div>}
+
+      {/* Mesure Tab */}
+      {scannerTab === "mesure" && <div style={{ ...s.wrap, paddingTop: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg,#52C37A,#3A9B5A)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F0EDE6" strokeWidth="2.2" strokeLinecap="round"><path d="M2 2l5 5M2 2v4M2 2h4" /><path d="M22 22l-5-5M22 22v-4M22 22h-4" /></svg>
+          </div>
+          <div>
+            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: "#52C37A" }}>Métreur IA Vision</div>
+            <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>Prenez une photo, l'IA estime les dimensions</div>
+          </div>
+        </div>
+
+        <video ref={mesureVideoRef} autoPlay playsInline muted style={{ width: "100%", borderRadius: 12, display: mesureCam ? "block" : "none", marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />
+        <canvas ref={mesureCanvasRef} style={{ display: "none" }} />
+
+        {mesurePhoto && <img src={mesurePhoto} alt="mesure" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />}
+
+        {!mesureCam && !mesurePhoto && (
+          <div style={{ width: "100%", aspectRatio: "4/3", background: "#0D1018", border: "1.5px dashed rgba(82,195,122,0.25)", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#52C37A" strokeWidth="1.2" strokeLinecap="round" style={{ opacity: 0.5, marginBottom: 10 }}><path d="M2 2l5 5M2 2v4M2 2h4" /><path d="M22 22l-5-5M22 22v-4M22 22h-4" /><path d="M22 2l-5 5M22 2v4M22 2h-4" /><path d="M2 22l5-5M2 22v-4M2 22h4" /></svg>
+            <p style={{ fontSize: 12, color: "rgba(240,237,230,0.5)" }}>Photographiez votre pièce ou mur</p>
+            <p style={{ fontSize: 10, color: "rgba(240,237,230,0.3)", marginTop: 4 }}>L'IA utilise les repères visibles (portes, prises, carrelage)</p>
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+          <button style={{ ...s.scanBtn, background: "linear-gradient(135deg,#52C37A,#3A9B5A)", borderColor: "rgba(82,195,122,0.5)" }} onClick={ouvrirMesureCam}>Activer caméra</button>
+          <button style={{ ...s.scanBtnGhost, borderColor: "rgba(82,195,122,0.3)", color: "#52C37A", opacity: mesureCam ? 1 : 0.4 }} onClick={prendreMesurePhoto}>Mesurer</button>
+        </div>
+
+        <label style={{ display: "block", width: "100%", background: "#181D28", border: "0.5px solid rgba(82,195,122,0.15)", borderRadius: 12, padding: "12px", textAlign: "center", fontSize: 12, color: "rgba(240,237,230,0.5)", cursor: "pointer", marginBottom: 12 }}>
+          Importer une photo depuis la galerie
+          <input type="file" accept="image/*" style={{ display: "none" }} onChange={importerMesurePhoto} />
+        </label>
+
+        {mesureLoading && <div style={{ background: "#181D28", borderRadius: 12, padding: 14, textAlign: "center", fontSize: 12, color: "#52C37A", marginBottom: 12 }}>{"\u{1F4D0}"} Le Métreur IA analyse les dimensions...</div>}
+
+        {mesureResult && !mesureResult.erreur && (
+          <div style={{ background: "#181D28", border: "0.5px solid rgba(82,195,122,0.2)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ padding: "3px 9px", borderRadius: 20, fontSize: 10, fontWeight: 700, background: mesureResult.confiance === "haute" ? "rgba(82,195,122,0.15)" : mesureResult.confiance === "moyenne" ? "rgba(201,168,76,0.12)" : "rgba(232,135,58,0.12)", color: mesureResult.confiance === "haute" ? "#52C37A" : mesureResult.confiance === "moyenne" ? "#C9A84C" : "#E8873A", border: "0.5px solid currentColor" }}>Confiance {mesureResult.confiance}</span>
+              <strong style={{ fontFamily: "'Syne',sans-serif", fontSize: 13 }}>{mesureResult.forme || "Espace analysé"}</strong>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 }}>
+              {mesureResult.largeur && <div style={{ background: "rgba(82,195,122,0.06)", border: "0.5px solid rgba(82,195,122,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Largeur</div><div style={{ fontSize: 14, fontWeight: 700, color: "#52C37A" }}>{mesureResult.largeur}</div></div>}
+              {mesureResult.longueur && <div style={{ background: "rgba(82,195,122,0.06)", border: "0.5px solid rgba(82,195,122,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Longueur</div><div style={{ fontSize: 14, fontWeight: 700, color: "#52C37A" }}>{mesureResult.longueur}</div></div>}
+              {mesureResult.hauteur && <div style={{ background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Hauteur</div><div style={{ fontSize: 14, fontWeight: 700, color: "#5290E0" }}>{mesureResult.hauteur}</div></div>}
+              {mesureResult.surface_sol && <div style={{ background: "rgba(201,168,76,0.06)", border: "0.5px solid rgba(201,168,76,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Surface sol</div><div style={{ fontSize: 14, fontWeight: 700, color: "#C9A84C" }}>{mesureResult.surface_sol}</div></div>}
+            </div>
+
+            {(mesureResult.pente || mesureResult.hauteur_min) && <div style={{ display: "flex", gap: 7, marginBottom: 10 }}>
+              {mesureResult.pente && <div style={{ flex: 1, background: "rgba(232,135,58,0.06)", border: "0.5px solid rgba(232,135,58,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Pente</div><div style={{ fontSize: 14, fontWeight: 700, color: "#E8873A" }}>{mesureResult.pente}</div></div>}
+              {mesureResult.hauteur_min && <div style={{ flex: 1, background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>H. min</div><div style={{ fontSize: 14, fontWeight: 700, color: "#5290E0" }}>{mesureResult.hauteur_min}</div></div>}
+              {mesureResult.hauteur_max && <div style={{ flex: 1, background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>H. max</div><div style={{ fontSize: 14, fontWeight: 700, color: "#5290E0" }}>{mesureResult.hauteur_max}</div></div>}
+              {mesureResult.surface_rampant && <div style={{ flex: 1, background: "rgba(232,135,58,0.06)", border: "0.5px solid rgba(232,135,58,0.2)", borderRadius: 8, padding: "8px 10px" }}><div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Surface rampant</div><div style={{ fontSize: 14, fontWeight: 700, color: "#E8873A" }}>{mesureResult.surface_rampant}</div></div>}
+            </div>}
+
+            {mesureResult.ouvertures?.length > 0 && <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 5 }}>Ouvertures détectées</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {mesureResult.ouvertures.map((o, i) => <span key={i} style={{ fontSize: 10, padding: "3px 9px", borderRadius: 20, background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.12)", color: "rgba(240,237,230,0.7)" }}>{o.type} {o.largeur}{"\u00D7"}{o.hauteur}</span>)}
+              </div>
+            </div>}
+
+            {mesureResult.details && <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)", lineHeight: 1.6, marginBottom: 10, borderTop: "0.5px solid rgba(255,255,255,0.06)", paddingTop: 8 }}>{"\u{1F4A1}"} {mesureResult.details}</div>}
+
+            <button onClick={injecterMesures} style={{ width: "100%", background: "linear-gradient(135deg,#52C37A,#3A9B5A)", border: "none", borderRadius: 12, padding: "12px", fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 800, color: "#F0EDE6", cursor: "pointer", boxShadow: "0 4px 20px rgba(82,195,122,0.3)" }}>{"\u{1F4D0}"} Utiliser ces mesures dans Outils</button>
+          </div>
+        )}
+
+        {mesureResult?.erreur && <div style={{ ...s.errBox }}>{mesureResult.erreur}</div>}
       </div>}
 
       {/* AR Tab */}
