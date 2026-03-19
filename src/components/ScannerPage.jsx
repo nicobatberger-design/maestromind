@@ -155,7 +155,7 @@ export default function ScannerPage() {
             <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Repère visible sur la photo</div>
             <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
               {[["porte", "Porte"], ["fenetre", "Fenêtre"], ["carreau", "Carreau"], ["hauteur", "Hauteur"], ["custom", "Autre"]].map(([k, l]) => (
-                <button key={k} onClick={() => { setMesureRefType(k); setMesureRefValue(k === "porte" ? "2.04" : k === "fenetre" ? "1.15" : k === "carreau" ? "30" : k === "hauteur" ? "2.50" : ""); }} style={{ flex: 1, padding: "5px 2px", borderRadius: 8, fontSize: 9, fontWeight: 600, cursor: "pointer", border: "0.5px solid " + (mesureRefType === k ? "#52C37A" : "rgba(255,255,255,0.08)"), background: mesureRefType === k ? "rgba(82,195,122,0.12)" : "transparent", color: mesureRefType === k ? "#52C37A" : "rgba(240,237,230,0.4)", whiteSpace: "nowrap" }}>{l}</button>
+                <button key={k} onClick={() => { setMesureRefType(k); setMesureRefValue(k === "porte" ? "2.04" : k === "fenetre" ? "1.15" : k === "carreau" ? "30" : k === "hauteur" ? "2.50" : ""); }} style={{ flex: 1, padding: "7px 4px", borderRadius: 8, fontSize: 9, fontWeight: 600, cursor: "pointer", border: "0.5px solid " + (mesureRefType === k ? "#52C37A" : "rgba(255,255,255,0.08)"), background: mesureRefType === k ? "rgba(82,195,122,0.12)" : "transparent", color: mesureRefType === k ? "#52C37A" : "rgba(240,237,230,0.4)", whiteSpace: "nowrap" }}>{l}</button>
               ))}
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -166,7 +166,7 @@ export default function ScannerPage() {
         </>}
 
         {/* === PHOTO (commune aux 2 modes) === */}
-        {photo && <img src={photo} alt="photo" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 280, objectFit: "cover" }} />}
+        {photo && <img src={photo} alt="photo" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 240, objectFit: "cover" }} />}
 
         {!photo && (
           <div style={{ width: "100%", aspectRatio: "4/3", background: "#0D1018", border: "1.5px dashed " + (mode === "mesure" ? "rgba(82,195,122,0.25)" : "rgba(201,168,76,0.18)"), borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>

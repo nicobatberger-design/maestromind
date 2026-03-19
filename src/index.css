@@ -122,6 +122,22 @@ html, body {
   background: rgba(201,168,76,0.18) !important;
 }
 
+/* ── Active feedback tactile ── */
+.bl-active:active {
+  transform: scale(0.97);
+  opacity: 0.8;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ── Scrollbar (redundant with above but explicit for webkit) ── */
 ::-webkit-scrollbar {
   display: none;
