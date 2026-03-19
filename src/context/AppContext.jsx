@@ -460,7 +460,7 @@ export function AppProvider({ children }) {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1200,
-          system: `${profilIA()}\nTu es un expert en quantitatifs matériaux bâtiment France. Tu connais parfaitement les dimensions standard des matériaux (plaques BA13 : 1200x2500, 1200x2600, 1200x2700, 1200x3000 ; rails R48/R70 en 3m ; montants M48/M70 en 2.50/2.60/2.70/3m ; etc.). IMPORTANT : adapte tes recommandations à la HAUTEUR et à la PENTE indiquées. Réponds UNIQUEMENT en JSON valide : {"materiaux":[{"nom":"Produit précis avec dimensions","quantite":"X unités (détail calcul)","prixEstime":"X€","conseil":"marque/ref recommandée"}],"total":"X€","conseil":"conseil pratique incluant mise en oeuvre"}`,
+          system: `${profilIA()}\nTu es un expert en quantitatifs matériaux bâtiment France 2026. Tu connais parfaitement les dimensions standard des matériaux (plaques BA13 : 1200x2500, 1200x2600, 1200x2700, 1200x3000 ; rails R48/R70 en 3m ; montants M48/M70 en 2.50/2.60/2.70/3m ; etc.). IMPORTANT : adapte tes recommandations à la HAUTEUR et à la PENTE indiquées. PRIX RÉFÉRENCE 2026 (sources prix-travaux-m2.com/allotravaux.com) : BA13 standard fourniture 2,50-9€/plaque · BA13 fourni-posé 27-41€/m² · Carrelage grès cérame posé 55-120€/m² · Carrelage standard posé 60-75€/m² · Isolation fourniture seule 5-60€/m² · Isolation fourni-posé 25-120€/m². Réponds UNIQUEMENT en JSON valide : {"materiaux":[{"nom":"Produit précis avec dimensions","quantite":"X unités (détail calcul)","prixEstime":"X€","conseil":"marque/ref recommandée"}],"total":"X€","conseil":"conseil pratique incluant mise en oeuvre"}`,
           messages: [{ role: "user", content: `Calcule les matériaux pour ${calcType}. ${dims} Inclus pertes standards (10-15%). Prix marché France 2026 actualisés. Produits disponibles Leroy Merlin/Castorama/Brico Dépôt. Détaille chaque produit avec ses dimensions exactes et la marque recommandée.` }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setCalcResult(parseAIJson(data?.content?.[0]?.text));
@@ -474,7 +474,7 @@ export function AppProvider({ children }) {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000,
-          system: `${profilIA()}\nTu es un expert certifié en aides rénovation France 2026 (MaPrimeRénov', CEE, éco-PTZ, TVA 5.5%, Anah). NOUVEAUTÉS 2026 : RDV France Rénov' OBLIGATOIRE avant dépôt MaPrimeRénov'. Parcours accompagné recentré sur E/F/G uniquement (C/D exclus). ITE en monogeste supprimée. Chaudières biomasse/granulés supprimées en monogeste. Plafond annuel 20 000€/logement. PLAFONDS REVENUS 2026 (1 pers IDF/Province) : Très modeste ≤23 541€/≤17 009€ · Modeste ≤28 657€/≤21 805€ · Intermédiaire ≤40 018€/≤30 549€. Artisan RGE OBLIGATOIRE. Éco-PTZ : 1 geste=15k€, 2-3 gestes=30k€, 4+=50k€ à 0%, max 20 ans. TVA 5.5% réno énergétique, 10% réno standard, logement >2 ans. Cumul optimal : MPR+CEE+éco-PTZ+TVA 5.5% = jusqu'à 90% très modestes. Réponds UNIQUEMENT en JSON valide : {"aides":[{"nom":"Aide","montant":"X€","condition":"condition courte","demarche":"comment faire en 1 phrase"}],"total":"X€","reste_a_charge":"X€","conseil":"conseil pratique","attention":"point important","rdv_france_renov":"obligatoire avant dépôt — 0 808 800 700"}`,
+          system: `${profilIA()}\nTu es un expert certifié en aides rénovation France 2026 (MaPrimeRénov', CEE, éco-PTZ, TVA 5.5%, Anah). NOUVEAUTÉS 2026 (sources hellio.com/effy.fr/quelleenergie.fr) : RDV France Rénov' OBLIGATOIRE avant dépôt MaPrimeRénov'. Parcours accompagné recentré sur E/F/G uniquement (C/D exclus). ITE+ITI+chaudières biomasse SUPPRIMÉS en monogeste. Profil Rose (revenus supérieurs) EXCLU du parcours par geste. Plafond 20 000€ sur 5 ans. BARÈMES PAR GESTE (Bleu/Jaune/Violet — Rose exclu) : PAC air/eau 5 000/4 000/3 000€ · PAC géo 11 000/9 000/6 000€ · Fenêtres 100/80/40€/équip. · Isolation combles 25/20/15€/m² · Toiture terrasse 75/60/40€/m² · Poêle à bois 1 250/800/400€ · VMC DF 2 500/2 000/1 500€. CEE revalorisées : PAC air/eau +1 000€, PAC géo +2 000€, isol. combles ~10-15€/m², murs ~15-25€/m². PLAFONDS REVENUS 2026 (1 pers IDF/Province) : Très modeste ≤23 541€/≤17 009€ · Modeste ≤28 657€/≤21 805€ · Intermédiaire ≤40 018€/≤30 549€. Artisan RGE OBLIGATOIRE. Éco-PTZ : 1 geste=15k€, 2-3 gestes=30k€, 4+=50k€ à 0%, max 20 ans. TVA 5.5% réno énergétique, 10% réno standard, logement >2 ans. Cumul optimal : MPR+CEE+éco-PTZ+TVA 5.5%+aides locales = jusqu'à 90% très modestes. Réponds UNIQUEMENT en JSON valide : {"aides":[{"nom":"Aide","montant":"X€","condition":"condition courte","demarche":"comment faire en 1 phrase"}],"total":"X€","reste_a_charge":"X€","conseil":"conseil pratique","attention":"point important","rdv_france_renov":"obligatoire avant dépôt — 0 808 800 700"}`,
           messages: [{ role: "user", content: `Foyer ${primesRev}, travaux : ${primesTrav}, surface : ${primesSurf}m². Quelles aides suis-je éligible en 2026 ? Calcule les montants exacts selon les barèmes 2026.` }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setPrimesResult(parseAIJson(data?.content?.[0]?.text));
@@ -518,7 +518,7 @@ export function AppProvider({ children }) {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1600,
-          system: `Tu es expert en rédaction de devis travaux France 2026, métreur certifié. ${profilIA()} PRIX MO 2026 TTC : Maçon 42-68€/h · Plombier 68-100€/h · Électricien 62-90€/h · Plaquiste/peintre 38-58€/h · Couvreur 48-75€/h · Menuisier 48-68€/h. PRIX MATÉRIAUX 2026 : BA13 7-9€/plaque · Rail R48 2.30€/ml · Carrelage grès 10-35€/m² · Peinture acrylique 4-8€/m² · Mortier-colle C2 14-20€/sac · LR 100mm 8-12€/m². TVA : 5.5% rénovation énergétique (art. 278-0 bis A CGI) · 10% rénovation standard (art. 279-0 bis CGI) · 20% construction neuve. Logement doit avoir >2 ans pour TVA réduite. Génère un devis professionnel conforme aux obligations légales. Réponds UNIQUEMENT en JSON valide : {"lignes":[{"description":"description précise","unite":"m² ou U ou ml ou forfait","quantite":"X","prix_unitaire":"X€","total":"X€","dtu":"DTU ou norme ou vide"}],"sous_total_ht":"X€","tva_taux":"10%","tva":"X€","total_ttc":"X€","validite":"30 jours","garanties":"décennale 10 ans + parfait achèvement 1 an","mentions":"TVA applicable selon art. 279-0 bis du CGI — logement >2 ans","conditions_paiement":"30% commande, 40% avancement, 30% réception"}`,
+          system: `Tu es expert en rédaction de devis travaux France 2026, métreur certifié. ${profilIA()} PRIX MO 2026 TTC (sources obat.fr/habitatpresto.com, +3.2% CAPEB) : Maçon 35-70€/h · Carreleur 35-55€/h · Plombier 40-65€/h · Électricien 40-65€/h · Plaquiste 30-50€/h · Peintre 30-40€/h · Couvreur 45-70€/h · Charpentier 40-60€/h · Menuisier 40-60€/h · Terrassier 60-80€/h. IDF +20-30%, PACA +10%. PRIX MATÉRIAUX 2026 : BA13 2,50-9€/plaque · BA13 fourni-posé 27-41€/m² · Rail R48 2.30€/ml · Carrelage grès cérame posé 55-120€/m² · Carrelage standard posé 60-75€/m² · Peinture acrylique 4-8€/m² · Isolation fourni-posé 25-120€/m². TVA : 5.5% rénovation énergétique (art. 278-0 bis A CGI) · 10% rénovation standard (art. 279-0 bis CGI) · 20% construction neuve. Logement doit avoir >2 ans pour TVA réduite. Génère un devis professionnel conforme aux obligations légales. Réponds UNIQUEMENT en JSON valide : {"lignes":[{"description":"description précise","unite":"m² ou U ou ml ou forfait","quantite":"X","prix_unitaire":"X€","total":"X€","dtu":"DTU ou norme ou vide"}],"sous_total_ht":"X€","tva_taux":"10%","tva":"X€","total_ttc":"X€","validite":"30 jours","garanties":"décennale 10 ans + parfait achèvement 1 an","mentions":"TVA applicable selon art. 279-0 bis du CGI — logement >2 ans","conditions_paiement":"30% commande, 40% avancement, 30% réception"}`,
           messages: [{ role: "user", content: "Travaux : " + devisProDesc + "\nSurface : " + devisProSurface + "m²\nClient : " + (devisProClient || "À compléter") + "\nGénère le devis complet prix France 2026 avec prix MO et matériaux actualisés." }] })}));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setDevisProResult(parseAIJson(data?.content?.[0]?.text));
@@ -601,18 +601,19 @@ export function AppProvider({ children }) {
   const calcDPE = useCallback(() => {
     const s = parseFloat(dpeS) || 75;
 
-    // ── MaPrimeRénov' 2026 — barèmes réels par geste + revenus ──
-    // Source : barèmes officiels ANAH 2026
+    // ── MaPrimeRénov' 2026 — barèmes réels par geste + profil couleur ──
+    // Sources : hellio.com, effy.fr, quelleenergie.fr — profils Bleu/Jaune/Violet, Rose EXCLU
+    // Très modeste=Bleu, Modeste=Jaune, Intermédiaire=Violet, Aisé=Rose (exclu parcours par geste)
     const BAREME_MPR = {
-      "Isolation combles": { "Très modeste": 25, "Modeste": 18, "Intermédiaire": 12, "Aisé": 7 },          // €/m²
-      "Isolation murs (ITI/ITE)": { "Très modeste": 25, "Modeste": 20, "Intermédiaire": 15, "Aisé": 7 },   // €/m² — attention ITE seule supprimée en monogeste 2026
-      "Isolation plancher bas": { "Très modeste": 20, "Modeste": 15, "Intermédiaire": 10, "Aisé": 5 },      // €/m²
-      "PAC air/eau": { "Très modeste": 5000, "Modeste": 4000, "Intermédiaire": 3000, "Aisé": 1500 },        // forfait
-      "PAC géothermique": { "Très modeste": 10000, "Modeste": 8000, "Intermédiaire": 6000, "Aisé": 3000 },   // forfait
-      "VMC double flux": { "Très modeste": 2500, "Modeste": 2000, "Intermédiaire": 1500, "Aisé": 1000 },     // forfait
-      "Fenêtres / Vitrages": { "Très modeste": 100, "Modeste": 80, "Intermédiaire": 40, "Aisé": 0 },        // par fenêtre — on multiplie par s/15 (estimation nb fenêtres)
+      "Isolation combles": { "Très modeste": 25, "Modeste": 20, "Intermédiaire": 15, "Aisé": 0 },           // €/m² — Bleu/Jaune/Violet, Rose exclu
+      "Isolation murs (ITI/ITE)": { "Très modeste": 0, "Modeste": 0, "Intermédiaire": 0, "Aisé": 0 },       // ⛔ ITE+ITI SUPPRIMÉS en monogeste 2026
+      "Isolation plancher bas": { "Très modeste": 20, "Modeste": 15, "Intermédiaire": 10, "Aisé": 0 },       // €/m²
+      "PAC air/eau": { "Très modeste": 5000, "Modeste": 4000, "Intermédiaire": 3000, "Aisé": 0 },           // forfait — Rose exclu
+      "PAC géothermique": { "Très modeste": 11000, "Modeste": 9000, "Intermédiaire": 6000, "Aisé": 0 },      // forfait revalorisé 2026
+      "VMC double flux": { "Très modeste": 2500, "Modeste": 2000, "Intermédiaire": 1500, "Aisé": 0 },        // forfait — Rose exclu
+      "Fenêtres / Vitrages": { "Très modeste": 100, "Modeste": 80, "Intermédiaire": 40, "Aisé": 0 },        // par équipement — Rose exclu
       "Chauffe-eau thermodynamique": { "Très modeste": 1200, "Modeste": 800, "Intermédiaire": 400, "Aisé": 0 }, // forfait
-      "Poêle à granulés": { "Très modeste": 2500, "Modeste": 2000, "Intermédiaire": 1500, "Aisé": 500 },     // forfait
+      "Poêle à granulés": { "Très modeste": 1250, "Modeste": 800, "Intermédiaire": 400, "Aisé": 0 },         // poêle à bois barème 2026
     };
 
     // Calcul MaPrimeRénov'
@@ -632,13 +633,13 @@ export function AppProvider({ children }) {
     // Plafond annuel MaPrimeRénov' 2026 = 20 000€
     prime = Math.min(prime, 20000);
 
-    // ── CEE 2026 — estimation par type ──
+    // ── CEE 2026 — estimation par type (revalorisées, sources primesenergie.fr/hellowatt.fr) ──
     const CEE_BAREMES = {
-      "Isolation combles": 12,        // €/m² (BAR-EN-101)
-      "Isolation murs (ITI/ITE)": 10, // €/m² (BAR-EN-102)
-      "Isolation plancher bas": 10,   // €/m² (BAR-EN-103)
-      "PAC air/eau": 3000,            // forfait (BAR-TH-104)
-      "PAC géothermique": 4000,       // forfait
+      "Isolation combles": 12,        // €/m² (~10-15€/m², BAR-EN-101)
+      "Isolation murs (ITI/ITE)": 20, // €/m² (~15-25€/m², BAR-EN-102)
+      "Isolation plancher bas": 12,   // €/m² (BAR-EN-103)
+      "PAC air/eau": 4000,            // forfait revalorisé +1 000€ (BAR-TH-104)
+      "PAC géothermique": 6000,       // forfait revalorisé +2 000€
       "VMC double flux": 500,         // forfait (BAR-TH-125)
       "Fenêtres / Vitrages": 50,     // par fenêtre
       "Chauffe-eau thermodynamique": 150, // forfait (BAR-TH-148)
@@ -687,7 +688,7 @@ export function AppProvider({ children }) {
       revenu: dpeRevenu,
       travaux: dpeTravaux,
       chauffage: dpeC,
-      alerte_ite: dpeTravaux === "Isolation murs (ITI/ITE)" ? "ITE en geste seul supprimée de MaPrimeRénov' 2026 — privilégiez le parcours accompagné ou l'ITI" : null,
+      alerte_ite: dpeTravaux === "Isolation murs (ITI/ITE)" ? "ITE ET ITI en monogeste supprimées de MaPrimeRénov' 2026 — privilégiez le parcours accompagné (rénovation d'ampleur)" : null,
       alerte_rdv: "RDV France Rénov' OBLIGATOIRE avant tout dépôt MaPrimeRénov' 2026 — france-renov.gouv.fr ou 0 808 800 700",
     });
   }, [dpeS, dpeC, dpeRevenu, dpeTravaux]);
