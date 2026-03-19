@@ -18,6 +18,12 @@ export default function OutilsPage() {
     rentaSurface, setRentaSurface, rentaTaux, setRentaTaux, rentaMat, setRentaMat, rentaDep, setRentaDep, rentaResult, rentaType, setRentaType, rentaStatut, setRentaStatut,
     analyserDevis, genererContreDevis, calculerMateriaux, calculerPrimes, verifierArtisan,
     planifierChantier, genererDevisPro, calculerRentabilite, calcDPE, genererDevisProPDF,
+    // Nouveaux calculateurs
+    betonLongueur, setBetonLongueur, betonLargeur, setBetonLargeur, betonEpaisseur, setBetonEpaisseur, betonType, setBetonType, betonResult, calculerBeton,
+    escalierHauteur, setEscalierHauteur, escalierLongueur, setEscalierLongueur, escalierResult, calculerEscalier,
+    tuyauDebit, setTuyauDebit, tuyauLongueur, setTuyauLongueur, tuyauMateriau, setTuyauMateriau, tuyauResult, calculerTuyauterie,
+    // Sécurité
+    securiteType, setSecuriteType, securiteChecks, toggleSecuriteCheck, showSOS, setShowSOS,
   } = useApp();
 
   return (
@@ -26,7 +32,7 @@ export default function OutilsPage() {
         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 3 }}>Outils IA</div>
         <div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 12 }}>Devis · Matériaux · Primes · Artisans · DPE</div>
         <div style={{ display: "flex", gap: 5, marginBottom: 16, overflowX: "auto", scrollbarWidth: "none" }}>
-          {[["devis", "Devis"], ["mat", "Matériaux"], ["primes", "Primes"], ["rge", "Artisan RGE"], ["dpe", "DPE"], ["planning", "Planning"], ["devis_pro", "Devis Pro"], ["rentabilite", "Rentabilité"]].map(([k, l]) => (
+          {[["devis", "Devis"], ["mat", "Matériaux"], ["primes", "Primes"], ["rge", "Artisan RGE"], ["dpe", "DPE"], ["planning", "Planning"], ["devis_pro", "Devis Pro"], ["rentabilite", "Rentabilité"], ["beton", "Béton"], ["escalier", "Escalier"], ["tuyau", "Tuyauterie"], ["securite", "Sécurité"]].map(([k, l]) => (
             <button key={k} onClick={() => setToolTab(k)} style={{ flexShrink: 0, padding: "6px 13px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: "none", background: toolTab === k ? "linear-gradient(135deg,#EDD060,#C9A84C,#9A7228)" : "rgba(15,19,28,0.7)", color: toolTab === k ? "#06080D" : "rgba(240,237,230,0.5)", transition: "all 0.2s" }}>{l}</button>
           ))}
         </div>
@@ -200,6 +206,144 @@ export default function OutilsPage() {
               <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", marginTop: 4 }}>Marge : {rentaResult.marge}% {rentaResult.marge < 15 ? "\u26A0\uFE0F Insuffisante" : rentaResult.marge > 30 ? "\u2705 Excellente" : ""}</div>
             </div>
             <button style={{ ...s.dlBtn, marginTop: 10 }} onClick={() => genererOutilPDF({ titre: "ANALYSE RENTABILITÉ", sousTitre: (rentaResult.type_travaux || rentaType) + " — " + rentaSurface + " m² — " + (rentaResult.statut || rentaStatut), accentColor: rentaResult.marge > 25 ? [82,195,122] : rentaResult.marge > 10 ? [232,135,58] : [224,82,82], sections: [{ label: "Indicateurs clés", items: [{ label: "CA Total", value: rentaResult.ca_total + "\u20AC", color: [201,168,76] }, { label: "Bénéfice net", value: rentaResult.benef + "\u20AC", color: rentaResult.benef > 0 ? [82,195,122] : [224,82,82] }, { label: "Marge", value: rentaResult.marge + "%", color: rentaResult.marge > 25 ? [82,195,122] : rentaResult.marge > 10 ? [232,135,58] : [224,82,82] }, { label: "Prix/m²", value: rentaResult.prix_m2 + "\u20AC", color: [82,144,224] }] }, { label: "Détail", items: [{ label: "Type travaux", value: rentaResult.type_travaux || rentaType }, { label: "Statut juridique", value: rentaResult.statut || rentaStatut }, { label: "Main d'oeuvre (" + rentaResult.heures + "h \u00D7 " + rentaTaux + "\u20AC/h)", value: rentaResult.mo + "\u20AC" }, { label: "Matériaux", value: rentaMat + "\u20AC" }, { label: "Déplacements", value: rentaDep + "\u20AC" }, { label: "Charges sociales (" + (rentaResult.taux_charges_pct || 22) + "%)", value: "-" + rentaResult.charges + "\u20AC", color: [224,82,82] }, { label: "Frais généraux (10%)", value: "-" + (rentaResult.frais_generaux || 0) + "\u20AC", color: [232,135,58] }, { label: "Bénéfice net", value: rentaResult.benef + "\u20AC", color: rentaResult.benef > 0 ? [82,195,122] : [224,82,82] }] }] })}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg> Télécharger le PDF</button>
+          </div>}
+        </div>}
+
+        {toolTab === "beton" && <div>
+          <div style={{ fontSize: 9, color: "#C9A84C", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>CALCULATEUR BÉTON</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Longueur m</div><input style={s.inp} type="number" inputMode="decimal" value={betonLongueur} onChange={e => setBetonLongueur(e.target.value)} placeholder="4" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Largeur m</div><input style={s.inp} type="number" inputMode="decimal" value={betonLargeur} onChange={e => setBetonLargeur(e.target.value)} placeholder="3" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Épaisseur m</div><input style={s.inp} type="number" inputMode="decimal" value={betonEpaisseur} onChange={e => setBetonEpaisseur(e.target.value)} placeholder="0.15" /></div>
+          </div>
+          <div style={{ marginBottom: 10 }}><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Type de béton</div><select style={s.inp} value={betonType} onChange={e => setBetonType(e.target.value)}><option value="C20">C20 (dosage léger)</option><option value="C25">C25 (standard)</option><option value="C30">C30 (renforcé)</option></select></div>
+          <button style={s.greenBtn} onClick={calculerBeton}>{"\u{1F9F1}"} Calculer le béton</button>
+          {betonResult && <div style={{ marginTop: 12 }}>
+            <div style={{ ...s.card, background: "rgba(201,168,76,0.06)", borderColor: "rgba(201,168,76,0.2)" }}>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 800, marginBottom: 10 }}>Volume : {betonResult.volume} m³ ({betonResult.type})</div>
+              <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", marginBottom: 8 }}>Quantités avec +10% pertes incluses</div>
+              {[
+                ["Ciment", betonResult.cimentKg + " kg (" + betonResult.sacsCiment + " sacs de 35kg)", betonResult.prixCiment + "\u20AC"],
+                ["Sable", betonResult.sableKg + " kg (" + betonResult.sacsSable + " sacs de 35kg)", betonResult.prixSable + "\u20AC"],
+                ["Gravier", betonResult.gravierKg + " kg (" + betonResult.sacsGravier + " sacs de 25kg)", betonResult.prixGravier + "\u20AC"],
+                ["Eau", betonResult.eauL + " litres", "—"],
+              ].map(([nom, qte, prix], i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                  <div style={{ fontSize: 12, color: "rgba(240,237,230,0.7)" }}>{nom}</div>
+                  <div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", textAlign: "right" }}>{qte}</div>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, color: "#C9A84C", minWidth: 50, textAlign: "right" }}>{prix}</div>
+                </div>
+              ))}
+              <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "10px 0" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: 12 }}>Total estimé matériaux</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 20, fontWeight: 800, color: "#C9A84C" }}>{betonResult.prixTotal}{"\u20AC"}</div>
+              </div>
+            </div>
+          </div>}
+        </div>}
+
+        {toolTab === "escalier" && <div>
+          <div style={{ fontSize: 9, color: "#5290E0", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>CALCULATEUR ESCALIER (LOI DE BLONDEL)</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Hauteur étage cm</div><input style={s.inp} type="number" inputMode="decimal" value={escalierHauteur} onChange={e => setEscalierHauteur(e.target.value)} placeholder="270" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Longueur dispo cm</div><input style={s.inp} type="number" inputMode="decimal" value={escalierLongueur} onChange={e => setEscalierLongueur(e.target.value)} placeholder="400" /></div>
+          </div>
+          <div style={{ background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", borderRadius: 10, padding: "8px 12px", marginBottom: 10, fontSize: 10, color: "#5290E0", lineHeight: 1.6 }}>{"\u2139\uFE0F"} Loi de Blondel : 2h + g = 60 à 64 cm. Hauteur de marche idéale : 17-18 cm. Emmarchement min : 80 cm (90 cm confort).</div>
+          <button style={{ ...s.greenBtn, borderColor: "rgba(82,144,224,0.45)", color: "#5290E0" }} onClick={calculerEscalier}>{"\u{1FA9C}"} Calculer l'escalier</button>
+          {escalierResult && <div style={{ marginTop: 12 }}>
+            <div style={{ ...s.card, borderColor: escalierResult.blondelOk ? "rgba(82,195,122,0.2)" : "rgba(224,82,82,0.2)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+                {[
+                  ["Nb marches", escalierResult.nbMarches, "#C9A84C"],
+                  ["Hauteur marche", escalierResult.hauteurMarche + " cm", "#5290E0"],
+                  ["Giron", escalierResult.giron + " cm", "#5290E0"],
+                  ["Blondel", escalierResult.blondel + " cm", escalierResult.blondelOk ? "#52C37A" : "#E05252"],
+                ].map(([label, val, color], i) => (
+                  <div key={i} style={{ ...s.sc, textAlign: "left", padding: "10px 12px" }}>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, color }}>{val}</div>
+                    <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)", marginTop: 2 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: "8px 12px", borderRadius: 10, background: escalierResult.blondelOk ? "rgba(82,195,122,0.08)" : "rgba(224,82,82,0.08)", border: "0.5px solid " + (escalierResult.blondelOk ? "rgba(82,195,122,0.25)" : "rgba(224,82,82,0.25)"), fontSize: 11, color: escalierResult.blondelOk ? "#52C37A" : "#E05252", lineHeight: 1.6 }}>
+                {escalierResult.blondelOk ? "\u2705" : "\u26A0\uFE0F"} {escalierResult.conseil}
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", marginTop: 8, lineHeight: 1.6 }}>Angle : {escalierResult.angleDeg}° | Emmarchement min : {escalierResult.emmarchementMin} cm (confort : {escalierResult.emmarchementConfort} cm) | Réchappement min : 190 cm</div>
+            </div>
+          </div>}
+        </div>}
+
+        {toolTab === "tuyau" && <div>
+          <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>CALCULATEUR TUYAUTERIE</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Débit L/min</div><input style={s.inp} type="number" inputMode="decimal" value={tuyauDebit} onChange={e => setTuyauDebit(e.target.value)} placeholder="12" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Longueur m</div><input style={s.inp} type="number" inputMode="decimal" value={tuyauLongueur} onChange={e => setTuyauLongueur(e.target.value)} placeholder="15" /></div>
+          </div>
+          <div style={{ marginBottom: 10 }}><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Matériau</div><select style={s.inp} value={tuyauMateriau} onChange={e => setTuyauMateriau(e.target.value)}><option value="cuivre">Cuivre</option><option value="PER">PER</option><option value="multicouche">Multicouche</option></select></div>
+          <button style={s.greenBtn} onClick={calculerTuyauterie}>{"\u{1F6BF}"} Calculer le diamètre</button>
+          {tuyauResult && <div style={{ marginTop: 12 }}>
+            <div style={{ ...s.card, borderColor: tuyauResult.vitesseOk ? "rgba(82,195,122,0.2)" : "rgba(224,82,82,0.2)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+                {[
+                  ["Diamètre min calculé", tuyauResult.diametreMinCalcule + " mm", "#5290E0"],
+                  ["Diamètre recommandé", tuyauResult.recommande + " mm", "#52C37A"],
+                  ["Vitesse réelle", tuyauResult.vitesseReelle + " m/s", tuyauResult.vitesseOk ? "#52C37A" : "#E05252"],
+                  ["Perte de charge", tuyauResult.perteCharge + " mCE", "#C9A84C"],
+                ].map(([label, val, color], i) => (
+                  <div key={i} style={{ ...s.sc, textAlign: "left", padding: "10px 12px" }}>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 16, fontWeight: 800, color }}>{val}</div>
+                    <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)", marginTop: 2 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: "8px 12px", borderRadius: 10, background: tuyauResult.vitesseOk ? "rgba(82,195,122,0.08)" : "rgba(224,82,82,0.08)", border: "0.5px solid " + (tuyauResult.vitesseOk ? "rgba(82,195,122,0.25)" : "rgba(224,82,82,0.25)"), fontSize: 11, color: tuyauResult.vitesseOk ? "#52C37A" : "#E05252", lineHeight: 1.6 }}>
+                {tuyauResult.vitesseOk ? "\u2705" : "\u26A0\uFE0F"} {tuyauResult.conseil}
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", marginTop: 8, lineHeight: 1.6 }}>Matériau : {tuyauResult.materiau} | Diamètres disponibles : {tuyauResult.diametresDispos.join(", ")} mm | Vitesse max : 2 m/s</div>
+            </div>
+          </div>}
+        </div>}
+
+        {toolTab === "securite" && <div>
+          <div style={{ fontSize: 9, color: "#E05252", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>SÉCURITÉ CHANTIER</div>
+          <div style={{ marginBottom: 10 }}><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Type de chantier</div><select style={s.inp} value={securiteType} onChange={e => setSecuriteType(e.target.value)}>{["Gros œuvre", "Électricité", "Plomberie", "Couverture/Hauteur", "Démolition", "Peinture/Finitions"].map(t => <option key={t}>{t}</option>)}</select></div>
+          <div style={{ marginBottom: 12 }}>
+            {({
+              "Gros œuvre": ["Casque de chantier", "Chaussures de sécurité S3", "Gants de manutention", "Lunettes anti-projection", "Gilet haute visibilité", "Balisage zone de travail", "Vérification étais/coffrages", "Point d'eau à proximité"],
+              "Électricité": ["Gants isolants classe 0", "Chaussures isolantes", "VAT (vérificateur absence tension)", "Consignation tableau", "Lunettes de protection", "Tapis isolant", "Extincteur CO2 à proximité", "Habilitation électrique valide"],
+              "Plomberie": ["Gants de protection", "Lunettes de protection", "Chaussures de sécurité", "Ventilation espace confiné", "Détecteur de gaz si gaz", "Clé d'arrêt eau accessible", "Seau/bâche de protection", "Témoin pression manomètre"],
+              "Couverture/Hauteur": ["Harnais EN 361", "Point d'ancrage vérifié", "Ligne de vie EN 354", "Filet de sécurité", "Garde-corps périmétrique", "Casque avec jugulaire", "Chaussures antidérapantes", "Vérification météo (vent <60km/h)"],
+              "Démolition": ["Masque FFP3", "Lunettes étanches", "Gants anti-coupure", "Combinaison jetable", "Diagnostic amiante vérifié", "Balisage zone exclusion", "Arrosage anti-poussière", "Étaiement structures adjacentes"],
+              "Peinture/Finitions": ["Masque FFP2 ou A1", "Gants nitrile", "Lunettes de protection", "Ventilation du local", "Bâches de protection sol", "Extincteur à proximité", "Produits étiquetés FDS", "Pas de source de chaleur"],
+            }[securiteType] || []).map((item, i) => {
+              const checks = securiteChecks[securiteType] || [];
+              const checked = checks[i] || false;
+              return (
+                <div key={i} onClick={() => toggleSecuriteCheck(securiteType, i)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", marginBottom: 5, borderRadius: 10, background: checked ? "rgba(82,195,122,0.06)" : "rgba(15,19,28,0.5)", border: "0.5px solid " + (checked ? "rgba(82,195,122,0.2)" : "rgba(255,255,255,0.06)"), cursor: "pointer", transition: "all 0.2s" }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 6, background: checked ? "rgba(82,195,122,0.2)" : "rgba(255,255,255,0.04)", border: "0.5px solid " + (checked ? "rgba(82,195,122,0.5)" : "rgba(255,255,255,0.12)"), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#52C37A", flexShrink: 0 }}>{checked ? "\u2713" : ""}</div>
+                  <div style={{ fontSize: 12, color: checked ? "rgba(240,237,230,0.4)" : "rgba(240,237,230,0.7)", textDecoration: checked ? "line-through" : "none" }}>{item}</div>
+                </div>
+              );
+            })}
+          </div>
+          <button onClick={() => setShowSOS(true)} style={{ width: "100%", background: "rgba(224,82,82,0.12)", border: "0.5px solid rgba(224,82,82,0.5)", borderRadius: 14, padding: 14, fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: "#E05252", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{"\u{1F6A8}"} SOS URGENCE</button>
+          {showSOS && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowSOS(false)}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,19,28,0.95)", border: "0.5px solid rgba(224,82,82,0.3)", borderRadius: 20, padding: "24px 20px", maxWidth: 360, width: "100%" }}>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, color: "#E05252", textAlign: "center", marginBottom: 16 }}>{"\u{1F6A8}"} NUMÉROS D'URGENCE</div>
+              {[
+                ["Pompiers", "18", "#E05252"],
+                ["SAMU", "15", "#5290E0"],
+                ["Urgences Europe", "112", "#C9A84C"],
+                ["Centre Antipoison", "0800 59 59 59", "#52C37A"],
+              ].map(([nom, tel, color], i) => (
+                <a key={i} href={"tel:" + tel.replace(/ /g, "")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", marginBottom: 8, borderRadius: 12, background: color + "12", border: "0.5px solid " + color + "44", textDecoration: "none" }}>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 700, color }}>{nom}</div>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 20, fontWeight: 800, color }}>{tel}</div>
+                </a>
+              ))}
+              <button onClick={() => setShowSOS(false)} style={{ width: "100%", marginTop: 10, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.1)", color: "rgba(240,237,230,0.5)", fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Fermer</button>
+            </div>
           </div>}
         </div>}
 

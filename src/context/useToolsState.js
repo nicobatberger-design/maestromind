@@ -53,6 +53,31 @@ export function useToolsState({ apiKey, profilIA }) {
   const [rentaType, setRentaType] = useState("Peinture");
   const [rentaStatut, setRentaStatut] = useState("Micro-entreprise");
 
+  // ── Béton ────────────────────────────────────────────────────
+  const [betonLongueur, setBetonLongueur] = useState("");
+  const [betonLargeur, setBetonLargeur] = useState("");
+  const [betonEpaisseur, setBetonEpaisseur] = useState("");
+  const [betonType, setBetonType] = useState("C25");
+  const [betonResult, setBetonResult] = useState(null);
+
+  // ── Escalier ────────────────────────────────────────────────
+  const [escalierHauteur, setEscalierHauteur] = useState("");
+  const [escalierLongueur, setEscalierLongueur] = useState("");
+  const [escalierResult, setEscalierResult] = useState(null);
+
+  // ── Tuyauterie ──────────────────────────────────────────────
+  const [tuyauDebit, setTuyauDebit] = useState("");
+  const [tuyauLongueur, setTuyauLongueur] = useState("");
+  const [tuyauMateriau, setTuyauMateriau] = useState("cuivre");
+  const [tuyauResult, setTuyauResult] = useState(null);
+
+  // ── Sécurité ────────────────────────────────────────────────
+  const [securiteType, setSecuriteType] = useState("Gros œuvre");
+  const [securiteChecks, setSecuriteChecks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("mm_securite_checks") || "{}"); } catch { return {}; }
+  });
+  const [showSOS, setShowSOS] = useState(false);
+
   // ── Analyser Devis ────────────────────────────────────────────
   const analyserDevis = useCallback(async () => {
     if (!devisText.trim()) return;
@@ -215,6 +240,114 @@ export function useToolsState({ apiKey, profilIA }) {
     });
   }, [rentaSurface, rentaTaux, rentaMat, rentaDep, rentaType, rentaStatut]);
 
+  // ── Calculateur Béton ───────────────────────────────────────
+  const calculerBeton = useCallback(() => {
+    const l = parseFloat(betonLongueur) || 0;
+    const w = parseFloat(betonLargeur) || 0;
+    const e = parseFloat(betonEpaisseur) || 0;
+    const volume = l > 0 && w > 0 && e > 0 ? l * w * e : 0;
+    if (volume <= 0) return;
+    const RECETTES = {
+      "C20": { ciment: 250, sable: 800, gravier: 1200, eau: 125 },
+      "C25": { ciment: 300, sable: 780, gravier: 1150, eau: 150 },
+      "C30": { ciment: 350, sable: 750, gravier: 1100, eau: 175 },
+    };
+    const r = RECETTES[betonType] || RECETTES["C25"];
+    const pertes = 1.10;
+    const cimentKg = Math.ceil(r.ciment * volume * pertes);
+    const sableKg = Math.ceil(r.sable * volume * pertes);
+    const gravierKg = Math.ceil(r.gravier * volume * pertes);
+    const eauL = Math.ceil(r.eau * volume * pertes);
+    const sacsCiment = Math.ceil(cimentKg / 35);
+    const sacsSable = Math.ceil(sableKg / 35);
+    const sacsGravier = Math.ceil(gravierKg / 25);
+    const prixCiment = sacsCiment * 7;
+    const prixSable = sacsSable * 3;
+    const prixGravier = sacsGravier * 4;
+    const prixTotal = prixCiment + prixSable + prixGravier;
+    setBetonResult({
+      volume: Math.round(volume * 1000) / 1000,
+      cimentKg, sableKg, gravierKg, eauL,
+      sacsCiment, sacsSable, sacsGravier,
+      prixCiment, prixSable, prixGravier, prixTotal,
+      type: betonType,
+    });
+  }, [betonLongueur, betonLargeur, betonEpaisseur, betonType]);
+
+  // ── Calculateur Escalier ──────────────────────────────────────
+  const calculerEscalier = useCallback(() => {
+    const h = parseFloat(escalierHauteur) || 0;
+    const l = parseFloat(escalierLongueur) || 0;
+    if (h <= 0 || l <= 0) return;
+    const nbMarches = Math.round(h / 17.5);
+    const hauteurMarche = Math.round((h / nbMarches) * 10) / 10;
+    const giron = Math.round((l / (nbMarches - 1)) * 10) / 10;
+    const blondel = Math.round((2 * hauteurMarche + giron) * 10) / 10;
+    const blondelOk = blondel >= 60 && blondel <= 64;
+    const angleRad = Math.atan(h / l);
+    const angleDeg = Math.round(angleRad * 180 / Math.PI);
+    const rechappement = Math.round((l / (nbMarches - 1)) * Math.cos(angleRad) * 100) / 100;
+    setEscalierResult({
+      nbMarches,
+      hauteurMarche,
+      giron,
+      blondel,
+      blondelOk,
+      angleDeg,
+      rechappementOk: true,
+      emmarchementMin: 80,
+      emmarchementConfort: 90,
+      conseil: blondelOk
+        ? "Escalier conforme a la loi de Blondel (" + blondel + " cm). Confortable."
+        : "Blondel hors norme (" + blondel + " cm). Ajustez la hauteur ou la longueur disponible.",
+    });
+  }, [escalierHauteur, escalierLongueur]);
+
+  // ── Calculateur Tuyauterie ────────────────────────────────────
+  const calculerTuyauterie = useCallback(() => {
+    const debit = parseFloat(tuyauDebit) || 0;
+    const longueur = parseFloat(tuyauLongueur) || 0;
+    if (debit <= 0 || longueur <= 0) return;
+    const Q = debit / 60000; // m³/s
+    const vMax = 2; // m/s
+    const dMin = Math.sqrt(4 * Q / (Math.PI * vMax)) * 1000; // mm
+    const DIAMETRES = {
+      cuivre: [{ int: 10, ext: 12 }, { int: 12, ext: 14 }, { int: 14, ext: 16 }, { int: 16, ext: 18 }, { int: 18, ext: 20 }, { int: 20, ext: 22 }],
+      PER: [{ int: 12, ext: 16 }, { int: 16, ext: 20 }, { int: 20, ext: 25 }, { int: 25, ext: 32 }],
+      multicouche: [{ int: 12, ext: 16 }, { int: 16, ext: 20 }, { int: 20, ext: 26 }, { int: 26, ext: 32 }],
+    };
+    const diams = DIAMETRES[tuyauMateriau] || DIAMETRES.cuivre;
+    const recommande = diams.find(d => d.int >= dMin) || diams[diams.length - 1];
+    const vitesseReelle = Q / (Math.PI * Math.pow(recommande.int / 2000, 2));
+    const Re = vitesseReelle * (recommande.int / 1000) / 1e-6;
+    const lambda = Re > 0 ? 0.316 / Math.pow(Re, 0.25) : 0.03;
+    const perteCharge = lambda * (longueur / (recommande.int / 1000)) * (Math.pow(vitesseReelle, 2) / (2 * 9.81));
+    setTuyauResult({
+      diametreMinCalcule: Math.round(dMin * 10) / 10,
+      recommande: recommande.int + "/" + recommande.ext,
+      vitesseReelle: Math.round(vitesseReelle * 100) / 100,
+      perteCharge: Math.round(perteCharge * 100) / 100,
+      vitesseOk: vitesseReelle <= vMax,
+      materiau: tuyauMateriau,
+      diametresDispos: diams.map(d => d.int + "/" + d.ext),
+      conseil: vitesseReelle <= vMax
+        ? "Diametre " + recommande.int + "/" + recommande.ext + " mm adapte. Vitesse " + (Math.round(vitesseReelle * 100) / 100) + " m/s conforme (<2 m/s)."
+        : "Attention : vitesse " + (Math.round(vitesseReelle * 100) / 100) + " m/s elevee. Prendre le diametre superieur.",
+    });
+  }, [tuyauDebit, tuyauLongueur, tuyauMateriau]);
+
+  // ── Sécurité : toggle check ───────────────────────────────────
+  const toggleSecuriteCheck = useCallback((type, index) => {
+    setSecuriteChecks(prev => {
+      const arr = prev[type] ? [...prev[type]] : [];
+      while (arr.length <= index) arr.push(false);
+      arr[index] = !arr[index];
+      const next = { ...prev, [type]: arr };
+      try { localStorage.setItem("mm_securite_checks", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
+
   return {
     toolTab, setToolTab,
     devisText, setDevisText, devisResult, devisLoading,
@@ -227,5 +360,13 @@ export function useToolsState({ apiKey, profilIA }) {
     rentaSurface, setRentaSurface, rentaTaux, setRentaTaux, rentaMat, setRentaMat, rentaDep, setRentaDep, rentaResult, rentaType, setRentaType, rentaStatut, setRentaStatut,
     analyserDevis, genererContreDevis, calculerMateriaux, calculerPrimes, verifierArtisan,
     planifierChantier, genererDevisPro, calculerRentabilite,
+    // Béton
+    betonLongueur, setBetonLongueur, betonLargeur, setBetonLargeur, betonEpaisseur, setBetonEpaisseur, betonType, setBetonType, betonResult, calculerBeton,
+    // Escalier
+    escalierHauteur, setEscalierHauteur, escalierLongueur, setEscalierLongueur, escalierResult, calculerEscalier,
+    // Tuyauterie
+    tuyauDebit, setTuyauDebit, tuyauLongueur, setTuyauLongueur, tuyauMateriau, setTuyauMateriau, tuyauResult, calculerTuyauterie,
+    // Sécurité
+    securiteType, setSecuriteType, securiteChecks, toggleSecuriteCheck, showSOS, setShowSOS,
   };
 }

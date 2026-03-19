@@ -32,7 +32,7 @@ function LazyFallback() {
 }
 
 function AppContent() {
-  const { onboardingDone, pdgUnlocked, theme } = useApp();
+  const { onboardingDone, pdgUnlocked, theme, modeChantier } = useApp();
   const { toast, dismissToast } = useRappelsToast();
 
   if (!onboardingDone) return <OnboardingScreen />;
@@ -41,7 +41,7 @@ function AppContent() {
   return (
     <>
       <RappelToast toast={toast} onDismiss={dismissToast} />
-      <div style={s.app} data-theme={theme}>
+      <div className={modeChantier ? "mode-chantier" : ""} style={s.app} data-theme={theme}>
         <div style={{ position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)", width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle,rgba(201,168,76,0.09) 0%,transparent 70%)", pointerEvents: "none", animation: "orbFloat 7s ease-in-out infinite", zIndex: 0 }} />
         <div style={{ position: "absolute", bottom: 60, right: -80, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle,rgba(82,144,224,0.05) 0%,transparent 70%)", pointerEvents: "none", animation: "orbFloat 9s ease-in-out infinite 1.5s", zIndex: 0 }} />
 

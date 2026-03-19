@@ -3,7 +3,7 @@ import { PROFILS } from "../data/constants";
 import s from "../styles/index";
 
 export default function Header() {
-  const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, theme, setTheme } = useApp();
+  const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, theme, setTheme, modeChantier, setModeChantier } = useApp();
 
   return (
     <>
@@ -38,6 +38,9 @@ export default function Header() {
             ))}
           </div>
           <div style={s.badge}>LIVE</div>
+          <button onClick={() => { const next = !modeChantier; setModeChantier(next); localStorage.setItem("mm_mode_chantier", next ? "1" : "0"); }} title={modeChantier ? "Mode normal" : "Mode chantier (gros boutons)"} style={{ width: 28, height: 28, borderRadius: 8, background: modeChantier ? "rgba(232,135,58,0.25)" : "rgba(201,168,76,0.08)", border: modeChantier ? "0.5px solid rgba(232,135,58,0.6)" : "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>
+            {"\u{1F6D1}"}
+          </button>
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title={theme === "dark" ? "Mode clair" : "Mode sombre"} style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>
             {theme === "dark" ? "\u2600\uFE0F" : "\uD83C\uDF19"}
           </button>

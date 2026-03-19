@@ -33,6 +33,9 @@ export function useUserState() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
 
+  // ── Mode Chantier ───────────────────────────────────────────
+  const [modeChantier, setModeChantier] = useState(() => localStorage.getItem("mm_mode_chantier") === "1");
+
   // ── Helpers ───────────────────────────────────────────────────
   const profilIA = useCallback(() => ({
     "Particulier":  "PROFIL UTILISATEUR : Particulier / non-professionnel. Langage simple et accessible, pas de jargon sans explication. Indiquer quand il faut imp\u00e9rativement faire appel \u00e0 un professionnel.",
@@ -75,5 +78,6 @@ export function useUserState() {
     pdgUnlocked, pinInput, pinError,
     profilIA, profilPDFLabel,
     handlePin, handlePinDel,
+    modeChantier, setModeChantier,
   };
 }

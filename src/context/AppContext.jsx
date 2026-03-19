@@ -68,6 +68,11 @@ export function AppProvider({ children }) {
   const [projetChatLoading, setProjetChatLoading] = useState(false);
   const [crLoading, setCrLoading] = useState(false);
 
+  // ── CR Journalier ───────────────────────────────────────────
+  const [crJournalierResult, setCrJournalierResult] = useState(null);
+  const [crJournalierLoading, setCrJournalierLoading] = useState(false);
+  const [showCRJournalier, setShowCRJournalier] = useState(false);
+
   // ══════════════════════════════════════════════════════════════
   // ── Sub-hooks ─────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════
@@ -171,6 +176,30 @@ export function AppProvider({ children }) {
     finally { setCrLoading(false); }
   }, [apiKey, profilIA]);
 
+  // ── CR Journalier ───────────────────────────────────────────
+  const genererCRJournalier = useCallback(async () => {
+    setCrJournalierLoading(true);
+    setCrJournalierResult(null);
+    setShowCRJournalier(true);
+    try {
+      const today = new Date().toLocaleDateString("fr-FR");
+      const analysisCount = parseInt(localStorage.getItem("mm_analysis_count") || "0");
+      const body = {
+        model: "claude-sonnet-4-20250514", max_tokens: 1000,
+        system: IAS.crJournalier.sys + "\n" + profilIA(),
+        messages: [{ role: "user", content: "Date : " + today + "\nProfil : " + userType + "\nNombre d'analyses realisees : " + analysisCount + "\nGenere le compte-rendu de fin de journee." }],
+      };
+      const rep = await streamChat({ apiKey, body, onToken: (partial) => {
+        setCrJournalierResult(partial);
+      }});
+      setCrJournalierResult(rep);
+    } catch (e) {
+      setCrJournalierResult("Erreur : " + e.message);
+    } finally {
+      setCrJournalierLoading(false);
+    }
+  }, [apiKey, profilIA, userType]);
+
   // ── PDFs ──────────────────────────────────────────────────────
   const exportChatPDF = useCallback(() => {
     _exportChatPDF({ msgs, curIA, IAS, profilPDFLabel: profilPDFLabel() });
@@ -208,6 +237,8 @@ export function AppProvider({ children }) {
     ajouterProjet, supprimerProjet, ouvrirProjetChat, sendProjetChat, genererCRChantier,
     // PDFs
     exportChatPDF, genererPDF, genererDevisProPDF, genererCRPDF: genererCRPDFLocal,
+    // CR Journalier
+    crJournalierResult, crJournalierLoading, showCRJournalier, setShowCRJournalier, genererCRJournalier,
     // Misc
     rangColor,
     // ── Spread sub-hooks ──────────────────────────────────────

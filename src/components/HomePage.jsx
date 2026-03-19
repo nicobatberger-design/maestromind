@@ -35,7 +35,7 @@ function getLastProject() {
 }
 
 export default function HomePage() {
-  const { page, goPage, switchDiv, userType, startUrgence, setToolTab, projets } = useApp();
+  const { page, goPage, switchDiv, userType, startUrgence, setToolTab, projets, crJournalierResult, crJournalierLoading, showCRJournalier, setShowCRJournalier, genererCRJournalier } = useApp();
   const [analysisCount, setAnalysisCount] = useState(getAnalysisCount);
   const [lastProject, setLastProject] = useState(getLastProject);
 
@@ -84,6 +84,16 @@ export default function HomePage() {
           <span>Quel est votre projet ?</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
         </button>
+        <button onClick={genererCRJournalier} disabled={crJournalierLoading} style={{ width: "100%", background: "rgba(232,135,58,0.12)", border: "0.5px solid rgba(232,135,58,0.5)", borderRadius: 14, padding: "13px 18px", fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: "#E8873A", cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: crJournalierLoading ? 0.6 : 1 }}>
+          {crJournalierLoading ? "Génération en cours..." : "\u{1F4CB} Fin de journée — CR IA"}
+        </button>
+        {showCRJournalier && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowCRJournalier(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,19,28,0.95)", border: "0.5px solid rgba(232,135,58,0.3)", borderRadius: 20, padding: "24px 20px", maxWidth: 400, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 16, fontWeight: 800, color: "#E8873A", marginBottom: 14 }}>{"\u{1F4CB}"} Compte-rendu de journée</div>
+            <div style={{ fontSize: 12, color: "rgba(240,237,230,0.7)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{crJournalierResult || "Chargement..."}</div>
+            <button onClick={() => setShowCRJournalier(false)} style={{ width: "100%", marginTop: 16, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.1)", color: "rgba(240,237,230,0.5)", fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Fermer</button>
+          </div>
+        </div>}
         <div style={{ marginBottom: 18 }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#E05252", marginBottom: 8 }}>{"\u{1F6A8}"} Urgence</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 7 }}>
@@ -106,14 +116,27 @@ export default function HomePage() {
       </div>
       <div style={s.secLbl}>Outils rapides</div>
       <div style={s.featGrid}>
-        {[
-          { label: "Vérifier un devis", sub: "Prix justes ?", color: "#E8873A", icon: "\u{1F4CB}", action: () => { goPage("outils"); setToolTab("devis"); } },
-          { label: "Calculer matériaux", sub: "Quantités exactes", color: "#52C37A", icon: "\u{1F4D0}", action: () => { goPage("outils"); setToolTab("mat"); } },
-          { label: "Aides 2026", sub: "MaPrimeRénov' CEE", color: "#52C37A", icon: "\u{1F4B0}", action: () => { goPage("outils"); setToolTab("primes"); } },
-          { label: "Vérifier artisan", sub: "RGE & légitimité", color: "#5290E0", icon: "\u{1F6E1}\uFE0F", action: () => { goPage("outils"); setToolTab("rge"); } },
-          { label: "Boutique", sub: "Matériaux partenaires", color: "#C9A84C", icon: "\u{1F6D2}", action: () => { goPage("shop"); } },
-          { label: "Certificat DTU", sub: "Validation conformité", color: "#C9A84C", icon: "\u{1F3C5}", action: () => { goPage("cert"); } },
-        ].map((t, i) => (
+        {(() => {
+          const allTools = {
+            devisPro: { label: "Devis Pro", sub: "Devis professionnel", color: "#E8873A", icon: "\u{1F4C4}", action: () => { goPage("outils"); setToolTab("devis_pro"); } },
+            rentabilite: { label: "Rentabilité", sub: "Calcul marge artisan", color: "#52C37A", icon: "\u{1F4CA}", action: () => { goPage("outils"); setToolTab("rentabilite"); } },
+            devis: { label: "Vérifier un devis", sub: "Prix justes ?", color: "#E8873A", icon: "\u{1F4CB}", action: () => { goPage("outils"); setToolTab("devis"); } },
+            mat: { label: "Calculer matériaux", sub: "Quantités exactes", color: "#52C37A", icon: "\u{1F4D0}", action: () => { goPage("outils"); setToolTab("mat"); } },
+            primes: { label: "Aides 2026", sub: "MaPrimeRénov' CEE", color: "#52C37A", icon: "\u{1F4B0}", action: () => { goPage("outils"); setToolTab("primes"); } },
+            rge: { label: "Vérifier artisan", sub: "RGE & légitimité", color: "#5290E0", icon: "\u{1F6E1}\uFE0F", action: () => { goPage("outils"); setToolTab("rge"); } },
+            shop: { label: "Boutique", sub: "Matériaux partenaires", color: "#C9A84C", icon: "\u{1F6D2}", action: () => { goPage("shop"); } },
+            cert: { label: "Certificat DTU", sub: "Validation conformité", color: "#C9A84C", icon: "\u{1F3C5}", action: () => { goPage("cert"); } },
+            planning: { label: "Planning", sub: "Planifier chantier", color: "#8B5CF6", icon: "\u{1F4C5}", action: () => { goPage("outils"); setToolTab("planning"); } },
+          };
+          const PROFIL_ORDER = {
+            "Artisan Pro": ["devisPro", "rentabilite", "mat", "planning", "devis", "cert"],
+            "Architecte": ["cert", "rge", "planning", "primes", "mat", "shop"],
+            "Investisseur": ["primes", "rge", "devis", "shop", "mat", "cert"],
+            "Particulier": ["devis", "mat", "primes", "rge", "shop", "cert"],
+          };
+          const order = PROFIL_ORDER[userType] || PROFIL_ORDER["Particulier"];
+          return order.map(k => allTools[k]).filter(Boolean);
+        })().map((t, i) => (
           <div key={i} className="bl-fc" style={s.fc} onClick={t.action}>
             <div style={{ ...s.fi, background: t.color + "18", border: "0.5px solid " + t.color + "44" }}>
               <span style={{ fontSize: 18 }}>{t.icon}</span>
