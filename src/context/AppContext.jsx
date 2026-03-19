@@ -423,7 +423,7 @@ export function AppProvider({ children }) {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000,
-          system: `${profilIA()}\nTu es un expert en tarifs de travaux en France 2025. Analyse ce devis et réponds UNIQUEMENT en JSON valide : {"verdict":"CORRECT","resume":"1 phrase synthèse","points":["point 1","point 2","point 3"],"conseil":"conseil pratique"}. Verdict possible : CORRECT, ÉLEVÉ, SUSPECT.`,
+          system: `${profilIA()}\nTu es un expert en tarifs de travaux en France 2026, certifié métreur-vérificateur. PRIX DE RÉFÉRENCE MO 2026 TTC : Maçon 42-68€/h · Plombier 68-100€/h · Électricien 62-90€/h · Plaquiste/peintre 38-58€/h · Couvreur 48-75€/h · Menuisier 48-68€/h. MAJORATION RÉGIONALE : IDF +20% · PACA/Rhône-Alpes +10% · Province base. Vérifie : cohérence quantitatifs vs surface, prix unitaires vs marché, TVA applicable (5.5% réno énergétique, 10% réno standard, 20% neuf), mentions légales obligatoires (assurance décennale, date validité, délai exécution). Analyse ce devis et réponds UNIQUEMENT en JSON valide : {"verdict":"CORRECT","resume":"1 phrase synthèse","points":["point 1","point 2","point 3"],"anomalies":["anomalie détectée ou vide"],"conseil":"conseil pratique","tva_correcte":"oui/non + explication"}. Verdict possible : CORRECT, ÉLEVÉ, SUSPECT, INCOMPLET.`,
           messages: [{ role: "user", content: "Analyse ce devis :\n\n" + devisText }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setDevisResult(parseAIJson(data?.content?.[0]?.text));
@@ -438,7 +438,7 @@ export function AppProvider({ children }) {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1400,
-          system: `Tu es un expert en négociation de travaux en France. ${profilIA()} Génère un contre-devis argumenté. Réponds UNIQUEMENT en JSON valide : {"lignes":[{"poste":"nom","prix_demande":"X€","prix_negocie":"X€","argument":"court argument"}],"economie_totale":"X€","message_negociation":"message poli à envoyer à l artisan en 2-3 phrases","conseil":"conseil final"}`,
+          system: `Tu es un expert en négociation de travaux en France 2026, métreur-vérificateur certifié. ${profilIA()} PRIX RÉFÉRENCE MO 2026 TTC : Maçon 42-68€/h · Plombier 68-100€/h · Électricien 62-90€/h · Plaquiste/peintre 38-58€/h · Couvreur 48-75€/h. MAJORATION IDF +20%, Sud-Est +10%. Matériaux : BA13 7-9€/plaque · Carrelage grès 10-35€/m² · Peinture acrylique 4-8€/m² · Mortier-colle C2 14-20€/sac 25kg. Génère un contre-devis argumenté en citant les prix de référence marché. Réponds UNIQUEMENT en JSON valide : {"lignes":[{"poste":"nom","prix_demande":"X€","prix_marche":"X€ (référence marché 2026)","prix_negocie":"X€","argument":"court argument avec référence prix"}],"economie_totale":"X€","pourcentage_economie":"X%","message_negociation":"message poli à envoyer à l artisan en 2-3 phrases","conseil":"conseil final"}`,
           messages: [{ role: "user", content: "Devis original :\n" + devisText + "\n\nAnalyse :\n" + JSON.stringify(devisResult) + "\n\nGénère le contre-devis." }] })}));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setCounterDevis(parseAIJson(data?.content?.[0]?.text));
@@ -461,7 +461,7 @@ export function AppProvider({ children }) {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1200,
           system: `${profilIA()}\nTu es un expert en quantitatifs matériaux bâtiment France. Tu connais parfaitement les dimensions standard des matériaux (plaques BA13 : 1200x2500, 1200x2600, 1200x2700, 1200x3000 ; rails R48/R70 en 3m ; montants M48/M70 en 2.50/2.60/2.70/3m ; etc.). IMPORTANT : adapte tes recommandations à la HAUTEUR et à la PENTE indiquées. Réponds UNIQUEMENT en JSON valide : {"materiaux":[{"nom":"Produit précis avec dimensions","quantite":"X unités (détail calcul)","prixEstime":"X€","conseil":"marque/ref recommandée"}],"total":"X€","conseil":"conseil pratique incluant mise en oeuvre"}`,
-          messages: [{ role: "user", content: `Calcule les matériaux pour ${calcType}. ${dims} Inclus pertes standards (10-15%). Prix marché France 2025. Produits disponibles Leroy Merlin/Castorama. Détaille chaque produit avec ses dimensions exactes.` }] }) }));
+          messages: [{ role: "user", content: `Calcule les matériaux pour ${calcType}. ${dims} Inclus pertes standards (10-15%). Prix marché France 2026 actualisés. Produits disponibles Leroy Merlin/Castorama/Brico Dépôt. Détaille chaque produit avec ses dimensions exactes et la marque recommandée.` }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setCalcResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setCalcResult({ materiaux: [], total: "0€", conseil: e.message }); }
@@ -474,8 +474,8 @@ export function AppProvider({ children }) {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000,
-          system: `${profilIA()}\nTu es un expert en aides rénovation France 2025 (MaPrimeRénov', CEE, éco-PTZ, TVA 5.5%, Anah). Réponds UNIQUEMENT en JSON valide : {"aides":[{"nom":"Aide","montant":"X€","condition":"condition courte","demarche":"comment faire en 1 phrase"}],"total":"X€","conseil":"conseil pratique","attention":"point important"}`,
-          messages: [{ role: "user", content: `Foyer ${primesRev}, travaux : ${primesTrav}, surface : ${primesSurf}m². Quelles aides suis-je éligible en 2025 ?` }] }) }));
+          system: `${profilIA()}\nTu es un expert certifié en aides rénovation France 2026 (MaPrimeRénov', CEE, éco-PTZ, TVA 5.5%, Anah). NOUVEAUTÉS 2026 : RDV France Rénov' OBLIGATOIRE avant dépôt MaPrimeRénov'. Parcours accompagné recentré sur E/F/G uniquement (C/D exclus). ITE en monogeste supprimée. Chaudières biomasse/granulés supprimées en monogeste. Plafond annuel 20 000€/logement. PLAFONDS REVENUS 2026 (1 pers IDF/Province) : Très modeste ≤23 541€/≤17 009€ · Modeste ≤28 657€/≤21 805€ · Intermédiaire ≤40 018€/≤30 549€. Artisan RGE OBLIGATOIRE. Éco-PTZ : 1 geste=15k€, 2-3 gestes=30k€, 4+=50k€ à 0%, max 20 ans. TVA 5.5% réno énergétique, 10% réno standard, logement >2 ans. Cumul optimal : MPR+CEE+éco-PTZ+TVA 5.5% = jusqu'à 90% très modestes. Réponds UNIQUEMENT en JSON valide : {"aides":[{"nom":"Aide","montant":"X€","condition":"condition courte","demarche":"comment faire en 1 phrase"}],"total":"X€","reste_a_charge":"X€","conseil":"conseil pratique","attention":"point important","rdv_france_renov":"obligatoire avant dépôt — 0 808 800 700"}`,
+          messages: [{ role: "user", content: `Foyer ${primesRev}, travaux : ${primesTrav}, surface : ${primesSurf}m². Quelles aides suis-je éligible en 2026 ? Calcule les montants exacts selon les barèmes 2026.` }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setPrimesResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setPrimesResult({ aides: [], total: "0€", conseil: e.message, attention: "" }); }
@@ -489,7 +489,7 @@ export function AppProvider({ children }) {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 900,
-          system: `${profilIA()}\nTu es un expert en vérification d'artisans RGE France. Génère une checklist complète. Réponds UNIQUEMENT en JSON valide : {"checks":[{"label":"Vérification","comment":"comment vérifier","url":"site officiel ou vide"}],"alertes":["alerte 1"],"conseils":"conseil global"}`,
+          system: `${profilIA()}\nTu es un expert en vérification d'artisans RGE France 2026. SITES OFFICIELS DE VÉRIFICATION : 1-Kbis/SIRET → infogreffe.fr ou societe.com 2-Assurance décennale → agira.fr (vérification par n° SIRET) 3-Certification RGE → france-renov.gouv.fr/annuaire-rge ou rge-artisan.fr 4-Qualibat → qualibat.com/certification 5-Qualifelec → qualifelec.com 6-QualiPAC → qualit-enr.org 7-Qualigaz → qualigaz.com (installations gaz). CHECKLIST 8 POINTS : Kbis récent, décennale valide, RGE en cours, RC pro, devis conforme, références vérifiables, pas d'acompte >30%, adresse fixe. SIGNAUX D'ALARME : paiement cash only, pas de devis avant travaux, pression urgence, prix anormalement bas, sous-traitance non déclarée, acompte >50%. Génère une checklist complète. Réponds UNIQUEMENT en JSON valide : {"checks":[{"label":"Vérification","comment":"comment vérifier","url":"site officiel","obligatoire":true}],"alertes":["alerte 1"],"signaux_alarme":["signal 1"],"conseils":"conseil global"}`,
           messages: [{ role: "user", content: `Je veux vérifier l'artisan "${artisanNom}" spécialisé en ${artisanSpec}. Checklist de vérification RGE, assurance décennale, existence légale.` }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setArtisanResult(parseAIJson(data?.content?.[0]?.text));
@@ -503,7 +503,7 @@ export function AppProvider({ children }) {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1400,
-          system: `Tu es expert en planification de chantier. ${profilIA()} Réponds UNIQUEMENT en JSON valide : {"duree_totale":"X semaines","semaines":[{"numero":1,"titre":"Titre court","taches":["tâche 1","tâche 2"],"materiaux_a_commander":["matériau 1"],"attention":"point critique"}],"ordre_metiers":["1. Corps de métier"],"conseils":"conseil global","budget_detail":"répartition budget"}`,
+          system: `Tu es expert certifié en planification de chantier bâtiment France 2026. ${profilIA()} DURÉES RÉALISTES (1 artisan qualifié) : dépose/démolition = 1j/pièce · gros œuvre/ragréage = 2-3j (+ séchage béton 28j) · plomberie brute = 1-2j · électricité brute = 1-2j · isolation murs = 1j/50m² · cloisons placo = 1j/25m² · carrelage = 1j/8-12m² · peinture 2 couches = 1j/40m² · menuiseries = 0.5j/unité · sanitaires = 0.5j/appareil. ORDRE IMPÉRATIF DES LOTS (NE JAMAIS INVERSER) : 1-Dépose/démolition 2-Gros œuvre 3-Plomberie brute 4-Électricité brute 5-Isolation 6-Cloisons/doublages 7-Enduits/ragréages (séchage 7-28j) 8-Carrelage/parquet 9-Peintures 10-Menuiseries 11-Sanitaires/appareillage 12-Nettoyage/réception. ERREURS FATALES : carrelage sur béton frais (<28j) · peinture sur enduit humide (<48h) · parquet avant carrelage SDB · branchement sous tension. Réponds UNIQUEMENT en JSON valide : {"duree_totale":"X semaines","semaines":[{"numero":1,"titre":"Titre court","taches":["tâche 1","tâche 2"],"materiaux_a_commander":["matériau 1"],"attention":"point critique","nb_artisans":"X"}],"ordre_metiers":["1. Corps de métier"],"chemin_critique":"étapes limitantes","conseils":"conseil global","budget_detail":"répartition budget par poste"}`,
           messages: [{ role: "user", content: "Projet : " + planningType + ", budget " + planningBudget + "€. Planning complet semaine par semaine." }] })}));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setPlanningResult(parseAIJson(data?.content?.[0]?.text));
@@ -518,31 +518,179 @@ export function AppProvider({ children }) {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1600,
-          system: `Tu es expert en rédaction de devis travaux France 2025. ${profilIA()} Génère un devis professionnel. Réponds UNIQUEMENT en JSON valide : {"lignes":[{"description":"description précise","unite":"m² ou U ou ml ou forfait","quantite":"X","prix_unitaire":"X€","total":"X€","dtu":"DTU ou norme ou vide"}],"sous_total_ht":"X€","tva_taux":"10%","tva":"X€","total_ttc":"X€","validite":"30 jours","garanties":"décennale 10 ans + parfait achèvement 1 an","mentions":"TVA applicable selon art. 279-0 bis du CGI"}`,
-          messages: [{ role: "user", content: "Travaux : " + devisProDesc + "\nSurface : " + devisProSurface + "m²\nClient : " + (devisProClient || "À compléter") + "\nGénère le devis complet prix France 2025." }] })}));
+          system: `Tu es expert en rédaction de devis travaux France 2026, métreur certifié. ${profilIA()} PRIX MO 2026 TTC : Maçon 42-68€/h · Plombier 68-100€/h · Électricien 62-90€/h · Plaquiste/peintre 38-58€/h · Couvreur 48-75€/h · Menuisier 48-68€/h. PRIX MATÉRIAUX 2026 : BA13 7-9€/plaque · Rail R48 2.30€/ml · Carrelage grès 10-35€/m² · Peinture acrylique 4-8€/m² · Mortier-colle C2 14-20€/sac · LR 100mm 8-12€/m². TVA : 5.5% rénovation énergétique (art. 278-0 bis A CGI) · 10% rénovation standard (art. 279-0 bis CGI) · 20% construction neuve. Logement doit avoir >2 ans pour TVA réduite. Génère un devis professionnel conforme aux obligations légales. Réponds UNIQUEMENT en JSON valide : {"lignes":[{"description":"description précise","unite":"m² ou U ou ml ou forfait","quantite":"X","prix_unitaire":"X€","total":"X€","dtu":"DTU ou norme ou vide"}],"sous_total_ht":"X€","tva_taux":"10%","tva":"X€","total_ttc":"X€","validite":"30 jours","garanties":"décennale 10 ans + parfait achèvement 1 an","mentions":"TVA applicable selon art. 279-0 bis du CGI — logement >2 ans","conditions_paiement":"30% commande, 40% avancement, 30% réception"}`,
+          messages: [{ role: "user", content: "Travaux : " + devisProDesc + "\nSurface : " + devisProSurface + "m²\nClient : " + (devisProClient || "À compléter") + "\nGénère le devis complet prix France 2026 avec prix MO et matériaux actualisés." }] })}));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setDevisProResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setDevisProResult({ lignes: [], sous_total_ht: "0€", tva_taux: "10%", tva: "0€", total_ttc: "0€", validite: "30 jours", garanties: "", mentions: "" }); }
     finally { setDevisProLoading(false); }
   }, [apiKey, profilIA, devisProDesc, devisProSurface, devisProClient]);
 
+  // ── Rentabilité — statut juridique + type de travaux ──────
+  const [rentaType, setRentaType] = useState("Peinture");
+  const [rentaStatut, setRentaStatut] = useState("Micro-entreprise");
+
   const calculerRentabilite = useCallback(() => {
     const surf = parseFloat(rentaSurface) || 0, taux = parseFloat(rentaTaux) || 0;
     const mat = parseFloat(rentaMat) || 0, dep = parseFloat(rentaDep) || 0;
-    const heures = surf * 2.5, mo = heures * taux;
+
+    // Temps par type de travaux (h/m²) — moyennes réalistes 2026
+    const TEMPS_PAR_TYPE = {
+      "Peinture": 0.3,              // 2 couches, préparation incluse
+      "Carrelage": 0.8,             // pose + joints + séchage
+      "Placo / Cloison BA13": 0.5,  // ossature + plaques + joints
+      "Enduit / Ragréage": 0.4,     // préparation + application
+      "Isolation murs (ITI)": 0.45, // doublage isolant + finition
+      "Isolation combles": 0.25,    // soufflage ou déroulage
+      "Parquet / Sol stratifié": 0.35, // pose flottante ou collée
+      "Plomberie": 0,               // forfait — pas au m²
+      "Électricité": 0,             // forfait — pas au m²
+      "Maçonnerie": 0.6,            // murs, reprises, ouvertures
+      "Couverture / Toiture": 0.7,  // dépose + repose tuiles/ardoises
+      "Menuiserie": 0,              // forfait — par unité
+      "Façade / Ravalement": 0.5,   // échafaudage + enduit/peinture
+    };
+
+    // Forfaits pour métiers non surfaciques (h par intervention standard)
+    const FORFAITS = {
+      "Plomberie": 8,     // 1 journée type (remplacement sanitaires, etc.)
+      "Électricité": 8,   // 1 journée type (tableau + prises pièce)
+      "Menuiserie": 4,    // par unité (porte, fenêtre)
+    };
+
+    const tempsM2 = TEMPS_PAR_TYPE[rentaType] ?? 0.5;
+    const heures = tempsM2 > 0 ? surf * tempsM2 : (FORFAITS[rentaType] || 8);
+    const mo = heures * taux;
+
+    // Charges sociales selon statut juridique
+    const TAUX_CHARGES = {
+      "Micro-entreprise": 0.22,    // 22% URSSAF artisan BIC
+      "Auto-entrepreneur": 0.22,   // identique micro
+      "EIRL": 0.35,                // ~35% charges RSI
+      "SARL / SAS": 0.45,          // ~45% charges patronales + salariales gérant
+      "Entreprise individuelle": 0.40, // ~40% cotisations TNS
+    };
+    const tauxCharges = TAUX_CHARGES[rentaStatut] ?? 0.22;
+
+    // Frais généraux : 10% du CA (assurance, véhicule, outillage, comptable)
     const ca_total = mo + mat + dep;
-    const charges = mo * 0.45;
-    const benef = ca_total - mat - dep - charges;
+    const charges = mo * tauxCharges;
+    const fraisGeneraux = ca_total * 0.10;
+    const benef = ca_total - mat - dep - charges - fraisGeneraux;
     const marge = ca_total > 0 ? Math.round((benef / ca_total) * 100) : 0;
-    setRentaResult({ heures: Math.round(heures), mo: Math.round(mo), ca_total: Math.round(ca_total), charges: Math.round(charges), benef: Math.round(benef), marge, prix_m2: surf > 0 ? Math.round(ca_total / surf) : 0 });
-  }, [rentaSurface, rentaTaux, rentaMat, rentaDep]);
+
+    setRentaResult({
+      heures: Math.round(heures * 10) / 10,
+      mo: Math.round(mo),
+      ca_total: Math.round(ca_total),
+      charges: Math.round(charges),
+      frais_generaux: Math.round(fraisGeneraux),
+      benef: Math.round(benef),
+      marge,
+      prix_m2: surf > 0 ? Math.round(ca_total / surf) : 0,
+      type_travaux: rentaType,
+      statut: rentaStatut,
+      taux_charges_pct: Math.round(tauxCharges * 100),
+    });
+  }, [rentaSurface, rentaTaux, rentaMat, rentaDep, rentaType, rentaStatut]);
+
+  // ── Revenus du foyer pour MaPrimeRénov' ──────────────────
+  const [dpeRevenu, setDpeRevenu] = useState("Modeste");
+  const [dpeTravaux, setDpeTravaux] = useState("Isolation combles");
 
   const calcDPE = useCallback(() => {
     const s = parseFloat(dpeS) || 75;
-    const prime = Math.round(s * 45 + 2000);
-    const cee = Math.round(s * 18);
-    setDpeRes({ prime, cee, total: prime + cee, eco: Math.round(s * 4.2) });
-  }, [dpeS]);
+
+    // ── MaPrimeRénov' 2026 — barèmes réels par geste + revenus ──
+    // Source : barèmes officiels ANAH 2026
+    const BAREME_MPR = {
+      "Isolation combles": { "Très modeste": 25, "Modeste": 18, "Intermédiaire": 12, "Aisé": 7 },          // €/m²
+      "Isolation murs (ITI/ITE)": { "Très modeste": 25, "Modeste": 20, "Intermédiaire": 15, "Aisé": 7 },   // €/m² — attention ITE seule supprimée en monogeste 2026
+      "Isolation plancher bas": { "Très modeste": 20, "Modeste": 15, "Intermédiaire": 10, "Aisé": 5 },      // €/m²
+      "PAC air/eau": { "Très modeste": 5000, "Modeste": 4000, "Intermédiaire": 3000, "Aisé": 1500 },        // forfait
+      "PAC géothermique": { "Très modeste": 10000, "Modeste": 8000, "Intermédiaire": 6000, "Aisé": 3000 },   // forfait
+      "VMC double flux": { "Très modeste": 2500, "Modeste": 2000, "Intermédiaire": 1500, "Aisé": 1000 },     // forfait
+      "Fenêtres / Vitrages": { "Très modeste": 100, "Modeste": 80, "Intermédiaire": 40, "Aisé": 0 },        // par fenêtre — on multiplie par s/15 (estimation nb fenêtres)
+      "Chauffe-eau thermodynamique": { "Très modeste": 1200, "Modeste": 800, "Intermédiaire": 400, "Aisé": 0 }, // forfait
+      "Poêle à granulés": { "Très modeste": 2500, "Modeste": 2000, "Intermédiaire": 1500, "Aisé": 500 },     // forfait
+    };
+
+    // Calcul MaPrimeRénov'
+    const baremeGeste = BAREME_MPR[dpeTravaux] || BAREME_MPR["Isolation combles"];
+    const montantUnitaire = baremeGeste[dpeRevenu] || baremeGeste["Modeste"];
+    const gestesSurfaciques = ["Isolation combles", "Isolation murs (ITI/ITE)", "Isolation plancher bas"];
+    const gesteFenetres = dpeTravaux === "Fenêtres / Vitrages";
+    let prime;
+    if (gestesSurfaciques.includes(dpeTravaux)) {
+      prime = Math.round(montantUnitaire * s);
+    } else if (gesteFenetres) {
+      const nbFenetres = Math.max(1, Math.round(s / 15)); // estimation 1 fenêtre / 15m²
+      prime = Math.round(montantUnitaire * nbFenetres);
+    } else {
+      prime = montantUnitaire; // forfait
+    }
+    // Plafond annuel MaPrimeRénov' 2026 = 20 000€
+    prime = Math.min(prime, 20000);
+
+    // ── CEE 2026 — estimation par type ──
+    const CEE_BAREMES = {
+      "Isolation combles": 12,        // €/m² (BAR-EN-101)
+      "Isolation murs (ITI/ITE)": 10, // €/m² (BAR-EN-102)
+      "Isolation plancher bas": 10,   // €/m² (BAR-EN-103)
+      "PAC air/eau": 3000,            // forfait (BAR-TH-104)
+      "PAC géothermique": 4000,       // forfait
+      "VMC double flux": 500,         // forfait (BAR-TH-125)
+      "Fenêtres / Vitrages": 50,     // par fenêtre
+      "Chauffe-eau thermodynamique": 150, // forfait (BAR-TH-148)
+      "Poêle à granulés": 800,        // forfait (BAR-TH-112)
+    };
+    const ceeUnit = CEE_BAREMES[dpeTravaux] || 12;
+    let cee;
+    if (gestesSurfaciques.includes(dpeTravaux)) {
+      cee = Math.round(ceeUnit * s);
+    } else if (gesteFenetres) {
+      cee = Math.round(ceeUnit * Math.max(1, Math.round(s / 15)));
+    } else {
+      cee = ceeUnit;
+    }
+
+    // ── Économies annuelles estimées selon chauffage ──
+    // Dépend du type de chauffage et du poste de travaux
+    const ECO_PAR_TYPE = {
+      "Gaz naturel": 0.12,     // €/kWh
+      "Électricité": 0.22,     // €/kWh
+      "Fioul": 0.15,           // €/kWh
+      "Bois / Granulés": 0.07, // €/kWh
+      "PAC": 0.08,             // €/kWh (COP ~3)
+    };
+    const prixKwh = ECO_PAR_TYPE[dpeC] || 0.12;
+    // Gain moyen en kWh/m²/an selon le poste
+    const GAINS_KWH = {
+      "Isolation combles": 45,       // ~25-30% des déperditions
+      "Isolation murs (ITI/ITE)": 35, // ~20-25%
+      "Isolation plancher bas": 15,   // ~7-10%
+      "PAC air/eau": 80,             // remplacement chaudière gaz → PAC COP 4
+      "PAC géothermique": 100,
+      "VMC double flux": 20,
+      "Fenêtres / Vitrages": 25,
+      "Chauffe-eau thermodynamique": 30,
+      "Poêle à granulés": 40,
+    };
+    const gainKwh = GAINS_KWH[dpeTravaux] || 30;
+    const eco = Math.round(s * gainKwh * prixKwh);
+
+    setDpeRes({
+      prime,
+      cee,
+      total: prime + cee,
+      eco,
+      revenu: dpeRevenu,
+      travaux: dpeTravaux,
+      chauffage: dpeC,
+      alerte_ite: dpeTravaux === "Isolation murs (ITI/ITE)" ? "ITE en geste seul supprimée de MaPrimeRénov' 2026 — privilégiez le parcours accompagné ou l'ITI" : null,
+      alerte_rdv: "RDV France Rénov' OBLIGATOIRE avant tout dépôt MaPrimeRénov' 2026 — france-renov.gouv.fr ou 0 808 800 700",
+    });
+  }, [dpeS, dpeC, dpeRevenu, dpeTravaux]);
 
   // ── AR advisor ────────────────────────────────────────────────
   const suggestShelf = useCallback(async () => {
@@ -640,7 +788,7 @@ export function AppProvider({ children }) {
     apiKey, setApiKey, showKey, setShowKey, keyInput, setKeyInput, keyErr, setKeyErr,
     curDiv, setCurDiv, curIA, setCurIA, msgs, setMsgs, hist, setHist, input, setInput, loading, errMsg,
     store, setStore,
-    dpeS, setDpeS, dpeT, setDpeT, dpeC, setDpeC, dpeRes,
+    dpeS, setDpeS, dpeT, setDpeT, dpeC, setDpeC, dpeRes, dpeRevenu, setDpeRevenu, dpeTravaux, setDpeTravaux,
     scanLoading, scanResult, setScanResult, scanIA, setScanIA, scannerTab, setScannerTab,
     arModeType, setArModeType, arAnchor, setArAnchor, arTilt, arShelfType, setArShelfType, showArAdvisor, setShowArAdvisor, arAdvInput, setArAdvInput, arAdvResult, arAdvLoading,
     certProjet, setCertProjet, certNorme, setCertNorme, certSurface, setCertSurface, certProp, setCertProp, certArtisan, setCertArtisan,
@@ -650,7 +798,7 @@ export function AppProvider({ children }) {
     primesRev, setPrimesRev, primesTrav, setPrimesTrav, primesSurf, setPrimesSurf, primesResult, primesLoading,
     counterDevis, setCounterDevis, counterLoading, planningType, setPlanningType, planningBudget, setPlanningBudget, planningResult, planningLoading,
     devisProDesc, setDevisProDesc, devisProClient, setDevisProClient, devisProSurface, setDevisProSurface, devisProResult, devisProLoading,
-    rentaSurface, setRentaSurface, rentaTaux, setRentaTaux, rentaMat, setRentaMat, rentaDep, setRentaDep, rentaResult,
+    rentaSurface, setRentaSurface, rentaTaux, setRentaTaux, rentaMat, setRentaMat, rentaDep, setRentaDep, rentaResult, rentaType, setRentaType, rentaStatut, setRentaStatut,
     projets, setProjets, projetNom, setProjetNom, projetType, setProjetType, projetNotes, setProjetNotes,
     projetChat, setProjetChat, projetChatMsgs, projetChatInput, setProjetChatInput, projetChatLoading, crLoading,
     voiceActive,
