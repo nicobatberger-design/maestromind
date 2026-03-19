@@ -82,6 +82,10 @@ export function AppProvider({ children }) {
   const [certProp, setCertProp] = useState("");
   const [certArtisan, setCertArtisan] = useState("");
 
+  // ── Theme ────────────────────────────────────────────────────
+  const [theme, setTheme] = useState(() => localStorage.getItem("mm_theme") || "dark");
+  useEffect(() => { localStorage.setItem("mm_theme", theme); }, [theme]);
+
   // ── Auth / Onboarding ─────────────────────────────────────────
   const [rgpdOk, setRgpdOk] = useState(() => localStorage.getItem("rgpd_accepted") === "1");
   const [msgCount, setMsgCount] = useState(() => parseInt(localStorage.getItem("bl_msg_count") || "0"));
@@ -631,6 +635,7 @@ export function AppProvider({ children }) {
   const value = {
     IS_DEV,
     // State
+    theme, setTheme,
     page, setPage,
     apiKey, setApiKey, showKey, setShowKey, keyInput, setKeyInput, keyErr, setKeyErr,
     curDiv, setCurDiv, curIA, setCurIA, msgs, setMsgs, hist, setHist, input, setInput, loading, errMsg,
@@ -646,7 +651,7 @@ export function AppProvider({ children }) {
     counterDevis, setCounterDevis, counterLoading, planningType, setPlanningType, planningBudget, setPlanningBudget, planningResult, planningLoading,
     devisProDesc, setDevisProDesc, devisProClient, setDevisProClient, devisProSurface, setDevisProSurface, devisProResult, devisProLoading,
     rentaSurface, setRentaSurface, rentaTaux, setRentaTaux, rentaMat, setRentaMat, rentaDep, setRentaDep, rentaResult,
-    projets, projetNom, setProjetNom, projetType, setProjetType, projetNotes, setProjetNotes,
+    projets, setProjets, projetNom, setProjetNom, projetType, setProjetType, projetNotes, setProjetNotes,
     projetChat, setProjetChat, projetChatMsgs, projetChatInput, setProjetChatInput, projetChatLoading, crLoading,
     voiceActive,
     // Refs

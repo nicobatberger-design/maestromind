@@ -1,3 +1,21 @@
+:root {
+  --bg-primary: #06080D;
+  --bg-secondary: #0D1117;
+  --bg-card: rgba(15,19,28,0.6);
+  --text-primary: #F0EDE6;
+  --text-secondary: rgba(240,237,230,0.5);
+  --border: rgba(255,255,255,0.07);
+}
+
+[data-theme="light"] {
+  --bg-primary: #F5F3EF;
+  --bg-secondary: #FFFFFF;
+  --bg-card: rgba(0,0,0,0.04);
+  --text-primary: #1A1A1A;
+  --text-secondary: rgba(0,0,0,0.55);
+  --border: rgba(0,0,0,0.1);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

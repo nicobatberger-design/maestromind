@@ -170,6 +170,84 @@ export async function genererDevisProPDF({ devisProResult, devisProClient }) {
   doc.save("devis-pro-" + num + ".pdf");
 }
 
+export async function genererOutilPDF({ titre, sousTitre, sections, accentColor }) {
+  const jsPDF = await getJsPDF();
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = 210, H = 297;
+  const dateStr = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  const num = "OUTIL-" + new Date().getFullYear() + "-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+  const ac = accentColor || [201, 168, 76];
+  // Background
+  doc.setFillColor(6, 8, 13); doc.rect(0, 0, W, H, "F");
+  // Left bar + top bar
+  doc.setFillColor(...ac); doc.rect(0, 0, 5, H, "F"); doc.rect(0, 0, W, 1.5, "F");
+  // Header block
+  doc.setFillColor(10, 14, 22); doc.rect(5, 1.5, W - 5, 42, "F");
+  // MAESTROMIND logo
+  doc.setFillColor(...ac); doc.roundedRect(14, 8, 20, 20, 3, 3, "F");
+  doc.setTextColor(6, 8, 13); doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text("M", 24, 22, { align: "center" });
+  doc.setTextColor(240, 237, 230); doc.setFontSize(15); doc.setFont("helvetica", "bold"); doc.text("MAESTRO", 40, 17);
+  const mw = doc.getTextWidth("MAESTRO"); doc.setTextColor(...ac); doc.text("MIND", 40 + mw, 17);
+  // Titre
+  doc.setTextColor(...ac); doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text(titre, 40, 25);
+  // Sous-titre + date
+  doc.setTextColor(100, 96, 88); doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
+  doc.text((sousTitre || "Généré par MAESTROMIND") + "  \u00B7  " + dateStr, 40, 32);
+  // Separator
+  doc.setDrawColor(...ac); doc.setLineWidth(0.3); doc.line(5, 44, W, 44);
+
+  let y = 52;
+  const addPage = () => {
+    doc.addPage();
+    doc.setFillColor(6, 8, 13); doc.rect(0, 0, W, H, "F");
+    doc.setFillColor(...ac); doc.rect(0, 0, 5, H, "F");
+    y = 20;
+  };
+
+  (sections || []).forEach(section => {
+    // Check page overflow for section header
+    if (y > 265) addPage();
+    // Section label
+    doc.setFillColor(10, 13, 20); doc.roundedRect(14, y, W - 28, 9, 2, 2, "F");
+    doc.setTextColor(...ac); doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
+    doc.text(section.label.toUpperCase(), 22, y + 6);
+    y += 13;
+
+    if (section.text) {
+      // Free text section
+      doc.setTextColor(160, 155, 148); doc.setFontSize(9); doc.setFont("helvetica", "normal");
+      const lines = doc.splitTextToSize(section.text, W - 40);
+      if (y + lines.length * 4.5 > 275) addPage();
+      doc.text(lines, 22, y);
+      y += lines.length * 4.5 + 6;
+    }
+
+    if (section.items) {
+      section.items.forEach(item => {
+        if (y > 270) addPage();
+        // Item label
+        doc.setTextColor(240, 237, 230); doc.setFontSize(9); doc.setFont("helvetica", "bold");
+        const labelLines = doc.splitTextToSize(item.label, 70);
+        doc.text(labelLines, 22, y);
+        // Item value
+        const col = item.color || [240, 237, 230];
+        doc.setTextColor(...col); doc.setFont("helvetica", "bold");
+        const valLines = doc.splitTextToSize(String(item.value || ""), 80);
+        doc.text(valLines, W - 20, y, { align: "right" });
+        y += Math.max(labelLines.length, valLines.length) * 4.5 + 3;
+      });
+      y += 3;
+    }
+  });
+
+  // Footer
+  footer(doc, W, ac);
+  doc.setTextColor(...ac); doc.setFontSize(8.5); doc.setFont("helvetica", "bold"); doc.text("MAESTROMIND", 13, 286);
+  doc.setTextColor(80, 76, 70); doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.text("Plateforme IA Expertise B\u00E2timent", 13, 292);
+  doc.text("N\u00B0 " + num, W - 12, 286, { align: "right" }); doc.text("\u00C9mis le " + dateStr, W - 12, 292, { align: "right" });
+  doc.save("MAESTROMIND-" + titre.replace(/\s+/g, "-").toLowerCase() + "-" + num + ".pdf");
+}
+
 export async function genererCRPDF({ projet, cr, profilPDFLabel }) {
   const jsPDF = await getJsPDF();
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
