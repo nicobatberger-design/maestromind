@@ -170,10 +170,17 @@ html, body {
   animation: fadeSlideUp 0.28s cubic-bezier(0.4,0,0.2,1) both;
 }
 
+.bl-fc {
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s !important;
+}
 .bl-fc:hover {
   border-color: rgba(201,168,76,0.28) !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 24px rgba(201,168,76,0.1), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+.bl-fc:active {
+  transform: scale(0.96) !important;
+  transition: transform 0.1s !important;
 }
 
 .bl-chip:hover {
@@ -191,6 +198,21 @@ html, body {
 .bl-active:active {
   transform: scale(0.97);
   opacity: 0.8;
+}
+
+/* ── Boutons — feedback tap global ── */
+button:active:not(.bl-pin) {
+  transform: scale(0.95);
+  transition: transform 0.08s !important;
+}
+
+/* ── Glassmorphism amélioré pour les cartes ── */
+.glass-card {
+  background: rgba(15,19,28,0.55) !important;
+  backdrop-filter: blur(20px) saturate(1.3) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.3) !important;
+  border: 0.5px solid rgba(201,168,76,0.12) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06) !important;
 }
 
 /* ── Reduced motion ── */

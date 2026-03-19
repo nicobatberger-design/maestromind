@@ -6,7 +6,7 @@ import s from "../styles/index";
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Bonjour";
-  if (h < 18) return "Bon apr\u00E8s-midi";
+  if (h < 18) return "Bon après-midi";
   return "Bonsoir";
 }
 
@@ -47,13 +47,16 @@ export default function HomePage() {
     }
   }, [page]);
 
-  // Track analysis count from msgCount in localStorage
+  // Track analysis count from msgCount (obfusqué base64)
   useEffect(() => {
-    const count = parseInt(localStorage.getItem("bl_msg_count") || "0");
-    if (count > analysisCount) {
-      localStorage.setItem("mm_analysis_count", String(count));
-      setAnalysisCount(count);
-    }
+    try {
+      const raw = localStorage.getItem("bl_mc_v2");
+      const count = raw ? parseInt(atob(raw), 10) || 0 : 0;
+      if (count > analysisCount) {
+        localStorage.setItem("mm_analysis_count", String(count));
+        setAnalysisCount(count);
+      }
+    } catch {}
   }, []);
 
   return (
@@ -61,7 +64,7 @@ export default function HomePage() {
       <div style={s.hero}>
         <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 12, marginBottom: 4 }}>{PROFILS[userType]?.icon} {getGreeting()}, {userType}</div>
         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, lineHeight: 1.15, marginBottom: 5 }}>MAESTRO<span style={{ color: "#C9A84C" }}>MIND</span></div>
-        <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 11, marginBottom: 18 }}>32 IA sp\u00E9cialis\u00E9es \u2014 Normes DTU \u2014 11 divisions</div>
+        <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 11, marginBottom: 18 }}>33 IA spécialisées — Normes DTU — 11 divisions</div>
 
         {/* Last project quick access */}
         {lastProject && (
@@ -94,7 +97,7 @@ export default function HomePage() {
         </div>
       </div>
       <div style={s.stats3}>
-        {[["32", "IA actives"], ["11", "Divisions"], [String(analysisCount), "Analyses"]].map(([v, l]) => (
+        {[["33", "IA actives"], ["11", "Divisions"], [String(analysisCount), "Analyses"]].map(([v, l]) => (
           <div key={l} style={s.sc}>
             <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 17, fontWeight: 800, color: "#C9A84C" }}>{v}</div>
             <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)", marginTop: 2 }}>{l}</div>
@@ -104,12 +107,12 @@ export default function HomePage() {
       <div style={s.secLbl}>Outils rapides</div>
       <div style={s.featGrid}>
         {[
-          { label: "V\u00E9rifier un devis", sub: "Prix justes ?", color: "#E8873A", icon: "\u{1F4CB}", action: () => { goPage("outils"); setToolTab("devis"); } },
-          { label: "Calculer mat\u00E9riaux", sub: "Quantit\u00E9s exactes", color: "#52C37A", icon: "\u{1F4D0}", action: () => { goPage("outils"); setToolTab("mat"); } },
-          { label: "Aides 2025", sub: "MaPrimeR\u00E9nov' CEE", color: "#52C37A", icon: "\u{1F4B0}", action: () => { goPage("outils"); setToolTab("primes"); } },
-          { label: "V\u00E9rifier artisan", sub: "RGE & l\u00E9gitimit\u00E9", color: "#5290E0", icon: "\u{1F6E1}\uFE0F", action: () => { goPage("outils"); setToolTab("rge"); } },
-          { label: "Boutique", sub: "Mat\u00E9riaux partenaires", color: "#C9A84C", icon: "\u{1F6D2}", action: () => { goPage("shop"); } },
-          { label: "Certificat DTU", sub: "Validation conformit\u00E9", color: "#C9A84C", icon: "\u{1F3C5}", action: () => { goPage("cert"); } },
+          { label: "Vérifier un devis", sub: "Prix justes ?", color: "#E8873A", icon: "\u{1F4CB}", action: () => { goPage("outils"); setToolTab("devis"); } },
+          { label: "Calculer matériaux", sub: "Quantités exactes", color: "#52C37A", icon: "\u{1F4D0}", action: () => { goPage("outils"); setToolTab("mat"); } },
+          { label: "Aides 2026", sub: "MaPrimeRénov' CEE", color: "#52C37A", icon: "\u{1F4B0}", action: () => { goPage("outils"); setToolTab("primes"); } },
+          { label: "Vérifier artisan", sub: "RGE & légitimité", color: "#5290E0", icon: "\u{1F6E1}\uFE0F", action: () => { goPage("outils"); setToolTab("rge"); } },
+          { label: "Boutique", sub: "Matériaux partenaires", color: "#C9A84C", icon: "\u{1F6D2}", action: () => { goPage("shop"); } },
+          { label: "Certificat DTU", sub: "Validation conformité", color: "#C9A84C", icon: "\u{1F3C5}", action: () => { goPage("cert"); } },
         ].map((t, i) => (
           <div key={i} className="bl-fc" style={s.fc} onClick={t.action}>
             <div style={{ ...s.fi, background: t.color + "18", border: "0.5px solid " + t.color + "44" }}>
