@@ -177,7 +177,7 @@ function drawPlan(canvas, planData, selectedElement, allMeasures, hoveredElement
         ctx.font = "bold 10px 'DM Sans', sans-serif";
         // Height dimension — right side
         if (m.realH) {
-          const dimText = m.realH.toFixed(2) + "m";
+          const dimText = Math.round(m.realH * 1000) + "mm";
           const tx = ex + ew + 4;
           const ty = ey + eh / 2;
           // Badge
@@ -206,7 +206,7 @@ function drawPlan(canvas, planData, selectedElement, allMeasures, hoveredElement
         }
         // Width dimension — bottom
         if (m.realW) {
-          const dimText = m.realW.toFixed(2) + "m";
+          const dimText = Math.round(m.realW * 1000) + "mm";
           const tx = ex + ew / 2;
           const ty = ey + eh + 12;
           const tw = ctx.measureText(dimText).width;
@@ -253,7 +253,7 @@ function drawPlan(canvas, planData, selectedElement, allMeasures, hoveredElement
   if (allMeasures && allMeasures._wallH) {
     ctx.font = "bold 11px 'Syne', sans-serif";
     // Wall height — far right
-    const dimH = allMeasures._wallH.toFixed(2) + "m";
+    const dimH = Math.round(allMeasures._wallH * 1000) + "mm";
     const twH = ctx.measureText(dimH).width;
     const rxH = mX + mW + 16;
     const ryH = mY + mH / 2;
@@ -280,7 +280,7 @@ function drawPlan(canvas, planData, selectedElement, allMeasures, hoveredElement
   }
   if (allMeasures && allMeasures._wallW) {
     ctx.font = "bold 11px 'Syne', sans-serif";
-    const dimW = allMeasures._wallW.toFixed(2) + "m";
+    const dimW = Math.round(allMeasures._wallW * 1000) + "mm";
     const twW = ctx.measureText(dimW).width;
     const rxW = mX + mW / 2;
     const ryW = mY + mH + 24;
@@ -822,13 +822,13 @@ export default function ScannerPage() {
                 {allMeasures._wallH && (
                   <div style={{ flex: 1, background: "rgba(201,168,76,0.08)", borderRadius: 8, padding: "8px 10px", border: "0.5px solid rgba(201,168,76,0.2)" }}>
                     <div style={{ fontSize: 8, color: "rgba(240,237,230,0.35)", textTransform: "uppercase" }}>Hauteur mur</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#C9A84C", fontFamily: "'Syne',sans-serif" }}>{allMeasures._wallH.toFixed(2)}m</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#C9A84C", fontFamily: "'Syne',sans-serif" }}>{Math.round(allMeasures._wallH * 1000)}mm</div>
                   </div>
                 )}
                 {allMeasures._wallW && (
                   <div style={{ flex: 1, background: "rgba(201,168,76,0.08)", borderRadius: 8, padding: "8px 10px", border: "0.5px solid rgba(201,168,76,0.2)" }}>
                     <div style={{ fontSize: 8, color: "rgba(240,237,230,0.35)", textTransform: "uppercase" }}>Largeur mur</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#C9A84C", fontFamily: "'Syne',sans-serif" }}>{allMeasures._wallW.toFixed(2)}m</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#C9A84C", fontFamily: "'Syne',sans-serif" }}>{Math.round(allMeasures._wallW * 1000)}mm</div>
                   </div>
                 )}
               </div>
@@ -847,8 +847,8 @@ export default function ScannerPage() {
                         {el.label || el.type} {isRef ? "(ref)" : ""}
                       </div>
                       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                        <span style={{ fontSize: 11, color: col.stroke, fontWeight: 700 }}>{m.realH.toFixed(2)}m H</span>
-                        <span style={{ fontSize: 11, color: col.stroke, fontWeight: 700 }}>{m.realW.toFixed(2)}m L</span>
+                        <span style={{ fontSize: 11, color: col.stroke, fontWeight: 700 }}>{Math.round(m.realH * 1000)}mm H</span>
+                        <span style={{ fontSize: 11, color: col.stroke, fontWeight: 700 }}>{Math.round(m.realW * 1000)}mm L</span>
                       </div>
                     </div>
                   </div>
