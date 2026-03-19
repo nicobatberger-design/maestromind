@@ -33,16 +33,44 @@ function saveHistory(entries) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0, MAX_HISTORY)));
 }
 
-function buildMesurePrompt(target, refType, refValue) {
-  const refInfo = refType && refValue
-    ? `\nCALIBRATION : ${refType === "porte" ? "porte visible = " + refValue + "m haut" : refType === "fenetre" ? "fenêtre = " + refValue + "m large" : refType === "carreau" ? "carreau = " + refValue + "cm" : refType === "hauteur" ? "hauteur plafond = " + refValue + "m" : "élément = " + refValue + "m"}. UTILISE CE REPÈRE comme référence absolue. Calcule tout par proportion.`
-    : "\nAucun repère fourni. Utilise les standards visibles (porte 2.04m, prise 30cm sol, interrupteur 1.10m, plinthe 8cm, carreaux 30/45/60cm).";
+function buildMesurePrompt(target, refType, refH, refL) {
+  let refInfo;
+  if (refType && refH) {
+    const dims = refL ? `${refH}m haut × ${refL}m large` : `${refH}m`;
+    const labels = { porte: "PORTE visible", fenetre: "FENÊTRE visible", carreau: "CARREAU visible", hauteur: "HAUTEUR PLAFOND connue", custom: "ÉLÉMENT visible" };
+    refInfo = `\nCALIBRATION EXACTE FOURNIE PAR L'UTILISATEUR : ${labels[refType] || "Repère"} = ${refType === "carreau" ? refH + "cm de côté" : dims}.
+CES MESURES SONT EXACTES — ne les remets JAMAIS en question.
+MÉTHODE OBLIGATOIRE :
+1. Repère sur la photo le ${labels[refType]?.toLowerCase() || "repère"} indiqué par l'utilisateur
+2. Mesure sa taille EN PIXELS sur la photo (hauteur pixels${refL ? " ET largeur pixels" : ""})
+3. Calcule le ratio : ${refType === "carreau" ? refH + "cm" : refH + "m"} = N pixels → 1 pixel = X ${refType === "carreau" ? "cm" : "m"}
+4. Applique ce ratio à TOUTES les autres dimensions visibles
+5. Pour chaque mesure, indique le calcul : "repère Xpx = ${refH}m, élément Ypx → Y/X × ${refH} = Z.Zm"`;
+  } else {
+    refInfo = "\nAucun repère fourni. Estime en utilisant les éléments standards visibles. Indique confiance 'basse'.";
+  }
 
-  const base = `Tu es MÉTREUR EXPERT bâtiment. Mesure à partir de la photo.${refInfo}\n\nRepères standards : Porte 2.04×0.83m | Prise 30cm sol | Interrupteur 1.10m | Plinthe 8cm | Carreaux 30/45/60cm | Parpaing 20×50cm | BA13 120×250cm`;
+  const base = `Tu es MÉTREUR EXPERT bâtiment certifié. Tu mesures des espaces à partir de photos avec une PRÉCISION MAXIMALE.
+${refInfo}
 
-  if (target === "mur") return base + `\n\nPHOTO MUR. JSON UNIQUEMENT :\n{"hauteur":"X.Xm","largeur":"X.Xm","surface_mur":"X.Xm²","ouvertures":[{"type":"porte/fenêtre","largeur":"X.Xm","hauteur":"X.Xm"}],"surface_nette":"X.Xm²","confiance":"haute/moyenne/basse","methode":"repère + calcul"}`;
-  if (target === "plafond") return base + `\n\nPHOTO PLAFOND. JSON UNIQUEMENT :\n{"type":"plat/pente","longueur":"X.Xm","largeur":"X.Xm","surface_sol":"X.Xm²","pente":"X°","hauteur_min":"X.Xm","hauteur_max":"X.Xm","surface_rampant":"X.Xm²","confiance":"haute/moyenne/basse","methode":"repère + calcul"}`;
-  return base + `\n\nPHOTO PIÈCE. JSON UNIQUEMENT :\n{"longueur":"X.Xm","largeur":"X.Xm","hauteur":"X.Xm","surface_sol":"X.Xm²","perimetre":"X.Xml","surface_murs":"X.Xm²","forme":"rectangulaire/L/sous combles","pente":"X°","hauteur_min":"X.Xm","hauteur_max":"X.Xm","ouvertures":[{"type":"porte/fenêtre","largeur":"X.Xm","hauteur":"X.Xm"}],"confiance":"haute/moyenne/basse","methode":"repère + calcul"}\nChamps pertinents uniquement.`;
+REPÈRES STANDARDS (si le repère utilisateur n'est pas visible) :
+- Porte intérieure : 2.04m haut × 0.80m large (standard France)
+- Fenêtre standard : 1.10m haut × 0.80m large (variable selon modèle)
+- Prise : 30cm du sol | Interrupteur : 1.10m du sol | Plinthe : 8cm
+- Carreaux : 30×30, 45×45 ou 60×60cm | Parpaing : 20×50cm
+
+RÈGLES :
+- TOUJOURS montrer le calcul dans "methode" (ex: "porte 485px = 2.04m → ratio 0.0042m/px, mur 1200px → 5.04m")
+- Arrondir au centimètre (2 décimales max)
+- Surface = hauteur × largeur (en m²), arrondir à 0.1m²`;
+
+  if (target === "mur") return base + `\n\nPHOTO D'UN MUR. JSON UNIQUEMENT :
+{"hauteur":"X.XXm","largeur":"X.XXm","surface_mur":"X.Xm²","ouvertures":[{"type":"porte ou fenêtre","hauteur":"X.XXm","largeur":"X.XXm"}],"surface_nette":"X.Xm² (brute - ouvertures)","confiance":"haute/moyenne/basse","methode":"calcul détaillé avec pixels et ratio"}`;
+  if (target === "plafond") return base + `\n\nPHOTO D'UN PLAFOND. JSON UNIQUEMENT :
+{"type":"plat ou pente","longueur":"X.XXm","largeur":"X.XXm","surface_sol":"X.Xm²","pente":"X°","hauteur_min":"X.XXm","hauteur_max":"X.XXm","surface_rampant":"X.Xm²","confiance":"haute/moyenne/basse","methode":"calcul détaillé"}`;
+  return base + `\n\nPHOTO D'UNE PIÈCE. JSON UNIQUEMENT :
+{"longueur":"X.XXm","largeur":"X.XXm","hauteur":"X.XXm","surface_sol":"X.Xm²","perimetre":"X.Xml","surface_murs":"X.Xm²","forme":"rectangulaire/L/sous combles","ouvertures":[{"type":"porte ou fenêtre","hauteur":"X.XXm","largeur":"X.XXm"}],"confiance":"haute/moyenne/basse","methode":"calcul détaillé"}
+Champs pertinents uniquement.`;
 }
 
 function parseAIJson(text) {
@@ -67,7 +95,8 @@ export default function ScannerPage() {
   // Mesure state
   const [mesureTarget, setMesureTarget] = useState("mur");
   const [mesureRefType, setMesureRefType] = useState("porte");
-  const [mesureRefValue, setMesureRefValue] = useState("2.04");
+  const [mesureRefH, setMesureRefH] = useState("2.04");
+  const [mesureRefL, setMesureRefL] = useState("0.80");
   const [mesureLoading, setMesureLoading] = useState(false);
   const [mesureResult, setMesureResult] = useState(null);
 
@@ -120,10 +149,10 @@ export default function ScannerPage() {
         headers: apiHeaders(apiKey),
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 900,
-          system: buildMesurePrompt(mesureTarget, mesureRefType, mesureRefValue),
+          system: buildMesurePrompt(mesureTarget, mesureRefType, mesureRefH, mesureRefL),
           messages: [{ role: "user", content: [
             { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-            { type: "text", text: "Photo : " + targetLabels[mesureTarget] + ". Repère : " + mesureRefType + " = " + mesureRefValue + (mesureRefType === "carreau" ? "cm" : "m") + ". Mesure tout par proportion." }
+            { type: "text", text: "Photo : " + targetLabels[mesureTarget] + ". Mon repère de calibration : " + mesureRefType + " = " + mesureRefH + (mesureRefType === "carreau" ? "cm" : "m haut") + (mesureRefL ? " × " + mesureRefL + "m large" : "") + ". Mesure en pixels, calcule le ratio, et déduis TOUTES les dimensions." }
           ]}]
         }),
       }));
@@ -136,7 +165,7 @@ export default function ScannerPage() {
     } catch (e) {
       setMesureResult({ erreur: e.message });
     } finally { setMesureLoading(false); }
-  }, [apiKey, mesureTarget, mesureRefType, mesureRefValue, addToHistory]);
+  }, [apiKey, mesureTarget, mesureRefType, mesureRefH, mesureRefL, addToHistory]);
 
   const injecterMesures = useCallback(() => {
     if (!mesureResult) return;
@@ -201,16 +230,23 @@ export default function ScannerPage() {
           </div>
 
           <div style={{ background: "rgba(82,195,122,0.05)", border: "0.5px solid rgba(82,195,122,0.15)", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
-            <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Repère visible sur la photo</div>
+            <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Repère visible sur la photo (mesures réelles)</div>
             <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
               {[["porte", "Porte"], ["fenetre", "Fenêtre"], ["carreau", "Carreau"], ["hauteur", "Hauteur"], ["custom", "Autre"]].map(([k, l]) => (
-                <button key={k} onClick={() => { setMesureRefType(k); setMesureRefValue(k === "porte" ? "2.04" : k === "fenetre" ? "1.15" : k === "carreau" ? "30" : k === "hauteur" ? "2.50" : ""); }} style={{ flex: 1, padding: "7px 4px", borderRadius: 8, fontSize: 9, fontWeight: 600, cursor: "pointer", border: "0.5px solid " + (mesureRefType === k ? "#52C37A" : "rgba(255,255,255,0.08)"), background: mesureRefType === k ? "rgba(82,195,122,0.12)" : "transparent", color: mesureRefType === k ? "#52C37A" : "rgba(240,237,230,0.4)", whiteSpace: "nowrap" }}>{l}</button>
+                <button key={k} onClick={() => { setMesureRefType(k); setMesureRefH(k === "porte" ? "2.04" : k === "fenetre" ? "1.10" : k === "carreau" ? "30" : k === "hauteur" ? "2.50" : ""); setMesureRefL(k === "porte" ? "0.80" : k === "fenetre" ? "0.80" : ""); }} style={{ flex: 1, padding: "7px 4px", borderRadius: 8, fontSize: 9, fontWeight: 600, cursor: "pointer", border: "0.5px solid " + (mesureRefType === k ? "#52C37A" : "rgba(255,255,255,0.08)"), background: mesureRefType === k ? "rgba(82,195,122,0.12)" : "transparent", color: mesureRefType === k ? "#52C37A" : "rgba(240,237,230,0.4)", whiteSpace: "nowrap" }}>{l}</button>
               ))}
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input style={{ ...s.inp, flex: 1 }} type="number" step="0.01" value={mesureRefValue} onChange={e => setMesureRefValue(e.target.value)} />
-              <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)" }}>{mesureRefType === "carreau" ? "cm" : "m"}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 8, color: "rgba(240,237,230,0.3)", marginBottom: 3 }}>{mesureRefType === "carreau" ? "Côté (cm)" : "Hauteur (m)"}</div>
+                <input style={s.inp} type="number" step="0.01" value={mesureRefH} onChange={e => setMesureRefH(e.target.value)} placeholder={mesureRefType === "carreau" ? "30" : "2.04"} />
+              </div>
+              {mesureRefType !== "carreau" && mesureRefType !== "hauteur" && <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 8, color: "rgba(240,237,230,0.3)", marginBottom: 3 }}>Largeur (m)</div>
+                <input style={s.inp} type="number" step="0.01" value={mesureRefL} onChange={e => setMesureRefL(e.target.value)} placeholder="0.80" />
+              </div>}
             </div>
+            <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", marginTop: 4 }}>{mesureRefType === "porte" ? "Mesurez votre porte réelle (standard 2.04×0.80m)" : mesureRefType === "fenetre" ? "Mesurez votre fenêtre réelle (ex: 1.10×0.80m)" : mesureRefType === "carreau" ? "Côté d'un carreau (30, 45 ou 60cm)" : mesureRefType === "hauteur" ? "Hauteur sous plafond mesurée au mètre" : "Mesurez un élément visible sur la photo"}</div>
           </div>
         </>}
 
