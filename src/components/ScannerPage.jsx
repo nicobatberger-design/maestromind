@@ -218,32 +218,19 @@ export default function ScannerPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, [drawCanvas]);
 
-  // Track if last event was touch to prevent ghost click
+  // Touch tracking for tap detection
+  const touchStartRef = useRef(null);
   const lastTouchRef = useRef(0);
 
-  // Get coordinates from event relative to canvas
-  const getCoords = useCallback((e) => {
+  // Get coordinates from event relative to canvas (CSS pixels)
+  const getCoords = useCallback((clientX, clientY) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
-    let clientX, clientY;
-    if (e.type?.startsWith("touch")) {
-      const touch = e.touches?.[0] || e.changedTouches?.[0];
-      if (!touch) return null;
-      clientX = touch.clientX;
-      clientY = touch.clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    // Coordinates in CSS pixels (matches the ctx.scale(dpr) in drawCanvas)
-    return {
-      x: clientX - rect.left,
-      y: clientY - rect.top,
-    };
+    return { x: clientX - rect.left, y: clientY - rect.top };
   }, []);
 
-  // Core tap handler
+  // Core tap handler — places a point
   const processTap = useCallback((coords) => {
     if (!coords) return;
     if (!drawingLine) {
@@ -251,11 +238,8 @@ export default function ScannerPage() {
     } else {
       const newLine = {
         id: Date.now(),
-        x1: drawingLine.x1,
-        y1: drawingLine.y1,
-        x2: coords.x,
-        y2: coords.y,
-        label: "",
+        x1: drawingLine.x1, y1: drawingLine.y1,
+        x2: coords.x, y2: coords.y, label: "",
       };
       setLines(prev => [...prev, newLine]);
       if (!refLine) setRefLine(newLine);
@@ -263,19 +247,38 @@ export default function ScannerPage() {
     }
   }, [drawingLine, refLine]);
 
-  // Touch handler (mobile)
+  // Touch start — record position + time, DON'T prevent default (allow zoom)
   const handleTouchStart = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    lastTouchRef.current = Date.now();
-    processTap(getCoords(e));
+    // Ignore multi-touch (pinch-to-zoom)
+    if (e.touches.length > 1) { touchStartRef.current = null; return; }
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+    // Don't preventDefault here — allow browser zoom/scroll
+  }, []);
+
+  // Touch end — check if it was a deliberate tap (short + no movement)
+  const handleTouchEnd = useCallback((e) => {
+    if (!touchStartRef.current) return;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    const t = e.changedTouches?.[0];
+    if (!t) return;
+    const dt = Date.now() - start.time;
+    const dx = Math.abs(t.clientX - start.x);
+    const dy = Math.abs(t.clientY - start.y);
+    // Only count as tap if: < 300ms, < 12px movement, single finger
+    if (dt < 300 && dx < 12 && dy < 12) {
+      e.preventDefault(); // Prevent ghost click only on valid tap
+      lastTouchRef.current = Date.now();
+      processTap(getCoords(t.clientX, t.clientY));
+    }
   }, [getCoords, processTap]);
 
   // Click handler (desktop) — ignore if recent touch
   const handleClick = useCallback((e) => {
     if (Date.now() - lastTouchRef.current < 500) return;
     e.preventDefault();
-    processTap(getCoords(e));
+    processTap(getCoords(e.clientX, e.clientY));
   }, [getCoords, processTap]);
 
   // Validate reference
@@ -406,9 +409,10 @@ export default function ScannerPage() {
                 ref={canvasRef}
                 onClick={handleClick}
                 onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
                 style={{
                   position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-                  touchAction: "none", cursor: "crosshair", borderRadius: 12,
+                  touchAction: "manipulation", cursor: "crosshair", borderRadius: 12,
                 }}
               />
             </div>
