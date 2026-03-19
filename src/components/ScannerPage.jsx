@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { IAS } from "../data/constants";
 import { apiURL, apiHeaders, withRetry } from "../utils/api";
@@ -33,54 +33,6 @@ function saveHistory(entries) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0, MAX_HISTORY)));
 }
 
-function buildMesurePrompt(target, refType, refH, refL) {
-  let refInfo;
-  if (refType && refH) {
-    const dims = refL ? `${refH}m haut × ${refL}m large` : `${refH}m`;
-    const labels = { porte: "PORTE visible", fenetre: "FENÊTRE visible", carreau: "CARREAU visible", hauteur: "HAUTEUR PLAFOND connue", custom: "ÉLÉMENT visible" };
-    refInfo = `\nCALIBRATION EXACTE FOURNIE PAR L'UTILISATEUR : ${labels[refType] || "Repère"} = ${refType === "carreau" ? refH + "cm de côté" : dims}.
-CES MESURES SONT EXACTES — ne les remets JAMAIS en question.
-MÉTHODE OBLIGATOIRE :
-1. Repère sur la photo le ${labels[refType]?.toLowerCase() || "repère"} indiqué par l'utilisateur
-2. Mesure sa taille EN PIXELS sur la photo (hauteur pixels${refL ? " ET largeur pixels" : ""})
-3. Calcule le ratio : ${refType === "carreau" ? refH + "cm" : refH + "m"} = N pixels → 1 pixel = X ${refType === "carreau" ? "cm" : "m"}
-4. Applique ce ratio à TOUTES les autres dimensions visibles
-5. Pour chaque mesure, indique le calcul : "repère Xpx = ${refH}m, élément Ypx → Y/X × ${refH} = Z.Zm"`;
-  } else {
-    refInfo = "\nAucun repère fourni. Estime en utilisant les éléments standards visibles. Indique confiance 'basse'.";
-  }
-
-  const base = `Tu es MÉTREUR EXPERT bâtiment certifié. Tu mesures des espaces à partir de photos avec une PRÉCISION MAXIMALE.
-${refInfo}
-
-REPÈRES STANDARDS (si le repère utilisateur n'est pas visible) :
-- Porte intérieure : 2.04m haut × 0.80m large (standard France)
-- Fenêtre standard : 1.10m haut × 0.80m large (variable selon modèle)
-- Prise : 30cm du sol | Interrupteur : 1.10m du sol | Plinthe : 8cm
-- Carreaux : 30×30, 45×45 ou 60×60cm | Parpaing : 20×50cm
-
-RÈGLES :
-- TOUJOURS montrer le calcul dans "methode" (ex: "porte 485px = 2.04m → ratio 0.0042m/px, mur 1200px → 5.04m")
-- Arrondir au centimètre (2 décimales max)
-- Surface = hauteur × largeur (en m²), arrondir à 0.1m²`;
-
-  if (target === "mur") return base + `\n\nPHOTO D'UN MUR. JSON UNIQUEMENT :
-{"hauteur":"X.XXm","largeur":"X.XXm","surface_mur":"X.Xm²","ouvertures":[{"type":"porte ou fenêtre","hauteur":"X.XXm","largeur":"X.XXm"}],"surface_nette":"X.Xm² (brute - ouvertures)","confiance":"haute/moyenne/basse","methode":"calcul détaillé avec pixels et ratio"}`;
-  if (target === "plafond") return base + `\n\nPHOTO D'UN PLAFOND. JSON UNIQUEMENT :
-{"type":"plat ou pente","longueur":"X.XXm","largeur":"X.XXm","surface_sol":"X.Xm²","pente":"X°","hauteur_min":"X.XXm","hauteur_max":"X.XXm","surface_rampant":"X.Xm²","confiance":"haute/moyenne/basse","methode":"calcul détaillé"}`;
-  return base + `\n\nPHOTO D'UNE PIÈCE. JSON UNIQUEMENT :
-{"longueur":"X.XXm","largeur":"X.XXm","hauteur":"X.XXm","surface_sol":"X.Xm²","perimetre":"X.Xml","surface_murs":"X.Xm²","forme":"rectangulaire/L/sous combles","ouvertures":[{"type":"porte ou fenêtre","hauteur":"X.XXm","largeur":"X.XXm"}],"confiance":"haute/moyenne/basse","methode":"calcul détaillé"}
-Champs pertinents uniquement.`;
-}
-
-function parseAIJson(text) {
-  const clean = (text || "").replace(/```json|```/g, "").trim();
-  try { return JSON.parse(clean); } catch {}
-  const m = clean.match(/\{[\s\S]*\}/);
-  if (m) return JSON.parse(m[0]);
-  throw new Error("L'IA n'a pas pu analyser. Réessayez avec une meilleure photo.");
-}
-
 export default function ScannerPage() {
   const {
     page, goPage, switchIA, apiKey,
@@ -92,13 +44,17 @@ export default function ScannerPage() {
   const [mode, setMode] = useState("diagnostic"); // diagnostic | mesure
   const [photo, setPhoto] = useState(null);
 
-  // Mesure state
-  const [mesureTarget, setMesureTarget] = useState("mur");
-  const [mesureRefType, setMesureRefType] = useState("porte");
-  const [mesureRefH, setMesureRefH] = useState("2.04");
-  const [mesureRefL, setMesureRefL] = useState("0.80");
-  const [mesureLoading, setMesureLoading] = useState(false);
-  const [mesureResult, setMesureResult] = useState(null);
+  // Mesure state — tracé sur photo
+  const [mesurePhoto, setMesurePhoto] = useState(null);
+  const [lines, setLines] = useState([]); // [{ id, x1, y1, x2, y2, label }]
+  const [refLine, setRefLine] = useState(null); // la ligne de référence
+  const [refSize, setRefSize] = useState(""); // dimension réelle en mètres
+  const [drawingLine, setDrawingLine] = useState(null); // ligne en cours de tracé {x1, y1}
+  const [pixelRatio, setPixelRatio] = useState(0); // mètres par pixel
+
+  const canvasRef = useRef(null);
+  const imgRef = useRef(null);
+  const containerRef = useRef(null);
 
   // History state
   const [history, setHistory] = useState(loadHistory);
@@ -119,7 +75,17 @@ export default function ScannerPage() {
     }
   }, [scanResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Gestion photo — ouvre la caméra NATIVE du téléphone
+  // Reset mesure state when switching modes
+  const resetMesure = useCallback(() => {
+    setMesurePhoto(null);
+    setLines([]);
+    setRefLine(null);
+    setRefSize("");
+    setDrawingLine(null);
+    setPixelRatio(0);
+  }, []);
+
+  // Gestion photo — ouvre la camera NATIVE du telephone
   const handlePhoto = useCallback((e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -130,70 +96,250 @@ export default function ScannerPage() {
       if (mode === "diagnostic") {
         analyserPhoto(dataUrl, scanIA);
       } else {
-        analyserMesurePhoto(dataUrl);
+        // Mode mesure : on stocke la photo pour le canvas
+        setMesurePhoto(dataUrl);
+        setLines([]);
+        setRefLine(null);
+        setRefSize("");
+        setDrawingLine(null);
+        setPixelRatio(0);
       }
     };
     reader.readAsDataURL(file);
     e.target.value = "";
   }, [mode, scanIA, analyserPhoto]);
 
-  const analyserMesurePhoto = useCallback(async (dataUrl) => {
-    setMesureLoading(true);
-    setMesureResult(null);
-    const base64 = dataUrl.split(",")[1];
-    const mediaType = dataUrl.split(";")[0].split(":")[1] || "image/jpeg";
-    const targetLabels = { mur: "un mur", piece: "une pièce", plafond: "un plafond" };
-    try {
-      const r = await withRetry(() => fetch(apiURL(), {
-        method: "POST",
-        headers: apiHeaders(apiKey),
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 900,
-          system: buildMesurePrompt(mesureTarget, mesureRefType, mesureRefH, mesureRefL),
-          messages: [{ role: "user", content: [
-            { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-            { type: "text", text: "Photo : " + targetLabels[mesureTarget] + ". Mon repère de calibration : " + mesureRefType + " = " + mesureRefH + (mesureRefType === "carreau" ? "cm" : "m haut") + (mesureRefL ? " × " + mesureRefL + "m large" : "") + ". Mesure en pixels, calcule le ratio, et déduis TOUTES les dimensions." }
-          ]}]
-        }),
-      }));
-      const data = await r.json();
-      if (data.error) throw new Error(data.error.message);
-      const result = parseAIJson(data?.content?.[0]?.text);
-      result._target = mesureTarget;
-      setMesureResult(result);
-      addToHistory(dataUrl, result, "mesure");
-    } catch (e) {
-      setMesureResult({ erreur: e.message });
-    } finally { setMesureLoading(false); }
-  }, [apiKey, mesureTarget, mesureRefType, mesureRefH, mesureRefL, addToHistory]);
+  // === CANVAS DRAWING ===
+  const drawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
 
+    const ctx = canvas.getContext("2d");
+    canvas.width = img.clientWidth;
+    canvas.height = img.clientHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const allLines = [...lines];
+
+    // Draw each line
+    allLines.forEach((line, idx) => {
+      const isRef = refLine && line.id === refLine.id;
+      const color = isRef ? "#52C37A" : "#C9A84C";
+
+      // Line
+      ctx.beginPath();
+      ctx.moveTo(line.x1, line.y1);
+      ctx.lineTo(line.x2, line.y2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Endpoints
+      [{ x: line.x1, y: line.y1 }, { x: line.x2, y: line.y2 }].forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = "#F0EDE6";
+        ctx.fill();
+      });
+
+      // Label
+      const midX = (line.x1 + line.x2) / 2;
+      const midY = (line.y1 + line.y2) / 2;
+      let label = "";
+      if (isRef && refSize) {
+        label = refSize + "m";
+      } else if (!isRef && pixelRatio > 0) {
+        const pxLen = Math.sqrt((line.x2 - line.x1) ** 2 + (line.y2 - line.y1) ** 2);
+        const realLen = (pxLen * pixelRatio).toFixed(2);
+        label = realLen + "m";
+      }
+      if (label) {
+        ctx.font = "bold 12px 'DM Sans', sans-serif";
+        const textW = ctx.measureText(label).width;
+        const padX = 8, padY = 4;
+        ctx.fillStyle = color;
+        const rx = midX - textW / 2 - padX;
+        const ry = midY - 8 - padY;
+        const rw = textW + padX * 2;
+        const rh = 16 + padY * 2;
+        const radius = 6;
+        ctx.beginPath();
+        ctx.moveTo(rx + radius, ry);
+        ctx.lineTo(rx + rw - radius, ry);
+        ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + radius);
+        ctx.lineTo(rx + rw, ry + rh - radius);
+        ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - radius, ry + rh);
+        ctx.lineTo(rx + radius, ry + rh);
+        ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - radius);
+        ctx.lineTo(rx, ry + radius);
+        ctx.quadraticCurveTo(rx, ry, rx + radius, ry);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#F0EDE6";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, midX, midY);
+      }
+    });
+
+    // Draw line being drawn (first point placed)
+    if (drawingLine) {
+      ctx.beginPath();
+      ctx.arc(drawingLine.x1, drawingLine.y1, 6, 0, Math.PI * 2);
+      ctx.fillStyle = (!refLine ? "#52C37A" : "#C9A84C");
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(drawingLine.x1, drawingLine.y1, 3, 0, Math.PI * 2);
+      ctx.fillStyle = "#F0EDE6";
+      ctx.fill();
+    }
+  }, [lines, refLine, refSize, pixelRatio, drawingLine]);
+
+  // Redraw canvas when state changes
+  useEffect(() => {
+    drawCanvas();
+  }, [drawCanvas]);
+
+  // Redraw on image load / resize
+  useEffect(() => {
+    const handleResize = () => drawCanvas();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [drawCanvas]);
+
+  // Get coordinates from event relative to canvas
+  const getCoords = useCallback((e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+    };
+  }, []);
+
+  // Handle canvas tap/click
+  const handleCanvasTap = useCallback((e) => {
+    e.preventDefault();
+    const coords = getCoords(e);
+    if (!coords) return;
+
+    if (!drawingLine) {
+      // First point
+      setDrawingLine({ x1: coords.x, y1: coords.y });
+    } else {
+      // Second point — create line
+      const newLine = {
+        id: Date.now(),
+        x1: drawingLine.x1,
+        y1: drawingLine.y1,
+        x2: coords.x,
+        y2: coords.y,
+        label: "",
+      };
+      setLines(prev => [...prev, newLine]);
+
+      // If no reference yet, this is the reference line
+      if (!refLine) {
+        setRefLine(newLine);
+      }
+
+      setDrawingLine(null);
+    }
+  }, [drawingLine, refLine, getCoords]);
+
+  // Validate reference
+  const validateReference = useCallback(() => {
+    if (!refLine || !refSize) return;
+    const pxLen = Math.sqrt((refLine.x2 - refLine.x1) ** 2 + (refLine.y2 - refLine.y1) ** 2);
+    if (pxLen === 0) return;
+    const ratio = parseFloat(refSize) / pxLen;
+    setPixelRatio(ratio);
+  }, [refLine, refSize]);
+
+  // Delete last line
+  const deleteLastLine = useCallback(() => {
+    setLines(prev => {
+      if (prev.length === 0) return prev;
+      const newLines = prev.slice(0, -1);
+      const removed = prev[prev.length - 1];
+      // If we removed the reference line, reset reference
+      if (refLine && removed.id === refLine.id) {
+        setRefLine(null);
+        setRefSize("");
+        setPixelRatio(0);
+      }
+      return newLines;
+    });
+  }, [refLine]);
+
+  // Clear all lines
+  const clearAllLines = useCallback(() => {
+    setLines([]);
+    setRefLine(null);
+    setRefSize("");
+    setDrawingLine(null);
+    setPixelRatio(0);
+  }, []);
+
+  // Inject largest measure into Outils
   const injecterMesures = useCallback(() => {
-    if (!mesureResult) return;
-    const r = mesureResult;
-    const surface = parseFloat(r.surface_nette || r.surface_sol || r.surface_mur || r.surface_rampant || "0");
-    if (surface > 0) setCalcSurface(String(surface));
-    const hauteur = parseFloat(r.hauteur || r.hauteur_max || "0");
-    if (hauteur > 0) setCalcHauteur(String(hauteur));
-    const pente = parseFloat(r.pente || "0");
-    if (pente > 0) setCalcPente(String(pente));
-    const longueur = parseFloat(r.perimetre || r.largeur || "0");
-    if (longueur > 0) setCalcLongueur(String(longueur));
+    if (lines.length === 0 || pixelRatio <= 0) return;
+    let maxReal = 0;
+    lines.forEach(line => {
+      if (refLine && line.id === refLine.id) return;
+      const pxLen = Math.sqrt((line.x2 - line.x1) ** 2 + (line.y2 - line.y1) ** 2);
+      const real = pxLen * pixelRatio;
+      if (real > maxReal) maxReal = real;
+    });
+    if (maxReal > 0) {
+      setCalcSurface(String(maxReal.toFixed(2)));
+    }
     goPage("outils");
-  }, [mesureResult, setCalcSurface, setCalcHauteur, setCalcPente, setCalcLongueur, goPage]);
+  }, [lines, pixelRatio, refLine, setCalcSurface, goPage]);
 
-  const MCard = ({ label, value, color = "#52C37A" }) => value ? (
-    <div style={{ background: color + "0F", border: "0.5px solid " + color + "33", borderRadius: 8, padding: "8px 10px" }}>
-      <div style={{ fontSize: 8, color: "rgba(240,237,230,0.4)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>{label}</div>
-      <div style={{ fontSize: 14, fontWeight: 700, color }}>{value}</div>
-    </div>
-  ) : null;
+  // Get computed measure for a line
+  const getLineMeasure = useCallback((line) => {
+    if (refLine && line.id === refLine.id) {
+      return refSize ? refSize + "m" : "";
+    }
+    if (pixelRatio <= 0) return "";
+    const pxLen = Math.sqrt((line.x2 - line.x1) ** 2 + (line.y2 - line.y1) ** 2);
+    return (pxLen * pixelRatio).toFixed(2) + "m";
+  }, [refLine, refSize, pixelRatio]);
+
+  // Determine current instruction step
+  const getInstruction = () => {
+    if (!mesurePhoto) return "Prenez une photo du mur ou de la pi\u00e8ce";
+    if (lines.length === 0 && !drawingLine) return "Tracez une ligne sur un \u00e9l\u00e9ment dont vous connaissez la taille (porte, fen\u00eatre)";
+    if (drawingLine) return "Touchez le 2\u00e8me point pour terminer la ligne";
+    if (refLine && !pixelRatio) return "Entrez la dimension r\u00e9elle de la ligne de r\u00e9f\u00e9rence";
+    if (pixelRatio > 0) return "Tracez des lignes pour mesurer. Touchez 2 points.";
+    return "";
+  };
 
   return (
     <div style={{ ...s.page, ...(page === "scanner" ? s.pageActive : {}) }}>
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, borderBottom: "0.5px solid rgba(201,168,76,0.12)", flexShrink: 0 }}>
         {[["diagnostic", "\u{1F4F7} Diagnostic IA"], ["mesure", "\u{1F4D0} Mesurer"]].map(([k, l]) => (
-          <button key={k} onClick={() => { setScannerTab(k); setMode(k); setPhoto(null); setMesureResult(null); }} style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", background: "transparent", color: mode === k ? (k === "mesure" ? "#52C37A" : "#C9A84C") : "rgba(240,237,230,0.3)", borderBottom: mode === k ? ("2px solid " + (k === "mesure" ? "#52C37A" : "#C9A84C")) : "2px solid transparent", fontFamily: "'Syne',sans-serif" }}>{l}</button>
+          <button key={k} onClick={() => { setScannerTab(k); setMode(k); setPhoto(null); resetMesure(); }} style={{ flex: 1, padding: "12px 0", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", background: "transparent", color: mode === k ? (k === "mesure" ? "#52C37A" : "#C9A84C") : "rgba(240,237,230,0.3)", borderBottom: mode === k ? ("2px solid " + (k === "mesure" ? "#52C37A" : "#C9A84C")) : "2px solid transparent", fontFamily: "'Syne',sans-serif" }}>{l}</button>
         ))}
       </div>
 
@@ -217,50 +363,93 @@ export default function ScannerPage() {
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F0EDE6" strokeWidth="2.2" strokeLinecap="round"><path d="M2 2l5 5M2 2v4M2 2h4" /><path d="M22 22l-5-5M22 22v-4M22 22h-4" /></svg>
             </div>
             <div>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: "#52C37A" }}>Métreur IA Vision</div>
-              <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>Prenez une photo, l'IA mesure</div>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: "#52C37A" }}>M\u00e9treur</div>
+              <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>Tracez des lignes sur la photo pour mesurer</div>
             </div>
           </div>
 
-          <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Je photographie</div>
-          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-            {[["mur", "\u{1F9F1} Un mur"], ["piece", "\u{1F3E0} Une pièce"], ["plafond", "\u2B06\uFE0F Un plafond"]].map(([k, l]) => (
-              <button key={k} onClick={() => setMesureTarget(k)} style={{ flex: 1, padding: "10px 6px", borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: "pointer", border: "0.5px solid " + (mesureTarget === k ? "#52C37A" : "rgba(255,255,255,0.08)"), background: mesureTarget === k ? "rgba(82,195,122,0.12)" : "rgba(15,19,28,0.6)", color: mesureTarget === k ? "#52C37A" : "rgba(240,237,230,0.5)", fontFamily: "'Syne',sans-serif" }}>{l}</button>
-            ))}
+          {/* Instruction */}
+          <div style={{ background: "rgba(82,195,122,0.05)", border: "0.5px solid rgba(82,195,122,0.15)", borderRadius: 10, padding: "10px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(82,195,122,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontSize: 11, color: "#52C37A", fontWeight: 700 }}>
+                {!mesurePhoto ? "1" : lines.length === 0 && !drawingLine ? "2" : refLine && !pixelRatio ? "3" : pixelRatio > 0 ? "4" : "2"}
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: "#52C37A", fontWeight: 600, lineHeight: 1.4 }}>{getInstruction()}</div>
           </div>
 
-          <div style={{ background: "rgba(82,195,122,0.05)", border: "0.5px solid rgba(82,195,122,0.15)", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
-            <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Repère visible sur la photo (mesures réelles)</div>
-            <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-              {[["porte", "Porte"], ["fenetre", "Fenêtre"], ["carreau", "Carreau"], ["hauteur", "Hauteur"], ["custom", "Autre"]].map(([k, l]) => (
-                <button key={k} onClick={() => { setMesureRefType(k); setMesureRefH(k === "porte" ? "2.04" : k === "fenetre" ? "1.10" : k === "carreau" ? "30" : k === "hauteur" ? "2.50" : ""); setMesureRefL(k === "porte" ? "0.80" : k === "fenetre" ? "0.80" : ""); }} style={{ flex: 1, padding: "7px 4px", borderRadius: 8, fontSize: 9, fontWeight: 600, cursor: "pointer", border: "0.5px solid " + (mesureRefType === k ? "#52C37A" : "rgba(255,255,255,0.08)"), background: mesureRefType === k ? "rgba(82,195,122,0.12)" : "transparent", color: mesureRefType === k ? "#52C37A" : "rgba(240,237,230,0.4)", whiteSpace: "nowrap" }}>{l}</button>
-              ))}
+          {/* Photo + Canvas overlay */}
+          {mesurePhoto && (
+            <div ref={containerRef} style={{ position: "relative", width: "100%", marginBottom: 12, borderRadius: 12, overflow: "hidden" }}>
+              <img
+                ref={imgRef}
+                src={mesurePhoto}
+                alt="mesure"
+                onLoad={drawCanvas}
+                style={{ width: "100%", display: "block", borderRadius: 12 }}
+              />
+              <canvas
+                ref={canvasRef}
+                onClick={handleCanvasTap}
+                onTouchEnd={handleCanvasTap}
+                style={{
+                  position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+                  touchAction: "none", cursor: "crosshair", borderRadius: 12,
+                }}
+              />
             </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 8, color: "rgba(240,237,230,0.3)", marginBottom: 3 }}>{mesureRefType === "carreau" ? "Côté (cm)" : "Hauteur (m)"}</div>
-                <input style={s.inp} type="number" step="0.01" value={mesureRefH} onChange={e => setMesureRefH(e.target.value)} placeholder={mesureRefType === "carreau" ? "30" : "2.04"} />
+          )}
+
+          {/* Reference dimension input */}
+          {refLine && !pixelRatio && (
+            <div style={{ background: "rgba(82,195,122,0.08)", border: "0.5px solid rgba(82,195,122,0.25)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
+              <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Dimension r\u00e9elle de la r\u00e9f\u00e9rence</div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ flex: 1 }}>
+                  <input
+                    style={s.inp}
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={refSize}
+                    onChange={e => setRefSize(e.target.value)}
+                    placeholder="Ex: 2.04"
+                    autoFocus
+                  />
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#52C37A" }}>m</span>
+                <button
+                  onClick={validateReference}
+                  disabled={!refSize || parseFloat(refSize) <= 0}
+                  style={{
+                    background: refSize && parseFloat(refSize) > 0 ? "linear-gradient(135deg,#52C37A,#3A9B5A)" : "rgba(82,195,122,0.15)",
+                    border: "none", borderRadius: 10, padding: "11px 18px",
+                    fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 800,
+                    color: refSize && parseFloat(refSize) > 0 ? "#F0EDE6" : "rgba(82,195,122,0.4)",
+                    cursor: refSize && parseFloat(refSize) > 0 ? "pointer" : "not-allowed",
+                  }}
+                >
+                  Valider
+                </button>
               </div>
-              {mesureRefType !== "carreau" && mesureRefType !== "hauteur" && <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 8, color: "rgba(240,237,230,0.3)", marginBottom: 3 }}>Largeur (m)</div>
-                <input style={s.inp} type="number" step="0.01" value={mesureRefL} onChange={e => setMesureRefL(e.target.value)} placeholder="0.80" />
-              </div>}
+              <div style={{ fontSize: 9, color: "rgba(240,237,230,0.35)", marginTop: 6 }}>
+                Entrez la dimension r\u00e9elle de l'\u00e9l\u00e9ment sur lequel vous avez trac\u00e9 la ligne verte (ex: porte = 2.04m)
+              </div>
             </div>
-            <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", marginTop: 4 }}>{mesureRefType === "porte" ? "Mesurez votre porte réelle (standard 2.04×0.80m)" : mesureRefType === "fenetre" ? "Mesurez votre fenêtre réelle (ex: 1.10×0.80m)" : mesureRefType === "carreau" ? "Côté d'un carreau (30, 45 ou 60cm)" : mesureRefType === "hauteur" ? "Hauteur sous plafond mesurée au mètre" : "Mesurez un élément visible sur la photo"}</div>
-          </div>
+          )}
         </>}
 
-        {/* === PHOTO (commune aux 2 modes) === */}
-        {photo && <img src={photo} alt="photo" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 240, objectFit: "cover" }} />}
+        {/* === PHOTO placeholder (commune aux 2 modes, quand pas de photo) === */}
+        {mode === "diagnostic" && photo && <img src={photo} alt="photo" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 240, objectFit: "cover" }} />}
 
         {!photo && (
           <div style={{ width: "100%", aspectRatio: "4/3", background: "#0D1018", border: "1.5px dashed " + (mode === "mesure" ? "rgba(82,195,122,0.25)" : "rgba(201,168,76,0.18)"), borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
             <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke={mode === "mesure" ? "#52C37A" : "#C9A84C"} strokeWidth="1.4" strokeLinecap="round" style={{ opacity: 0.6, marginBottom: 10 }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
-            <p style={{ fontSize: 12, color: "rgba(240,237,230,0.5)" }}>{mode === "mesure" ? "Photographiez votre mur ou pièce" : "Photographiez le problème"}</p>
+            <p style={{ fontSize: 12, color: "rgba(240,237,230,0.5)" }}>{mode === "mesure" ? "Prenez une photo du mur ou de la pi\u00e8ce" : "Photographiez le probl\u00e8me"}</p>
           </div>
         )}
 
-        {/* Boutons — caméra native du téléphone */}
+        {/* Boutons --- camera native du telephone */}
         <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
           <label style={{ flex: 1, background: mode === "mesure" ? "linear-gradient(135deg,#52C37A,#3A9B5A)" : "linear-gradient(135deg,#EDD060,#C9A84C)", border: "none", borderRadius: 12, padding: "14px", textAlign: "center", fontSize: 13, fontWeight: 800, color: mode === "mesure" ? "#F0EDE6" : "#06080D", cursor: "pointer", fontFamily: "'Syne',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
@@ -273,7 +462,7 @@ export default function ScannerPage() {
           </label>
         </div>
 
-        {/* === RÉSULTATS DIAGNOSTIC === */}
+        {/* === RESULTATS DIAGNOSTIC === */}
         {mode === "diagnostic" && scanLoading && <div style={{ background: "#181D28", borderRadius: 12, padding: 14, textAlign: "center", fontSize: 12, color: "rgba(240,237,230,0.5)", marginBottom: 12 }}>L'IA analyse votre photo...</div>}
         {mode === "diagnostic" && scanResult && (
           <div style={{ background: "#181D28", border: "0.5px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
@@ -296,70 +485,49 @@ export default function ScannerPage() {
           </div>
         )}
 
-        {/* === RÉSULTATS MESURE === */}
-        {mode === "mesure" && mesureLoading && <div style={{ background: "#181D28", borderRadius: 12, padding: 14, textAlign: "center", fontSize: 12, color: "#52C37A", marginBottom: 12 }}>{"\u{1F4D0}"} Le Métreur IA analyse...</div>}
-        {mode === "mesure" && mesureResult && !mesureResult.erreur && (
+        {/* === RESUME MESURES === */}
+        {mode === "mesure" && lines.length > 0 && (
           <div style={{ background: "#181D28", border: "0.5px solid rgba(82,195,122,0.2)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <span style={{ padding: "3px 9px", borderRadius: 20, fontSize: 10, fontWeight: 700, background: mesureResult.confiance === "haute" ? "rgba(82,195,122,0.15)" : mesureResult.confiance === "moyenne" ? "rgba(201,168,76,0.12)" : "rgba(232,135,58,0.12)", color: mesureResult.confiance === "haute" ? "#52C37A" : mesureResult.confiance === "moyenne" ? "#C9A84C" : "#E8873A", border: "0.5px solid currentColor" }}>Confiance {mesureResult.confiance}</span>
-              <strong style={{ fontFamily: "'Syne',sans-serif", fontSize: 13 }}>{mesureResult.forme || mesureResult.type || "Analyse"}</strong>
+            <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Mesures ({lines.length})</div>
+            {lines.map((line, idx) => {
+              const isRef = refLine && line.id === refLine.id;
+              const measure = getLineMeasure(line);
+              return (
+                <div key={line.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: idx < lines.length - 1 ? "0.5px solid rgba(255,255,255,0.05)" : "none" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: isRef ? "#52C37A" : "#C9A84C", flexShrink: 0 }} />
+                  <div style={{ flex: 1, fontSize: 12, color: "rgba(240,237,230,0.7)", fontWeight: 600 }}>
+                    Ligne {idx + 1} {isRef ? "(r\u00e9f\u00e9rence)" : ""}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: isRef ? "#52C37A" : "#C9A84C", fontFamily: "'Syne',sans-serif" }}>
+                    {measure || "---"}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Action buttons */}
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              {pixelRatio > 0 && lines.length > 1 && (
+                <button onClick={injecterMesures} style={{ flex: 1, background: "linear-gradient(135deg,#52C37A,#3A9B5A)", border: "none", borderRadius: 10, padding: "11px", fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 800, color: "#F0EDE6", cursor: "pointer" }}>
+                  Utiliser dans Outils
+                </button>
+              )}
+              <button onClick={deleteLastLine} style={{ flex: pixelRatio > 0 && lines.length > 1 ? 0 : 1, minWidth: 44, background: "rgba(232,135,58,0.1)", border: "0.5px solid rgba(232,135,58,0.3)", borderRadius: 10, padding: "11px 14px", fontSize: 11, fontWeight: 700, color: "#E8873A", cursor: "pointer" }}>
+                Supprimer derni\u00e8re
+              </button>
+              <button onClick={clearAllLines} style={{ flex: pixelRatio > 0 && lines.length > 1 ? 0 : 1, minWidth: 44, background: "rgba(224,82,82,0.08)", border: "0.5px solid rgba(224,82,82,0.25)", borderRadius: 10, padding: "11px 14px", fontSize: 11, fontWeight: 700, color: "#E05252", cursor: "pointer" }}>
+                Effacer tout
+              </button>
             </div>
-
-            {mesureResult._target === "mur" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 }}>
-              <MCard label="Hauteur" value={mesureResult.hauteur} color="#5290E0" />
-              <MCard label="Largeur" value={mesureResult.largeur} />
-              <MCard label="Surface brute" value={mesureResult.surface_mur} color="#C9A84C" />
-              <MCard label="Surface nette" value={mesureResult.surface_nette} color="#52C37A" />
-            </div>}
-
-            {mesureResult._target === "piece" && <>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 }}>
-                <MCard label="Longueur" value={mesureResult.longueur} />
-                <MCard label="Largeur" value={mesureResult.largeur} />
-                <MCard label="Hauteur" value={mesureResult.hauteur} color="#5290E0" />
-                <MCard label="Surface sol" value={mesureResult.surface_sol} color="#C9A84C" />
-              </div>
-              {mesureResult.perimetre && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 }}>
-                <MCard label="Périmètre" value={mesureResult.perimetre} color="#C9A84C" />
-                <MCard label="Surface murs" value={mesureResult.surface_murs} color="#5290E0" />
-              </div>}
-            </>}
-
-            {mesureResult._target === "plafond" && <>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 10 }}>
-                <MCard label="Longueur" value={mesureResult.longueur} />
-                <MCard label="Largeur" value={mesureResult.largeur} />
-                <MCard label="Surface sol" value={mesureResult.surface_sol} color="#C9A84C" />
-                <MCard label="Type" value={mesureResult.type} color="#5290E0" />
-              </div>
-              {mesureResult.pente && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 7, marginBottom: 10 }}>
-                <MCard label="Pente" value={mesureResult.pente} color="#E8873A" />
-                <MCard label="H. min" value={mesureResult.hauteur_min} color="#5290E0" />
-                <MCard label="H. max" value={mesureResult.hauteur_max} color="#5290E0" />
-              </div>}
-              {mesureResult.surface_rampant && <MCard label="Surface rampant" value={mesureResult.surface_rampant} color="#E8873A" />}
-            </>}
-
-            {mesureResult.ouvertures?.length > 0 && <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 5 }}>Ouvertures</div>
-              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                {mesureResult.ouvertures.map((o, i) => <span key={i} style={{ fontSize: 10, padding: "3px 9px", borderRadius: 20, background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.12)", color: "rgba(240,237,230,0.7)" }}>{o.type} {o.largeur}{"\u00D7"}{o.hauteur}</span>)}
-              </div>
-            </div>}
-
-            {mesureResult.methode && <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", lineHeight: 1.6, marginBottom: 10, borderTop: "0.5px solid rgba(255,255,255,0.06)", paddingTop: 8 }}>{"\u{1F4A1}"} {mesureResult.methode}</div>}
-
-            <button onClick={injecterMesures} style={{ width: "100%", background: "linear-gradient(135deg,#52C37A,#3A9B5A)", border: "none", borderRadius: 12, padding: "12px", fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 800, color: "#F0EDE6", cursor: "pointer" }}>{"\u{1F4D0}"} Utiliser dans Outils</button>
           </div>
         )}
-        {mode === "mesure" && mesureResult?.erreur && <div style={s.errBox}>{mesureResult.erreur}</div>}
 
         {/* === HISTORIQUE PREVIEW === */}
         {historyPreview && (
           <div style={{ background: "#181D28", border: "0.5px solid rgba(201,168,76,0.25)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#C9A84C" }}>{historyPreview.mode === "diagnostic" ? "Diagnostic" : "Mesure"} — {historyPreview.date}</div>
-              <button onClick={() => setHistoryPreview(null)} style={{ background: "transparent", border: "none", color: "rgba(240,237,230,0.4)", cursor: "pointer", fontSize: 16, padding: 0 }}>✕</button>
+              <button onClick={() => setHistoryPreview(null)} style={{ background: "transparent", border: "none", color: "rgba(240,237,230,0.4)", cursor: "pointer", fontSize: 16, padding: 0 }}>{"\u2715"}</button>
             </div>
             {historyPreview.mode === "diagnostic" && historyPreview.result && (
               <div>
