@@ -49,6 +49,7 @@ export default function ScannerPage() {
   const [lines, setLines] = useState([]); // [{ id, x1, y1, x2, y2, label }]
   const [refLine, setRefLine] = useState(null); // la ligne de référence
   const [refSize, setRefSize] = useState(""); // dimension réelle en mètres
+  const [measureMode, setMeasureMode] = useState(false); // true = taps créent des points, false = zoom libre
   const [drawingLine, setDrawingLine] = useState(null); // ligne en cours de tracé {x1, y1}
   const [pixelRatio, setPixelRatio] = useState(0); // mètres par pixel
 
@@ -344,10 +345,12 @@ export default function ScannerPage() {
   // Determine current instruction step
   const getInstruction = () => {
     if (!mesurePhoto) return "Prenez une photo du mur ou de la pi\u00e8ce";
-    if (lines.length === 0 && !drawingLine) return "Tracez une ligne sur un \u00e9l\u00e9ment dont vous connaissez la taille (porte, fen\u00eatre)";
-    if (drawingLine) return "Touchez le 2\u00e8me point pour terminer la ligne";
-    if (refLine && !pixelRatio) return "Entrez la dimension r\u00e9elle de la ligne de r\u00e9f\u00e9rence";
-    if (pixelRatio > 0) return "Tracez des lignes pour mesurer. Touchez 2 points.";
+    if (!measureMode && lines.length === 0) return "Zoomez sur la zone \u00e0 mesurer, puis passez en mode Mesurer";
+    if (!measureMode) return "Mode zoom actif \u2014 passez en mode Mesurer pour tracer";
+    if (lines.length === 0 && !drawingLine) return "Tapez sur un bout de la porte (ou fen\u00eatre), puis l'autre bout";
+    if (drawingLine) return "Tapez le 2\u00e8me point pour terminer la ligne";
+    if (refLine && !pixelRatio) return "Entrez la dimension r\u00e9elle de la r\u00e9f\u00e9rence ci-dessous";
+    if (pixelRatio > 0) return "Tapez 2 points pour mesurer autre chose";
     return "";
   };
 
@@ -395,6 +398,18 @@ export default function ScannerPage() {
             <div style={{ fontSize: 11, color: "#52C37A", fontWeight: 600, lineHeight: 1.4 }}>{getInstruction()}</div>
           </div>
 
+          {/* Toggle Mesurer / Naviguer */}
+          {mesurePhoto && (
+            <div style={{ display: "flex", gap: 0, marginBottom: 10, borderRadius: 10, overflow: "hidden", border: "0.5px solid rgba(82,195,122,0.3)" }}>
+              <button onClick={() => setMeasureMode(false)} style={{ flex: 1, padding: "10px", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", background: !measureMode ? "rgba(82,195,122,0.15)" : "transparent", color: !measureMode ? "#52C37A" : "rgba(240,237,230,0.4)", fontFamily: "'Syne',sans-serif" }}>
+                {"\u{1F50D}"} Zoomer
+              </button>
+              <button onClick={() => setMeasureMode(true)} style={{ flex: 1, padding: "10px", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", borderLeft: "0.5px solid rgba(82,195,122,0.3)", background: measureMode ? "rgba(82,195,122,0.15)" : "transparent", color: measureMode ? "#52C37A" : "rgba(240,237,230,0.4)", fontFamily: "'Syne',sans-serif" }}>
+                {"\u{1F4D0}"} Mesurer
+              </button>
+            </div>
+          )}
+
           {/* Photo + Canvas overlay */}
           {mesurePhoto && (
             <div ref={containerRef} style={{ position: "relative", width: "100%", marginBottom: 12, borderRadius: 12, overflow: "hidden" }}>
@@ -407,12 +422,15 @@ export default function ScannerPage() {
               />
               <canvas
                 ref={canvasRef}
-                onClick={handleClick}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
+                onClick={measureMode ? handleClick : undefined}
+                onTouchStart={measureMode ? handleTouchStart : undefined}
+                onTouchEnd={measureMode ? handleTouchEnd : undefined}
                 style={{
                   position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-                  touchAction: "manipulation", cursor: "crosshair", borderRadius: 12,
+                  touchAction: measureMode ? "none" : "auto",
+                  cursor: measureMode ? "crosshair" : "default",
+                  pointerEvents: measureMode ? "auto" : "none",
+                  borderRadius: 12,
                 }}
               />
             </div>
