@@ -1,8 +1,37 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { IAS } from "../data/constants";
 import { apiURL, apiHeaders, withRetry } from "../utils/api";
 import s from "../styles/index";
+
+const HISTORY_KEY = "mm_scanner_history";
+const MAX_HISTORY = 20;
+
+function createThumbnail(dataUrl, size = 100) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const min = Math.min(img.width, img.height);
+      const sx = (img.width - min) / 2;
+      const sy = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      resolve(canvas.toDataURL("image/jpeg", 0.6));
+    };
+    img.src = dataUrl;
+  });
+}
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; }
+}
+
+function saveHistory(entries) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0, MAX_HISTORY)));
+}
 
 function buildMesurePrompt(target, refType, refValue) {
   const refInfo = refType && refValue
@@ -41,6 +70,25 @@ export default function ScannerPage() {
   const [mesureRefValue, setMesureRefValue] = useState("2.04");
   const [mesureLoading, setMesureLoading] = useState(false);
   const [mesureResult, setMesureResult] = useState(null);
+
+  // History state
+  const [history, setHistory] = useState(loadHistory);
+  const [historyPreview, setHistoryPreview] = useState(null);
+
+  const addToHistory = useCallback(async (photoDataUrl, resultData, histMode) => {
+    const thumb = await createThumbnail(photoDataUrl);
+    const entry = { id: Date.now(), date: new Date().toLocaleString("fr-FR"), mode: histMode, thumb, result: resultData };
+    setHistory(prev => { const next = [entry, ...prev].slice(0, MAX_HISTORY); saveHistory(next); return next; });
+  }, []);
+
+  const clearHistory = useCallback(() => { setHistory([]); setHistoryPreview(null); localStorage.removeItem(HISTORY_KEY); }, []);
+
+  // Save diagnostic result to history when it arrives
+  useEffect(() => {
+    if (scanResult && photo && mode === "diagnostic") {
+      addToHistory(photo, scanResult, "diagnostic");
+    }
+  }, [scanResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gestion photo — ouvre la caméra NATIVE du téléphone
   const handlePhoto = useCallback((e) => {
@@ -84,10 +132,11 @@ export default function ScannerPage() {
       const result = parseAIJson(data?.content?.[0]?.text);
       result._target = mesureTarget;
       setMesureResult(result);
+      addToHistory(dataUrl, result, "mesure");
     } catch (e) {
       setMesureResult({ erreur: e.message });
     } finally { setMesureLoading(false); }
-  }, [apiKey, mesureTarget, mesureRefType, mesureRefValue]);
+  }, [apiKey, mesureTarget, mesureRefType, mesureRefValue, addToHistory]);
 
   const injecterMesures = useCallback(() => {
     if (!mesureResult) return;
@@ -268,6 +317,52 @@ export default function ScannerPage() {
           </div>
         )}
         {mode === "mesure" && mesureResult?.erreur && <div style={s.errBox}>{mesureResult.erreur}</div>}
+
+        {/* === HISTORIQUE PREVIEW === */}
+        {historyPreview && (
+          <div style={{ background: "#181D28", border: "0.5px solid rgba(201,168,76,0.25)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#C9A84C" }}>{historyPreview.mode === "diagnostic" ? "Diagnostic" : "Mesure"} — {historyPreview.date}</div>
+              <button onClick={() => setHistoryPreview(null)} style={{ background: "transparent", border: "none", color: "rgba(240,237,230,0.4)", cursor: "pointer", fontSize: 16, padding: 0 }}>✕</button>
+            </div>
+            {historyPreview.mode === "diagnostic" && historyPreview.result && (
+              <div>
+                {historyPreview.result.urgence && <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 9, fontWeight: 700, background: "rgba(201,168,76,0.1)", color: "#C9A84C", border: "0.5px solid rgba(201,168,76,0.3)" }}>{historyPreview.result.urgence}</span>}
+                {historyPreview.result.titre && <div style={{ fontSize: 12, fontWeight: 700, marginTop: 6, fontFamily: "'Syne',sans-serif" }}>{historyPreview.result.titre}</div>}
+                {historyPreview.result.etapes?.map((e, i) => <div key={i} style={{ fontSize: 11, color: "rgba(240,237,230,0.6)", lineHeight: 1.5, marginTop: 4 }}>{i + 1}. {e}</div>)}
+              </div>
+            )}
+            {historyPreview.mode === "mesure" && historyPreview.result && !historyPreview.result.erreur && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                {Object.entries(historyPreview.result).filter(([k]) => !k.startsWith("_") && k !== "confiance" && k !== "methode" && k !== "ouvertures" && k !== "forme" && k !== "type").map(([k, v]) => (
+                  <div key={k} style={{ background: "rgba(82,195,122,0.06)", borderRadius: 6, padding: "5px 8px" }}>
+                    <div style={{ fontSize: 8, color: "rgba(240,237,230,0.35)", textTransform: "uppercase" }}>{k.replace(/_/g, " ")}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#52C37A" }}>{typeof v === "string" ? v : JSON.stringify(v)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* === HISTORIQUE SCANNER === */}
+        {history.length > 0 && (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 9, color: "#C9A84C", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Historique ({history.length})</div>
+              <button onClick={clearHistory} style={{ background: "rgba(224,82,82,0.08)", border: "0.5px solid rgba(224,82,82,0.25)", borderRadius: 8, padding: "4px 10px", fontSize: 9, fontWeight: 600, color: "#E05252", cursor: "pointer" }}>Effacer</button>
+            </div>
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 6 }}>
+              {history.map(h => (
+                <div key={h.id} onClick={() => setHistoryPreview(h)} style={{ flexShrink: 0, cursor: "pointer", width: 80, textAlign: "center", opacity: historyPreview?.id === h.id ? 1 : 0.7, transition: "opacity 0.2s" }}>
+                  <img src={h.thumb} alt="" style={{ width: 64, height: 64, borderRadius: 10, objectFit: "cover", border: historyPreview?.id === h.id ? "1.5px solid #C9A84C" : "1px solid rgba(255,255,255,0.08)" }} />
+                  <div style={{ fontSize: 8, color: h.mode === "diagnostic" ? "#C9A84C" : "#52C37A", fontWeight: 600, marginTop: 3 }}>{h.mode === "diagnostic" ? "Diag" : "Mesure"}</div>
+                  <div style={{ fontSize: 7, color: "rgba(240,237,230,0.3)" }}>{h.date.split(" ")[0]}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

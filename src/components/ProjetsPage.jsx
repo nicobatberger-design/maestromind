@@ -1,5 +1,6 @@
 import { useApp } from "../context/AppContext";
 import s from "../styles/index";
+import RappelsChantier from "./RappelsChantier";
 
 export default function ProjetsPage() {
   const {
@@ -44,6 +45,8 @@ export default function ProjetsPage() {
             <button onClick={() => genererCRChantier(p)} disabled={crLoading} style={{ background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", borderRadius: 10, padding: "10px 6px", fontSize: 9, fontWeight: 700, color: "#5290E0", cursor: "pointer", opacity: crLoading ? 0.5 : 1 }}>{crLoading ? "..." : "\u{1F4CB} CR PDF"}</button>
           </div>
         </div>)}
+
+        <RappelsChantier />
       </div>
     </div>
   );

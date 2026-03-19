@@ -64,6 +64,7 @@ const s = {
   keyInp: { width:"100%", background:"rgba(6,8,13,0.85)", border:"0.5px solid rgba(201,168,76,0.2)", borderRadius:10, padding:"12px 14px", color:"#F0EDE6", fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", marginBottom:12 },
   keyBtn: { width:"100%", background:"linear-gradient(135deg,#EDD060,#C9A84C,#7A6030)", border:"none", borderRadius:10, padding:14, fontFamily:"'Syne',sans-serif", fontSize:14, fontWeight:700, color:"#06080D", cursor:"pointer", boxShadow:"0 4px 22px rgba(201,168,76,0.32)" },
   rangBadge: { fontSize:9, padding:"2px 7px", borderRadius:20, fontWeight:700, marginLeft:6 },
+  skeleton: { background:"linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(201,168,76,0.08) 50%, rgba(255,255,255,0.03) 75%)", backgroundSize:"200% 100%", animation:"shimmer 1.5s ease-in-out infinite", borderRadius:8 },
 };
 
 export default s;
