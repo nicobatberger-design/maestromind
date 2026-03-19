@@ -3,7 +3,7 @@ const IS_DEV = import.meta.env.DEV;
 export const PDG_PIN_HASH = import.meta.env.VITE_PDG_PIN_HASH || "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92";
 
 export function apiURL() {
-  return IS_DEV ? "https://api.anthropic.com/v1/messages" : "/api/anthropic";
+  return IS_DEV ? "https://api.anthropic.com/v1/messages" : "https://maestromind.vercel.app/api/anthropic";
 }
 
 export function apiHeaders(apiKey) {
