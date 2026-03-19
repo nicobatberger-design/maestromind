@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { IAS, DIVISIONS, PROFILS, buildSystemPrompt, getChips, PDG_PIN_HASH } from "../data/constants";
-import { apiURL, apiHeaders, withRetry, hashPin } from "../utils/api";
+import { apiURL, apiHeaders, withRetry, streamChat, hashPin } from "../utils/api";
 import { exportChatPDF as _exportChatPDF, genererCertificatPDF, genererDevisProPDF as _genererDevisProPDF, genererCRPDF } from "../utils/pdf";
 
 const IS_DEV = import.meta.env.DEV;
@@ -12,6 +12,20 @@ function parseAIJson(text) {
   const match = clean.match(/\{[\s\S]*\}/);
   if (match) return JSON.parse(match[0]);
   throw new Error("Réponse IA invalide. Réessayez.");
+}
+
+// Obfuscation compteur paywall (anti-triche localStorage)
+const MC_KEY = "bl_mc_v2";
+function readMsgCount() {
+  try {
+    const raw = localStorage.getItem(MC_KEY);
+    if (!raw) return 0;
+    const n = parseInt(atob(raw), 10);
+    return isNaN(n) ? 0 : n;
+  } catch { return 0; }
+}
+function writeMsgCount(n) {
+  try { localStorage.setItem(MC_KEY, btoa(String(n))); } catch {}
 }
 
 const ROUTE_TO_PAGE = { "/": "home", "/coach": "coach", "/scanner": "scanner", "/shop": "shop", "/cert": "cert", "/outils": "outils", "/projets": "projets", "/dashboard": "dashboard" };
@@ -88,7 +102,7 @@ export function AppProvider({ children }) {
 
   // ── Auth / Onboarding ─────────────────────────────────────────
   const [rgpdOk, setRgpdOk] = useState(() => localStorage.getItem("rgpd_accepted") === "1");
-  const [msgCount, setMsgCount] = useState(() => parseInt(localStorage.getItem("bl_msg_count") || "0"));
+  const [msgCount, setMsgCount] = useState(() => readMsgCount());
   const [showPaywall, setShowPaywall] = useState(false);
   const [isPremium, setIsPremium] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -279,19 +293,15 @@ export function AppProvider({ children }) {
     setErrMsg("");
     const newMsgs = [...msgs, { role: "user", text: txt }];
     const newHist = [...hist, { role: "user", content: txt }];
-    const nc = msgCount + 1; setMsgCount(nc); localStorage.setItem("bl_msg_count", nc);
+    const nc = msgCount + 1; setMsgCount(nc); writeMsgCount(nc);
     if (!isPremium && nc > 0 && nc % 5 === 0) { setMsgs(newMsgs); setShowPaywall(true); return; }
     setMsgs([...newMsgs, { role: "ai", text: "..." }]);
     setLoading(true);
     try {
-      const r = await withRetry(() => fetch(apiURL(), {
-        method: "POST",
-        headers: apiHeaders(apiKey),
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: buildSystemPrompt(curIA, userType), messages: newHist.slice(-10) }),
-      }));
-      const data = await r.json();
-      if (data.error) throw new Error(data.error.message);
-      const rep = data?.content?.[0]?.text || "Désolé, réessayez.";
+      const body = { model: "claude-sonnet-4-20250514", max_tokens: 1000, system: buildSystemPrompt(curIA, userType), messages: newHist.slice(-10) };
+      const rep = await streamChat({ apiKey, body, onToken: (partial) => {
+        setMsgs([...newMsgs, { role: "ai", text: partial }]);
+      }});
       setHist([...newHist, { role: "assistant", content: rep }]);
       const finalMsgs = [...newMsgs, { role: "ai", text: rep }];
       setMsgs(finalMsgs);
@@ -303,6 +313,7 @@ export function AppProvider({ children }) {
   }, [loading, input, msgs, hist, msgCount, isPremium, apiKey, curIA, userType, saveConv]);
 
   const sendWithPhoto = useCallback(async (dataUrl) => {
+    if (loading) return;
     const caption = input.trim() || "Analyse cette photo et donne-moi ton expertise.";
     setInput("");
     setErrMsg("");
@@ -312,19 +323,15 @@ export function AppProvider({ children }) {
       { type: "image", source: { type: "base64", media_type: mediaTypePhoto, data: dataUrl.split(",")[1] } },
       { type: "text", text: caption }
     ]}];
-    const nc = msgCount + 1; setMsgCount(nc); localStorage.setItem("bl_msg_count", nc);
+    const nc = msgCount + 1; setMsgCount(nc); writeMsgCount(nc);
     if (!isPremium && nc > 0 && nc % 5 === 0) { setMsgs(newMsgs); setShowPaywall(true); return; }
     setMsgs([...newMsgs, { role: "ai", text: "..." }]);
     setLoading(true);
     try {
-      const r = await withRetry(() => fetch(apiURL(), {
-        method: "POST",
-        headers: apiHeaders(apiKey),
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: buildSystemPrompt(curIA, userType), messages: newHist.slice(-10) }),
-      }));
-      const data = await r.json();
-      if (data.error) throw new Error(data.error.message);
-      const rep = data?.content?.[0]?.text || "Désolé, réessayez.";
+      const body = { model: "claude-sonnet-4-20250514", max_tokens: 1000, system: buildSystemPrompt(curIA, userType), messages: newHist.slice(-10) };
+      const rep = await streamChat({ apiKey, body, onToken: (partial) => {
+        setMsgs([...newMsgs, { role: "ai", text: partial }]);
+      }});
       setHist([...newHist, { role: "assistant", content: rep }]);
       const finalMsgs2 = [...newMsgs, { role: "ai", text: rep }];
       setMsgs(finalMsgs2);
@@ -333,7 +340,7 @@ export function AppProvider({ children }) {
       setMsgs(newMsgs);
       setErrMsg(e.message);
     } finally { setLoading(false); }
-  }, [input, msgs, hist, msgCount, isPremium, apiKey, curIA, userType, saveConv]);
+  }, [loading, input, msgs, hist, msgCount, isPremium, apiKey, curIA, userType, saveConv]);
 
   const rateMsg = useCallback((idx, rating) => {
     let r; try { r = JSON.parse(localStorage.getItem("bl_ratings") || "[]"); } catch { r = []; }
@@ -373,6 +380,7 @@ export function AppProvider({ children }) {
   const startVoice = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { alert("Reconnaissance vocale non supportée sur ce navigateur."); return; }
+    if (voiceRef.current) { try { voiceRef.current.abort(); } catch {} }
     const rec = new SR();
     rec.lang = "fr-FR"; rec.continuous = false; rec.interimResults = false;
     voiceRef.current = rec;
@@ -737,13 +745,13 @@ export function AppProvider({ children }) {
     setProjetChatMsgs([...newMsgs, { role: "ai", text: "..." }]);
     setProjetChatLoading(true);
     try {
-      const r = await withRetry(() => fetch(apiURL(), {
-        method: "POST", headers: apiHeaders(apiKey),
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 900,
-          system: "Tu es l'assistant IA dédié à ce projet — Nom : " + projetChat.nom + ". Type : " + projetChat.type + ". Date : " + projetChat.date + ". Statut : " + projetChat.statut + ". Notes : " + (projetChat.notes || "aucune") + ". Expert bâtiment, normes DTU. Réponds de façon concise et pratique.\n" + profilIA(),
-          messages: newMsgs.filter(m => m.text !== "...").map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.text })).slice(-8) }) }));
-      const data = await r.json(); if (data.error) throw new Error(data.error.message);
-      setProjetChatMsgs([...newMsgs, { role: "ai", text: data.content[0].text }]);
+      const body = { model: "claude-sonnet-4-20250514", max_tokens: 900,
+        system: "Tu es l'assistant IA dédié à ce projet — Nom : " + projetChat.nom + ". Type : " + projetChat.type + ". Date : " + projetChat.date + ". Statut : " + projetChat.statut + ". Notes : " + (projetChat.notes || "aucune") + ". Expert bâtiment, normes DTU. Réponds de façon concise et pratique.\n" + profilIA(),
+        messages: newMsgs.filter(m => m.text !== "...").map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.text })).slice(-8) };
+      const rep = await streamChat({ apiKey, body, onToken: (partial) => {
+        setProjetChatMsgs([...newMsgs, { role: "ai", text: partial }]);
+      }});
+      setProjetChatMsgs([...newMsgs, { role: "ai", text: rep }]);
     } catch (e) { setProjetChatMsgs([...newMsgs, { role: "ai", text: "Erreur : " + e.message }]); }
     finally { setProjetChatLoading(false); }
   }, [projetChatInput, projetChat, projetChatMsgs, apiKey, profilIA]);
