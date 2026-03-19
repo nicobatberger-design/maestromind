@@ -1,15 +1,63 @@
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { IAS, DIVISIONS } from "../data/constants";
 import s from "../styles/index";
 
+// Format AI text: bold, numbered lists, titles, prices in color
+function formatAIText(text) {
+  if (!text || text === "...") return "<span>...</span>";
+  let html = text
+    // Bold
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    // Numbered lists: "1. " or "1) " at start of line
+    .replace(/^(\d+)[.)]\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#C9A84C;font-weight:700;flex-shrink:0">$1.</span><span>$2</span></div>')
+    // Bullet lists: "- " or "* " at start of line
+    .replace(/^[-*]\s+(.+)$/gm, '<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#C9A84C">&#8226;</span><span>$1</span></div>')
+    // Prices: match patterns like 100€, 1 500€, 100-300€, ~200€
+    .replace(/([~]?\d[\d\s]*(?:[.,]\d+)?(?:\s*[-\u2013]\s*\d[\d\s]*(?:[.,]\d+)?)?\s*\u20AC)/g, '<span style="color:#52C37A;font-weight:700">$1</span>')
+    // Lines that look like titles (all caps or ending with :)
+    .replace(/^([A-Z\u00C0-\u00DC\s]{5,}):?\s*$/gm, '<div style="font-weight:700;color:#C9A84C;margin-top:6px;font-size:11px;letter-spacing:0.5px">$1</div>')
+    // Newlines
+    .replace(/\n/g, "<br/>");
+  return html;
+}
+
 export default function CoachPage() {
   const {
     page, curDiv, curIA, msgs, setMsgs, hist, setHist, input, setInput, loading, errMsg,
-    userType, voiceActive,
+    userType, voiceActive, msgCount, isPremium,
     msgsRef, chips,
     switchDiv, switchIA, send, sendWithPhoto, rateMsg,
     startVoice, exportChatPDF, rangColor, saveConv, welcomeMsg,
   } = useApp();
+
+  const [copiedIdx, setCopiedIdx] = useState(null);
+  const textareaRef = useRef(null);
+
+  // Copy message text to clipboard
+  const copyMessage = useCallback(async (text, idx) => {
+    try {
+      // Strip markdown-like formatting for plain text copy
+      const plain = text.replace(/\*\*(.*?)\*\*/g, "$1");
+      await navigator.clipboard.writeText(plain);
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(null), 2000);
+    } catch { /* clipboard may fail on some browsers */ }
+  }, []);
+
+  // Auto-resize textarea (max 4 lines)
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    const lineH = 20; // approx line height
+    const maxH = lineH * 4;
+    ta.style.height = Math.min(ta.scrollHeight, maxH) + "px";
+  }, [input]);
+
+  // Message counter for paywall
+  const userMsgCount = msgs.filter(m => m.role === "user").length;
+  const msgsBeforePaywall = isPremium ? null : (5 - (msgCount % 5));
 
   return (
     <div style={{ ...s.page, ...(page === "coach" ? s.pageActive : {}) }}>
@@ -29,6 +77,12 @@ export default function CoachPage() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {/* Message counter badge */}
+            {!isPremium && (
+              <div style={{ padding: "3px 8px", borderRadius: 20, fontSize: 9, fontWeight: 700, background: msgsBeforePaywall <= 1 ? "rgba(224,82,82,0.12)" : "rgba(201,168,76,0.1)", color: msgsBeforePaywall <= 1 ? "#E05252" : "#C9A84C", border: "0.5px solid " + (msgsBeforePaywall <= 1 ? "rgba(224,82,82,0.3)" : "rgba(201,168,76,0.25)") }}>
+                {msgsBeforePaywall}/5
+              </div>
+            )}
             {msgs.length > 1 && <button onClick={exportChatPDF} title="Exporter en PDF" style={{ background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2.2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>
             </button>}
@@ -61,8 +115,11 @@ export default function CoachPage() {
                 </svg>
               </div>
               <div style={{ maxWidth: "88%" }}>
-                <div style={m.role === "ai" ? s.bubA : s.bubU} dangerouslySetInnerHTML={{ __html: m.text === "..." ? "<span>...</span>" : m.text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br/>") }} />
+                <div style={m.role === "ai" ? s.bubA : s.bubU} dangerouslySetInnerHTML={{ __html: formatAIText(m.text) }} />
                 {m.role === "ai" && m.text !== "..." && <div style={{ display: "flex", gap: 6, marginTop: 5, paddingLeft: 2 }}>
+                  <button onClick={() => copyMessage(m.text, i)} style={{ background: copiedIdx === i ? "rgba(82,195,122,0.15)" : "transparent", border: "0.5px solid " + (copiedIdx === i ? "#52C37A" : "rgba(255,255,255,0.07)"), borderRadius: 20, padding: "2px 8px", fontSize: 10, color: copiedIdx === i ? "#52C37A" : "rgba(240,237,230,0.3)", cursor: "pointer", transition: "all 0.2s" }}>
+                    {copiedIdx === i ? "\u2713 Copie" : "\u{1F4CB} Copier"}
+                  </button>
                   <button onClick={() => rateMsg(i, 1)} style={{ background: m.rated === 1 ? "rgba(82,195,122,0.15)" : "transparent", border: "0.5px solid " + (m.rated === 1 ? "#52C37A" : "rgba(255,255,255,0.07)"), borderRadius: 20, padding: "2px 8px", fontSize: 11, color: m.rated === 1 ? "#52C37A" : "rgba(240,237,230,0.3)", cursor: "pointer" }}>{"\u{1F44D}"}</button>
                   <button onClick={() => rateMsg(i, -1)} style={{ background: m.rated === -1 ? "rgba(224,82,82,0.12)" : "transparent", border: "0.5px solid " + (m.rated === -1 ? "#E05252" : "rgba(255,255,255,0.07)"), borderRadius: 20, padding: "2px 8px", fontSize: 11, color: m.rated === -1 ? "#E05252" : "rgba(240,237,230,0.3)", cursor: "pointer" }}>{"\u{1F44E}"}</button>
                 </div>}
@@ -72,11 +129,11 @@ export default function CoachPage() {
         </div>
         {errMsg && <div style={s.errBox}>{errMsg}</div>}
         <div style={s.inputBar}>
-          <textarea style={s.ci} value={input} onChange={e => setInput(e.target.value)} placeholder={"Demandez à " + IAS[curIA]?.name + "..."} rows={1} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
-          <button onClick={startVoice} title="Parler à l'IA" style={{ width: 44, height: 44, borderRadius: "50%", border: "0.5px solid " + (voiceActive ? "rgba(224,82,82,0.6)" : "rgba(201,168,76,0.22)"), background: voiceActive ? "rgba(224,82,82,0.15)" : "rgba(201,168,76,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, animation: voiceActive ? "voicePulse 0.8s ease-in-out infinite" : "none" }}>
+          <textarea ref={textareaRef} style={{ ...s.ci, overflow: "hidden", maxHeight: 80 }} value={input} onChange={e => setInput(e.target.value)} placeholder={"Demandez \u00E0 " + IAS[curIA]?.name + "..."} rows={1} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
+          <button onClick={startVoice} title="Parler \u00E0 l'IA" style={{ width: 44, height: 44, borderRadius: "50%", border: "0.5px solid " + (voiceActive ? "rgba(224,82,82,0.6)" : "rgba(201,168,76,0.22)"), background: voiceActive ? "rgba(224,82,82,0.15)" : "rgba(201,168,76,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, animation: voiceActive ? "voicePulse 0.8s ease-in-out infinite" : "none" }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={voiceActive ? "#E05252" : "#C9A84C"} strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
           </button>
-          <label style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.22)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }} title="Envoyer une photo à cette IA">
+          <label style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.22)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }} title="Envoyer une photo \u00E0 cette IA">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
             <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => sendWithPhoto(ev.target.result); r.readAsDataURL(f); e.target.value = ""; }} />
           </label>

@@ -65,12 +65,12 @@ export default function OutilsPage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
             <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Type de travaux</div><select style={s.inp} value={calcType} onChange={e => setCalcType(e.target.value)}>{["Peinture", "Carrelage", "Parquet", "Placo BA13", "Cloison BA13", "Doublage BA13+isolant", "Faux plafond BA13", "Enduit", "Isolation murs", "Isolation combles", "Isolation rampants", "Toiture", "Béton dalle", "Ragréage", "Charpente", "Bardage"].map(t => <option key={t}>{t}</option>)}</select></div>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Surface m²</div><input style={s.inp} type="number" value={calcSurface} onChange={e => setCalcSurface(e.target.value)} placeholder="20" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Surface m²</div><input style={s.inp} type="number" inputMode="decimal" value={calcSurface} onChange={e => setCalcSurface(e.target.value)} placeholder="20" /></div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Hauteur m</div><input style={s.inp} type="number" step="0.01" value={calcHauteur} onChange={e => setCalcHauteur(e.target.value)} placeholder="2.50" /></div>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Pente °</div><input style={s.inp} type="number" value={calcPente} onChange={e => setCalcPente(e.target.value)} placeholder="0" /></div>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Longueur ml</div><input style={s.inp} type="number" value={calcLongueur} onChange={e => setCalcLongueur(e.target.value)} placeholder="—" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Hauteur m</div><input style={s.inp} type="number" inputMode="decimal" step="0.01" value={calcHauteur} onChange={e => setCalcHauteur(e.target.value)} placeholder="2.50" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Pente °</div><input style={s.inp} type="number" inputMode="decimal" value={calcPente} onChange={e => setCalcPente(e.target.value)} placeholder="0" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Longueur ml</div><input style={s.inp} type="number" inputMode="decimal" value={calcLongueur} onChange={e => setCalcLongueur(e.target.value)} placeholder="—" /></div>
           </div>
           {parseFloat(calcPente) > 0 && <div style={{ background: "rgba(232,135,58,0.08)", border: "0.5px solid rgba(232,135,58,0.25)", borderRadius: 10, padding: "8px 12px", marginBottom: 10, fontSize: 10, color: "#E8873A", lineHeight: 1.6 }}>{"\u26A0\uFE0F"} Pente {calcPente}° — l'IA calculera la surface réelle en rampant et adaptera les dimensions des matériaux.</div>}
           {parseFloat(calcHauteur) > 2.5 && ["Placo BA13", "Cloison BA13", "Doublage BA13+isolant"].includes(calcType) && <div style={{ background: "rgba(82,144,224,0.08)", border: "0.5px solid rgba(82,144,224,0.25)", borderRadius: 10, padding: "8px 12px", marginBottom: 10, fontSize: 10, color: "#5290E0", lineHeight: 1.6 }}>{"\u2139\uFE0F"} Hauteur {calcHauteur}m — plaques et montants adaptés (hors standard 2.50m).</div>}
@@ -91,7 +91,7 @@ export default function OutilsPage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
             <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Revenus du foyer</div><select style={s.inp} value={primesRev} onChange={e => setPrimesRev(e.target.value)}>{["Très modeste", "Modeste", "Intermédiaire", "Supérieur"].map(r => <option key={r}>{r}</option>)}</select></div>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Surface m²</div><input style={s.inp} type="number" value={primesSurf} onChange={e => setPrimesSurf(e.target.value)} /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Surface m²</div><input style={s.inp} type="number" inputMode="decimal" value={primesSurf} onChange={e => setPrimesSurf(e.target.value)} /></div>
           </div>
           <div style={{ marginBottom: 12 }}><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Type de travaux</div><select style={s.inp} value={primesTrav} onChange={e => setPrimesTrav(e.target.value)}>{["Isolation combles", "Isolation murs", "Pompe à chaleur", "Chaudière gaz à condensation", "Poêle à granulés", "VMC double flux", "Fenêtres double vitrage", "Rénovation globale"].map(t => <option key={t}>{t}</option>)}</select></div>
           <button style={primesLoading ? { ...s.greenBtn, opacity: 0.5 } : s.greenBtn} onClick={calculerPrimes} disabled={primesLoading}>{primesLoading ? "Calcul en cours..." : "\u{1F4B0} Calculer mes aides 2025"}</button>
@@ -121,7 +121,7 @@ export default function OutilsPage() {
           <div style={s.card}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 11 }}>
               <div><div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 6, textTransform: "uppercase" }}>Type de bien</div><select style={s.inp} value={dpeT} onChange={e => setDpeT(e.target.value)}><option>Appartement</option><option>Maison</option></select></div>
-              <div><div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 6, textTransform: "uppercase" }}>Surface m²</div><input style={s.inp} type="number" value={dpeS} onChange={e => setDpeS(parseInt(e.target.value) || 75)} /></div>
+              <div><div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 6, textTransform: "uppercase" }}>Surface m²</div><input style={s.inp} type="number" inputMode="decimal" value={dpeS} onChange={e => setDpeS(parseInt(e.target.value) || 75)} /></div>
             </div>
             <div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 6, textTransform: "uppercase" }}>Chauffage actuel</div>
             <select style={{ ...s.inp, marginBottom: 12 }} value={dpeC} onChange={e => setDpeC(e.target.value)}><option>Gaz naturel</option><option>Électrique</option><option>Fioul</option><option>Pompe à chaleur</option></select>
@@ -137,7 +137,7 @@ export default function OutilsPage() {
         {toolTab === "planning" && <div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
             <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Type de projet</div><select style={s.inp} value={planningType} onChange={e => setPlanningType(e.target.value)}>{["Rénovation salle de bain", "Rénovation cuisine", "Isolation combles", "Isolation murs", "Pose carrelage", "Cloison BA13", "Peinture appartement", "Rénovation complète", "Installation électrique", "Plomberie sanitaires"].map(t => <option key={t}>{t}</option>)}</select></div>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Budget {"\u20AC"}</div><input style={s.inp} type="number" value={planningBudget} onChange={e => setPlanningBudget(e.target.value)} /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Budget {"\u20AC"}</div><input style={s.inp} type="number" inputMode="decimal" value={planningBudget} onChange={e => setPlanningBudget(e.target.value)} /></div>
           </div>
           <button style={planningLoading ? { ...s.greenBtn, opacity: 0.5 } : s.greenBtn} onClick={planifierChantier} disabled={planningLoading}>{planningLoading ? "Planification en cours..." : "\u{1F4C5} Générer le planning chantier"}</button>
           {planningResult && <div style={{ marginTop: 14 }}>
@@ -155,7 +155,7 @@ export default function OutilsPage() {
           <div style={{ marginBottom: 8 }}><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Décrivez les travaux</div><textarea style={{ ...s.ci, width: "100%", minHeight: 100, borderRadius: 12, padding: "10px 14px", marginBottom: 0, lineHeight: 1.6 }} value={devisProDesc} onChange={e => setDevisProDesc(e.target.value)} placeholder="Ex: Pose carrelage salle de bain 8m²..." /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
             <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Client</div><input style={s.inp} value={devisProClient} onChange={e => setDevisProClient(e.target.value)} placeholder="Nom du client" /></div>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Surface m²</div><input style={s.inp} type="number" value={devisProSurface} onChange={e => setDevisProSurface(e.target.value)} /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Surface m²</div><input style={s.inp} type="number" inputMode="decimal" value={devisProSurface} onChange={e => setDevisProSurface(e.target.value)} /></div>
           </div>
           <button style={devisProLoading ? { ...s.greenBtn, opacity: 0.5, borderColor: "rgba(232,135,58,0.4)", color: "#E8873A" } : { ...s.greenBtn, borderColor: "rgba(232,135,58,0.45)", color: "#E8873A" }} onClick={genererDevisPro} disabled={devisProLoading}>{devisProLoading ? "Génération en cours..." : "\u{1F4C4} Générer le devis professionnel"}</button>
           {devisProResult && <div style={{ marginTop: 12 }}>
@@ -171,7 +171,7 @@ export default function OutilsPage() {
         {toolTab === "rentabilite" && <div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
             {[["Surface chantier m²", rentaSurface, setRentaSurface], ["Taux horaire \u20AC/h", rentaTaux, setRentaTaux], ["Coût matériaux \u20AC", rentaMat, setRentaMat], ["Déplacements \u20AC", rentaDep, setRentaDep]].map(([label, val, set]) => (
-              <div key={label}><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>{label}</div><input style={s.inp} type="number" value={val} onChange={e => set(e.target.value)} /></div>
+              <div key={label}><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>{label}</div><input style={s.inp} type="number" inputMode="decimal" value={val} onChange={e => set(e.target.value)} /></div>
             ))}
           </div>
           <button style={s.greenBtn} onClick={calculerRentabilite}>{"\u{1F4CA}"} Calculer ma rentabilité</button>

@@ -4,6 +4,16 @@ import { IAS } from "../data/constants";
 import { apiURL, apiHeaders, withRetry } from "../utils/api";
 import s from "../styles/index";
 
+// ── FORMAT HELPERS ──
+function fmtDual(meters) {
+  const mm = Math.round(meters * 1000);
+  return `${mm} (${meters.toFixed(2)}m)`;
+}
+function fmtDualShort(meters) {
+  const mm = Math.round(meters * 1000);
+  return `${mm}mm (${meters.toFixed(2)}m)`;
+}
+
 const HISTORY_KEY = "mm_scanner_history";
 const MAX_HISTORY = 20;
 
@@ -174,13 +184,12 @@ function drawPlan(canvas, planData, selectedElement, allMeasures, hoveredElement
     if (allMeasures) {
       const m = allMeasures[idx];
       if (m) {
-        ctx.font = "bold 10px 'DM Sans', sans-serif";
-        // Height dimension — right side
+        ctx.font = "bold 9px 'DM Sans', sans-serif";
+        // Height dimension — right side (dual mm + m)
         if (m.realH) {
-          const dimText = Math.round(m.realH * 1000) + "mm";
+          const dimText = fmtDual(m.realH);
           const tx = ex + ew + 4;
           const ty = ey + eh / 2;
-          // Badge
           const tw = ctx.measureText(dimText).width;
           ctx.fillStyle = "rgba(26,29,36,0.85)";
           roundRect(ctx, tx - 2, ty - 8, tw + 6, 16, 4);
@@ -200,13 +209,12 @@ function drawPlan(canvas, planData, selectedElement, allMeasures, hoveredElement
           ctx.strokeStyle = col.stroke;
           ctx.lineWidth = 0.5;
           ctx.stroke();
-          // Arrow tips
           drawArrowTip(ctx, ex + ew + 1, ey, "up", col.stroke);
           drawArrowTip(ctx, ex + ew + 1, ey + eh, "down", col.stroke);
         }
-        // Width dimension — bottom
+        // Width dimension — bottom (dual mm + m)
         if (m.realW) {
-          const dimText = Math.round(m.realW * 1000) + "mm";
+          const dimText = fmtDual(m.realW);
           const tx = ex + ew / 2;
           const ty = ey + eh + 12;
           const tw = ctx.measureText(dimText).width;
@@ -221,7 +229,6 @@ function drawPlan(canvas, planData, selectedElement, allMeasures, hoveredElement
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(dimText, tx, ty);
-          // Arrow line
           ctx.beginPath();
           ctx.moveTo(ex, ey + eh + 3);
           ctx.lineTo(ex + ew, ey + eh + 3);
@@ -230,6 +237,25 @@ function drawPlan(canvas, planData, selectedElement, allMeasures, hoveredElement
           ctx.stroke();
           drawArrowTip(ctx, ex, ey + eh + 3, "left", col.stroke);
           drawArrowTip(ctx, ex + ew, ey + eh + 3, "right", col.stroke);
+        }
+        // Floor height (cote depuis le sol) — small label at bottom-left of element
+        if (m.floorH !== undefined && el.type !== "plinthe") {
+          ctx.font = "600 8px 'DM Sans', sans-serif";
+          const floorText = "Sol: " + fmtDual(m.floorH);
+          const ftw = ctx.measureText(floorText).width;
+          const fx = ex - 2;
+          const fy = ey + eh + 22;
+          ctx.fillStyle = "rgba(26,29,36,0.9)";
+          roundRect(ctx, fx - 2, fy - 6, ftw + 6, 12, 3);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(232,135,58,0.6)";
+          ctx.lineWidth = 0.5;
+          roundRect(ctx, fx - 2, fy - 6, ftw + 6, 12, 3);
+          ctx.stroke();
+          ctx.fillStyle = "#E8873A";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          ctx.fillText(floorText, fx + 1, fy);
         }
       }
     }
@@ -251,9 +277,9 @@ function drawPlan(canvas, planData, selectedElement, allMeasures, hoveredElement
 
   // Wall total dimensions if allMeasures
   if (allMeasures && allMeasures._wallH) {
-    ctx.font = "bold 11px 'Syne', sans-serif";
-    // Wall height — far right
-    const dimH = Math.round(allMeasures._wallH * 1000) + "mm";
+    ctx.font = "bold 10px 'Syne', sans-serif";
+    // Wall height — far right (dual mm + m)
+    const dimH = fmtDualShort(allMeasures._wallH);
     const twH = ctx.measureText(dimH).width;
     const rxH = mX + mW + 16;
     const ryH = mY + mH / 2;
@@ -278,9 +304,30 @@ function drawPlan(canvas, planData, selectedElement, allMeasures, hoveredElement
     drawArrowTip(ctx, rxH - 6, mY, "up", "#C9A84C");
     drawArrowTip(ctx, rxH - 6, mY + mH, "down", "#C9A84C");
   }
+  // Wall surface (m2)
+  if (allMeasures && allMeasures._wallH && allMeasures._wallW) {
+    const surfM2 = (allMeasures._wallH * allMeasures._wallW).toFixed(2);
+    ctx.font = "bold 10px 'Syne', sans-serif";
+    const surfText = "Surface: " + surfM2 + " m\u00B2";
+    const twS = ctx.measureText(surfText).width;
+    const sxS = mX + mW / 2;
+    const syS = mY - 10;
+    ctx.fillStyle = "rgba(26,29,36,0.92)";
+    roundRect(ctx, sxS - twS / 2 - 5, syS - 9, twS + 10, 18, 5);
+    ctx.fill();
+    ctx.strokeStyle = "#52C37A";
+    ctx.lineWidth = 1;
+    roundRect(ctx, sxS - twS / 2 - 5, syS - 9, twS + 10, 18, 5);
+    ctx.stroke();
+    ctx.fillStyle = "#52C37A";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(surfText, sxS, syS);
+  }
+
   if (allMeasures && allMeasures._wallW) {
-    ctx.font = "bold 11px 'Syne', sans-serif";
-    const dimW = Math.round(allMeasures._wallW * 1000) + "mm";
+    ctx.font = "bold 10px 'Syne', sans-serif";
+    const dimW = fmtDualShort(allMeasures._wallW);
     const twW = ctx.measureText(dimW).width;
     const rxW = mX + mW / 2;
     const ryW = mY + mH + 24;
@@ -594,7 +641,12 @@ export default function ScannerPage() {
       if (el.type === "mur") return;
       const rH = (el.h / 100) * wallH;
       const rW = (el.w / 100) * wallW;
-      measures[idx] = { realH: rH, realW: rW };
+      // Floor height = distance from bottom of wall to bottom of element
+      // In the plan, y=0 is top, y=100 is bottom. Bottom of element = el.y + el.h
+      // Distance from floor (bottom) = 100 - (el.y + el.h) => in % of wall height
+      const floorPercent = 100 - (el.y + el.h);
+      const floorH = Math.max(0, (floorPercent / 100) * wallH);
+      measures[idx] = { realH: rH, realW: rW, floorH };
     });
 
     setAllMeasures(measures);
@@ -629,6 +681,81 @@ export default function ScannerPage() {
     if (allMeasures._wallH) setCalcHauteur(String(allMeasures._wallH.toFixed(2)));
     goPage("outils");
   }, [allMeasures, setCalcSurface, setCalcHauteur, goPage]);
+
+  // ── Export Plan PDF ──
+  const exportPlanPDF = useCallback(async () => {
+    if (!allMeasures || !planData) return;
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const W = 210;
+    const dateStr = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+
+    // Background
+    doc.setFillColor(6, 8, 13); doc.rect(0, 0, W, 297, "F");
+    doc.setFillColor(201, 168, 76); doc.rect(0, 0, 5, 297, "F"); doc.rect(0, 0, W, 1.5, "F");
+
+    // Header
+    doc.setFillColor(10, 14, 22); doc.rect(5, 1.5, W - 5, 42, "F");
+    doc.setTextColor(240, 237, 230); doc.setFontSize(15); doc.setFont("helvetica", "bold");
+    doc.text("MAESTRO", 42, 18);
+    const mw = doc.getTextWidth("MAESTRO");
+    doc.setTextColor(201, 168, 76); doc.text("MIND", 42 + mw, 18);
+    doc.setTextColor(201, 168, 76); doc.setFontSize(9); doc.text("PLAN COT\u00C9 — RELEV\u00C9 ARCHI", 42, 27);
+    doc.setTextColor(100, 96, 88); doc.setFontSize(8); doc.setFont("helvetica", "normal");
+    doc.text("Export " + dateStr, 42, 34);
+    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.3); doc.line(5, 44, W, 44);
+
+    let y = 52;
+
+    // Wall dimensions
+    doc.setTextColor(201, 168, 76); doc.setFontSize(11); doc.setFont("helvetica", "bold");
+    doc.text("Dimensions du mur", 14, y); y += 8;
+    doc.setTextColor(200, 195, 185); doc.setFontSize(10); doc.setFont("helvetica", "normal");
+    if (allMeasures._wallH) { doc.text("Hauteur : " + fmtDualShort(allMeasures._wallH), 14, y); y += 6; }
+    if (allMeasures._wallW) { doc.text("Largeur : " + fmtDualShort(allMeasures._wallW), 14, y); y += 6; }
+    if (allMeasures._wallH && allMeasures._wallW) {
+      const surf = (allMeasures._wallH * allMeasures._wallW).toFixed(2);
+      doc.setTextColor(82, 195, 122);
+      doc.text("Surface : " + surf + " m\u00B2", 14, y); y += 10;
+    }
+
+    // Table header
+    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.3); doc.line(14, y, W - 14, y); y += 6;
+    doc.setTextColor(201, 168, 76); doc.setFontSize(8); doc.setFont("helvetica", "bold");
+    doc.text("\u00C9l\u00E9ment", 14, y);
+    doc.text("Hauteur", 70, y);
+    doc.text("Largeur", 110, y);
+    doc.text("Cote sol", 150, y);
+    y += 2; doc.line(14, y, W - 14, y); y += 5;
+
+    // Elements
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    (planData.elements || []).forEach((el, idx) => {
+      if (el.type === "mur") return;
+      const m = allMeasures[idx];
+      if (!m) return;
+      const isRef = idx === refElementId;
+      doc.setTextColor(200, 195, 185);
+      doc.text((el.label || el.type) + (isRef ? " (r\u00E9f)" : ""), 14, y);
+      doc.text(fmtDualShort(m.realH), 70, y);
+      doc.text(fmtDualShort(m.realW), 110, y);
+      doc.setTextColor(232, 135, 58);
+      doc.text(m.floorH !== undefined ? fmtDualShort(m.floorH) : "-", 150, y);
+      y += 6;
+      if (y > 270) { doc.addPage(); doc.setFillColor(6, 8, 13); doc.rect(0, 0, W, 297, "F"); doc.setFillColor(201, 168, 76); doc.rect(0, 0, 5, 297, "F"); y = 20; }
+    });
+
+    // Footer
+    doc.setFillColor(10, 14, 22); doc.rect(0, 278, W, 19, "F");
+    doc.setFillColor(201, 168, 76); doc.rect(0, 278, 5, 19, "F"); doc.rect(0, 295.5, W, 1.5, "F");
+    doc.setTextColor(201, 168, 76); doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
+    doc.text("MAESTROMIND", 13, 286);
+    doc.setTextColor(80, 76, 70); doc.setFontSize(7); doc.setFont("helvetica", "normal");
+    doc.text("Plan cot\u00E9 \u00B7 Relev\u00E9 Archi", 13, 292);
+    doc.text(dateStr, W - 12, 286, { align: "right" });
+
+    doc.save("MAESTROMIND-plan-cote-" + Date.now() + ".pdf");
+  }, [allMeasures, planData, refElementId]);
 
   // ── Instructions ──
   const getInstruction = () => {
@@ -782,6 +909,7 @@ export default function ScannerPage() {
                   <input
                     style={s.inp}
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
                     min="0.01"
                     value={refRealSize}
@@ -822,13 +950,19 @@ export default function ScannerPage() {
                 {allMeasures._wallH && (
                   <div style={{ flex: 1, background: "rgba(201,168,76,0.08)", borderRadius: 8, padding: "8px 10px", border: "0.5px solid rgba(201,168,76,0.2)" }}>
                     <div style={{ fontSize: 8, color: "rgba(240,237,230,0.35)", textTransform: "uppercase" }}>Hauteur mur</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#C9A84C", fontFamily: "'Syne',sans-serif" }}>{Math.round(allMeasures._wallH * 1000)}mm</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "#C9A84C", fontFamily: "'Syne',sans-serif" }}>{fmtDualShort(allMeasures._wallH)}</div>
                   </div>
                 )}
                 {allMeasures._wallW && (
                   <div style={{ flex: 1, background: "rgba(201,168,76,0.08)", borderRadius: 8, padding: "8px 10px", border: "0.5px solid rgba(201,168,76,0.2)" }}>
                     <div style={{ fontSize: 8, color: "rgba(240,237,230,0.35)", textTransform: "uppercase" }}>Largeur mur</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#C9A84C", fontFamily: "'Syne',sans-serif" }}>{Math.round(allMeasures._wallW * 1000)}mm</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "#C9A84C", fontFamily: "'Syne',sans-serif" }}>{fmtDualShort(allMeasures._wallW)}</div>
+                  </div>
+                )}
+                {allMeasures._wallH && allMeasures._wallW && (
+                  <div style={{ flex: 1, background: "rgba(82,195,122,0.08)", borderRadius: 8, padding: "8px 10px", border: "0.5px solid rgba(82,195,122,0.2)" }}>
+                    <div style={{ fontSize: 8, color: "rgba(240,237,230,0.35)", textTransform: "uppercase" }}>Surface mur</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "#52C37A", fontFamily: "'Syne',sans-serif" }}>{(allMeasures._wallH * allMeasures._wallW).toFixed(2)} m{"\u00B2"}</div>
                   </div>
                 )}
               </div>
@@ -846,9 +980,10 @@ export default function ScannerPage() {
                       <div style={{ flex: 1, fontSize: 12, color: "rgba(240,237,230,0.7)", fontWeight: 600 }}>
                         {el.label || el.type} {isRef ? "(ref)" : ""}
                       </div>
-                      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                        <span style={{ fontSize: 11, color: col.stroke, fontWeight: 700 }}>{Math.round(m.realH * 1000)}mm H</span>
-                        <span style={{ fontSize: 11, color: col.stroke, fontWeight: 700 }}>{Math.round(m.realW * 1000)}mm L</span>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        <span style={{ fontSize: 10, color: col.stroke, fontWeight: 700 }}>{fmtDualShort(m.realH)} H</span>
+                        <span style={{ fontSize: 10, color: col.stroke, fontWeight: 700 }}>{fmtDualShort(m.realW)} L</span>
+                        {m.floorH !== undefined && <span style={{ fontSize: 9, color: "#E8873A", fontWeight: 600 }}>Sol: {fmtDualShort(m.floorH)}</span>}
                       </div>
                     </div>
                   </div>
@@ -859,6 +994,9 @@ export default function ScannerPage() {
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                 <button onClick={injecterMesures} style={{ flex: 1, background: "linear-gradient(135deg,#52C37A,#3A9B5A)", border: "none", borderRadius: 10, padding: "11px", fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 800, color: "#F0EDE6", cursor: "pointer" }}>
                   Utiliser dans Outils
+                </button>
+                <button onClick={exportPlanPDF} style={{ background: "rgba(201,168,76,0.1)", border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 10, padding: "11px 14px", fontSize: 11, fontWeight: 700, color: "#C9A84C", cursor: "pointer" }}>
+                  {"\u{1F4C4}"} PDF
                 </button>
                 <button onClick={() => { setAllMeasures(null); setRefElementId(null); setRefRealSize(""); setSelectedElement(null); }} style={{ background: "rgba(232,135,58,0.1)", border: "0.5px solid rgba(232,135,58,0.3)", borderRadius: 10, padding: "11px 14px", fontSize: 11, fontWeight: 700, color: "#E8873A", cursor: "pointer" }}>
                   Recalculer
