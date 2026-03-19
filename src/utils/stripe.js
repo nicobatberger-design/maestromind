@@ -10,7 +10,7 @@ export async function checkoutPremium() {
     return null;
   }
   try {
-    const res = await fetch("/api/stripe-checkout", {
+    const res = await fetch("https://maestromind-maestromind.vercel.app/api/stripe-checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ priceId: import.meta.env.VITE_STRIPE_PRICE_ID || "price_maestromind_premium" }),
