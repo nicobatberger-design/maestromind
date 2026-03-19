@@ -18,11 +18,11 @@ export default defineConfig({
         background_color: '#06080D',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: '/maestromind/',
+        start_url: '/maestromind/',
         icons: [
-          { src: '/icons/icon-192.svg', sizes: '192x192', type: 'image/svg+xml' },
-          { src: '/icons/icon-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: '/maestromind/icons/icon-192.svg', sizes: '192x192', type: 'image/svg+xml' },
+          { src: '/maestromind/icons/icon-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
         ],
       },
       workbox: {
