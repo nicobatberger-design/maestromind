@@ -335,11 +335,23 @@ export default function ScannerPage() {
   // Get computed measure for a line
   const getLineMeasure = useCallback((line) => {
     if (refLine && line.id === refLine.id) {
-      return refSize ? refSize + "m" : "";
+      return { value: refSize ? refSize + "m" : "", warn: false };
     }
-    if (pixelRatio <= 0) return "";
+    if (pixelRatio <= 0) return { value: "", warn: false };
     const pxLen = Math.sqrt((line.x2 - line.x1) ** 2 + (line.y2 - line.y1) ** 2);
-    return (pxLen * pixelRatio).toFixed(2) + "m";
+    // Check distance from reference (perspective warning)
+    let warn = false;
+    if (refLine && imgRef.current) {
+      const refMidX = (refLine.x1 + refLine.x2) / 2;
+      const refMidY = (refLine.y1 + refLine.y2) / 2;
+      const lineMidX = (line.x1 + line.x2) / 2;
+      const lineMidY = (line.y1 + line.y2) / 2;
+      const dist = Math.sqrt((lineMidX - refMidX) ** 2 + (lineMidY - refMidY) ** 2);
+      const imgSize = Math.max(imgRef.current.clientWidth, imgRef.current.clientHeight);
+      // Warn if line center is > 40% of image size away from reference
+      if (dist > imgSize * 0.4) warn = true;
+    }
+    return { value: (pxLen * pixelRatio).toFixed(2) + "m", warn };
   }, [refLine, refSize, pixelRatio]);
 
   // Determine current instruction step
@@ -387,6 +399,18 @@ export default function ScannerPage() {
               <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>Tracez des lignes sur la photo pour mesurer</div>
             </div>
           </div>
+
+          {/* Guide de prise de photo */}
+          {!mesurePhoto && (
+            <div style={{ background: "rgba(232,135,58,0.06)", border: "0.5px solid rgba(232,135,58,0.2)", borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
+              <div style={{ fontSize: 9, color: "#E8873A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Pour des mesures précises</div>
+              <div style={{ fontSize: 11, color: "rgba(240,237,230,0.6)", lineHeight: 1.6 }}>
+                {"\u{1F4F1}"} Photographiez <strong style={{ color: "#E8873A" }}>bien en face</strong> du mur (perpendiculaire)<br/>
+                {"\u{1F4CF}"} La référence (porte, fenêtre) doit être <strong style={{ color: "#E8873A" }}>dans le même plan</strong> que ce que vous mesurez<br/>
+                {"\u{1F6AB}"} Évitez les photos en angle — ça fausse les proportions
+              </div>
+            </div>
+          )}
 
           {/* Instruction */}
           <div style={{ background: "rgba(82,195,122,0.05)", border: "0.5px solid rgba(82,195,122,0.15)", borderRadius: 10, padding: "10px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
@@ -527,16 +551,19 @@ export default function ScannerPage() {
             <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Mesures ({lines.length})</div>
             {lines.map((line, idx) => {
               const isRef = refLine && line.id === refLine.id;
-              const measure = getLineMeasure(line);
+              const { value: measure, warn } = getLineMeasure(line);
               return (
-                <div key={line.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: idx < lines.length - 1 ? "0.5px solid rgba(255,255,255,0.05)" : "none" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: isRef ? "#52C37A" : "#C9A84C", flexShrink: 0 }} />
-                  <div style={{ flex: 1, fontSize: 12, color: "rgba(240,237,230,0.7)", fontWeight: 600 }}>
-                    Ligne {idx + 1} {isRef ? "(r\u00e9f\u00e9rence)" : ""}
+                <div key={line.id} style={{ padding: "6px 0", borderBottom: idx < lines.length - 1 ? "0.5px solid rgba(255,255,255,0.05)" : "none" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: isRef ? "#52C37A" : warn ? "#E8873A" : "#C9A84C", flexShrink: 0 }} />
+                    <div style={{ flex: 1, fontSize: 12, color: "rgba(240,237,230,0.7)", fontWeight: 600 }}>
+                      Ligne {idx + 1} {isRef ? "(r\u00e9f\u00e9rence)" : ""}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: isRef ? "#52C37A" : warn ? "#E8873A" : "#C9A84C", fontFamily: "'Syne',sans-serif" }}>
+                      {measure || "---"}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: isRef ? "#52C37A" : "#C9A84C", fontFamily: "'Syne',sans-serif" }}>
-                    {measure || "---"}
-                  </div>
+                  {warn && <div style={{ fontSize: 9, color: "#E8873A", marginTop: 3, marginLeft: 16 }}>{"\u26A0\uFE0F"} Loin de la référence — mesure moins fiable (perspective)</div>}
                 </div>
               );
             })}
