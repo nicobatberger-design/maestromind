@@ -113,12 +113,18 @@ export default function ScannerPage() {
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
-    if (!canvas || !img) return;
+    if (!canvas || !img || !img.clientWidth) return;
 
+    // Set canvas internal resolution to match displayed image size
+    // Use devicePixelRatio for sharp rendering on hi-DPI screens
+    const dpr = window.devicePixelRatio || 1;
+    const w = img.clientWidth;
+    const h = img.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
     const ctx = canvas.getContext("2d");
-    canvas.width = img.clientWidth;
-    canvas.height = img.clientHeight;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
 
     const allLines = [...lines];
 
@@ -212,39 +218,37 @@ export default function ScannerPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, [drawCanvas]);
 
+  // Track if last event was touch to prevent ghost click
+  const lastTouchRef = useRef(0);
+
   // Get coordinates from event relative to canvas
   const getCoords = useCallback((e) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     let clientX, clientY;
-    if (e.touches && e.touches.length > 0) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else if (e.changedTouches && e.changedTouches.length > 0) {
-      clientX = e.changedTouches[0].clientX;
-      clientY = e.changedTouches[0].clientY;
+    if (e.type?.startsWith("touch")) {
+      const touch = e.touches?.[0] || e.changedTouches?.[0];
+      if (!touch) return null;
+      clientX = touch.clientX;
+      clientY = touch.clientY;
     } else {
       clientX = e.clientX;
       clientY = e.clientY;
     }
+    // Coordinates in CSS pixels (matches the ctx.scale(dpr) in drawCanvas)
     return {
       x: clientX - rect.left,
       y: clientY - rect.top,
     };
   }, []);
 
-  // Handle canvas tap/click
-  const handleCanvasTap = useCallback((e) => {
-    e.preventDefault();
-    const coords = getCoords(e);
+  // Core tap handler
+  const processTap = useCallback((coords) => {
     if (!coords) return;
-
     if (!drawingLine) {
-      // First point
       setDrawingLine({ x1: coords.x, y1: coords.y });
     } else {
-      // Second point — create line
       const newLine = {
         id: Date.now(),
         x1: drawingLine.x1,
@@ -254,15 +258,25 @@ export default function ScannerPage() {
         label: "",
       };
       setLines(prev => [...prev, newLine]);
-
-      // If no reference yet, this is the reference line
-      if (!refLine) {
-        setRefLine(newLine);
-      }
-
+      if (!refLine) setRefLine(newLine);
       setDrawingLine(null);
     }
-  }, [drawingLine, refLine, getCoords]);
+  }, [drawingLine, refLine]);
+
+  // Touch handler (mobile)
+  const handleTouchStart = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    lastTouchRef.current = Date.now();
+    processTap(getCoords(e));
+  }, [getCoords, processTap]);
+
+  // Click handler (desktop) — ignore if recent touch
+  const handleClick = useCallback((e) => {
+    if (Date.now() - lastTouchRef.current < 500) return;
+    e.preventDefault();
+    processTap(getCoords(e));
+  }, [getCoords, processTap]);
 
   // Validate reference
   const validateReference = useCallback(() => {
@@ -390,8 +404,8 @@ export default function ScannerPage() {
               />
               <canvas
                 ref={canvasRef}
-                onClick={handleCanvasTap}
-                onTouchEnd={handleCanvasTap}
+                onClick={handleClick}
+                onTouchStart={handleTouchStart}
                 style={{
                   position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
                   touchAction: "none", cursor: "crosshair", borderRadius: 12,
