@@ -4,6 +4,28 @@ import s from "../styles/index";
 const RAPPELS_KEY = "mm_rappels";
 const TOAST_KEY = "mm_rappels_last_check";
 
+// Demande la permission notifications au premier rappel
+function requestNotifPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+// Envoie une notification native si autorisé
+function sendNotification(titre, body) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification("MAESTROMIND — " + titre, {
+        body: body || "Rappel chantier",
+        icon: "/maestromind/icons/icon-192.svg",
+        badge: "/maestromind/icons/icon-192.svg",
+        tag: "rappel-" + Date.now(),
+        vibrate: [200, 100, 200],
+      });
+    } catch {}
+  }
+}
+
 function loadRappels() {
   try { return JSON.parse(localStorage.getItem(RAPPELS_KEY)) || []; } catch { return []; }
 }
@@ -22,6 +44,7 @@ export function useRappelsToast() {
       });
       if (due.length > 0) {
         setToast(due[0]);
+        sendNotification(due[0].titre, due[0].date + " " + due[0].heure);
         // Auto-dismiss after 5s
         setTimeout(() => setToast(null), 5000);
         // Mark as dismissed (for "une fois") or update next occurrence
@@ -77,6 +100,7 @@ export default function RappelsChantier() {
 
   const ajouterRappel = useCallback(() => {
     if (!titre.trim()) return;
+    requestNotifPermission();
     const newR = { id: Date.now(), titre: titre.trim(), date, heure, recurrence, dismissed: false };
     const updated = [newR, ...rappels];
     setRappels(updated);
