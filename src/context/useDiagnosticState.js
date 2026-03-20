@@ -57,52 +57,87 @@ export function useDiagnosticState({ apiKey }) {
   useEffect(() => { arModeRef.current = arModeType; }, [arModeType]);
   useEffect(() => { arShelfTypeRef.current = arShelfType; }, [arShelfType]);
 
+  // ── Mapping catégories → mots-clés pour matching intelligent ──
+  const CATEGORY_KEYWORDS = {
+    gros_oeuvre: ["fondation", "dalle", "béton", "mur porteur", "parpaing", "brique", "linteau", "chaînage", "ragréage", "fissure structur", "maçonnerie"],
+    cloison_placo: ["cloison", "placo", "ba13", "plaque", "doublage", "faux plafond", "plâtre", "ossature", "rail", "montant", "fissure cloison"],
+    carrelage: ["carrelage", "carreaux", "faïence", "grès", "cérame", "mosaïque", "joint", "mortier-colle"],
+    peinture: ["peinture", "enduit", "papier peint", "moisissure", "tache", "cloque", "écaillé", "lissage", "sous-couche"],
+    plomberie: ["fuite", "plomberie", "robinet", "mitigeur", "wc", "chauffe-eau", "tuyau", "canalisation", "eau", "sanitaire", "siphon", "chasse"],
+    electricite: ["électri", "prise", "interrupteur", "disjoncteur", "tableau", "câble", "court-circuit", "fil", "brûlé"],
+    isolation: ["isolation", "humidité", "condensation", "pont thermique", "laine", "polystyrène", "déperdition", "froid", "moisissure mur"],
+    menuiserie: ["fenêtre", "porte", "volet", "vitrage", "menuiserie", "joint fenêtre", "infiltration air"],
+    toiture: ["toiture", "toit", "tuile", "ardoise", "gouttière", "charpente", "couverture", "infiltration plafond", "fuite toit"],
+    exterieur: ["terrasse", "clôture", "portail", "extérieur", "façade", "jardin", "allée"],
+  };
+
   // ── Enrichir le résultat diagnostic avec les bases de données ──
   const enrichirDiagnostic = useCallback((result) => {
     if (!result || result.urgence === "ERREUR") return result;
     const enrichi = { ...result };
 
-    // 1. Prix travaux liés
-    const prixLies = [];
     const titleLower = (result.titre || "").toLowerCase();
     const matLower = (result.materiaux || []).join(" ").toLowerCase();
-    const all = titleLower + " " + matLower;
+    const etapesLower = (result.etapes || []).join(" ").toLowerCase();
+    const dtuLower = (result.reference_dtu || "").toLowerCase();
+    const all = [titleLower, matLower, etapesLower, dtuLower].join(" ");
 
-    Object.entries(PRIX_TRAVAUX_2026).forEach(([cat, items]) => {
+    // 1. Trouver les catégories de travaux liées
+    const matchedCategories = [];
+    Object.entries(CATEGORY_KEYWORDS).forEach(([cat, keywords]) => {
+      const score = keywords.filter(k => all.includes(k)).length;
+      if (score > 0) matchedCategories.push({ cat, score });
+    });
+    matchedCategories.sort((a, b) => b.score - a.score);
+
+    // 2. Prix travaux liés (top 2 catégories, max 5 prix)
+    const prixLies = [];
+    matchedCategories.slice(0, 2).forEach(({ cat }) => {
+      const items = PRIX_TRAVAUX_2026[cat];
+      if (!items) return;
       Object.entries(items).forEach(([nom, data]) => {
-        const nomL = nom.toLowerCase();
-        // Match si le titre ou matériaux contiennent des mots clés du prix
-        const keywords = nomL.split(" ").filter(w => w.length > 3);
-        const match = keywords.some(k => all.includes(k));
-        if (match && prixLies.length < 5) {
-          prixLies.push({ nom, ...data, categorie: cat });
-        }
+        if (prixLies.length < 5) prixLies.push({ nom, ...data, categorie: cat });
       });
     });
+    // Toujours ajouter au moins des prix génériques si rien trouvé
+    if (prixLies.length === 0 && all.length > 10) {
+      prixLies.push({ nom: "Diagnostic professionnel sur place", unite: "forfait", prix_bas: 150, prix_haut: 400, categorie: "diagnostic" });
+    }
     if (prixLies.length > 0) enrichi.prix_reference = prixLies;
 
-    // 2. Diagnostics obligatoires potentiels
+    // 3. Diagnostics obligatoires
     const diagsLies = [];
-    if (all.includes("amiante") || all.includes("fibro")) {
+    if (all.includes("amiante") || all.includes("fibro") || all.includes("flocage")) {
       diagsLies.push(DIAGNOSTICS_OBLIGATOIRES.travaux.find(d => d.nom.includes("Amiante")));
     }
-    if (all.includes("plomb") || all.includes("peinture ancienne")) {
+    if (all.includes("plomb") || all.includes("peinture ancienne") || all.includes("ceruse")) {
       diagsLies.push(DIAGNOSTICS_OBLIGATOIRES.travaux.find(d => d.nom.includes("Plomb")));
     }
-    if (all.includes("humid") || all.includes("fissure") || all.includes("isol")) {
-      diagsLies.push({ nom: "DPE recommandé", obligatoire: false, condition: "Pour évaluer la performance énergétique après travaux", prix: "100-250€" });
+    if (all.includes("humid") || all.includes("fissure") || all.includes("isol") || all.includes("condensation") || all.includes("moisissure")) {
+      diagsLies.push({ nom: "DPE recommandé", obligatoire: false, condition: "Évaluer la performance énergétique", prix: "100-250€" });
     }
-    if (diagsLies.filter(Boolean).length > 0) enrichi.diagnostics_lies = diagsLies.filter(Boolean);
+    if (all.includes("électri") || all.includes("disjoncteur") || all.includes("tableau")) {
+      diagsLies.push({ nom: "Diagnostic électricité", obligatoire: true, condition: "Installation >15 ans", prix: "100-150€" });
+    }
+    if (all.includes("gaz") || all.includes("chaudière")) {
+      diagsLies.push({ nom: "Diagnostic gaz", obligatoire: true, condition: "Installation >15 ans", prix: "100-150€" });
+    }
+    const filteredDiags = diagsLies.filter(Boolean);
+    if (filteredDiags.length > 0) enrichi.diagnostics_lies = filteredDiags;
 
-    // 3. Aides financières potentielles
+    // 4. Aides financières
     const aidesLiees = [];
-    if (all.includes("isol") || all.includes("thermique") || all.includes("fenêtre") || all.includes("chauff")) {
+    const isEnergie = matchedCategories.some(m => ["isolation", "menuiserie", "toiture"].includes(m.cat));
+    const isReno = matchedCategories.length > 0;
+
+    if (isEnergie) {
       aidesLiees.push({ nom: "MaPrimeRénov'", detail: "Jusqu'à 75€/m² selon revenus", lien: "france-renov.gouv.fr" });
-      aidesLiees.push({ nom: "CEE", detail: "Prime énergie cumulable", lien: "Demandez à votre artisan RGE" });
-      aidesLiees.push({ nom: "TVA 5.5%", detail: "Au lieu de 20% sur travaux d'amélioration énergétique" });
-    } else if (all.includes("plomb") || all.includes("électri") || all.includes("plomberi")) {
-      aidesLiees.push({ nom: "TVA 10%", detail: "Travaux de rénovation (logement >2 ans)" });
+      aidesLiees.push({ nom: "CEE", detail: "Prime énergie cumulable avec MaPrimeRénov'" });
+      aidesLiees.push({ nom: "TVA 5.5%", detail: "Travaux d'amélioration énergétique" });
       aidesLiees.push({ nom: "Éco-PTZ", detail: "Prêt à taux zéro jusqu'à 50 000€" });
+    } else if (isReno) {
+      aidesLiees.push({ nom: "TVA 10%", detail: "Travaux de rénovation (logement >2 ans)" });
+      aidesLiees.push({ nom: "Éco-PTZ", detail: "Prêt à taux zéro si rénovation globale" });
     }
     if (aidesLiees.length > 0) enrichi.aides_potentielles = aidesLiees;
 
@@ -227,6 +262,6 @@ export function useDiagnosticState({ apiKey }) {
     scanLoading, scanResult, setScanResult, scanIA, setScanIA, scannerTab, setScannerTab,
     arModeType, setArModeType, arAnchor, setArAnchor, arTilt, arShelfType, setArShelfType, showArAdvisor, setShowArAdvisor, arAdvInput, setArAdvInput, arAdvResult, arAdvLoading,
     arAnchorRef, arModeRef, arTiltRef, arShelfTypeRef,
-    analyserPhoto, calcDPE, suggestShelf,
+    analyserPhoto, calcDPE, suggestShelf, enrichirDiagnostic,
   };
 }

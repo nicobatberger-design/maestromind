@@ -419,9 +419,30 @@ function hitTestElement(planData, canvasW, canvasH, clickX, clickY) {
 export default function ScannerPage() {
   const {
     page, goPage, switchIA, apiKey,
-    scanLoading, scanResult, scanIA, setScanIA, scannerTab, setScannerTab,
-    analyserPhoto, setCalcSurface, setCalcHauteur, setCalcPente, setCalcLongueur,
+    scanLoading, scanResult, setScanResult, scanIA, setScanIA, scannerTab, setScannerTab,
+    analyserPhoto, enrichirDiagnostic, setCalcSurface, setCalcHauteur, setCalcPente, setCalcLongueur,
   } = useApp();
+
+  // Démo diagnostic enrichi (pour test sans API key)
+  const runDemoScan = useCallback(() => {
+    const fakeRaw = {
+      urgence: "MODERE",
+      titre: "Fissure cloison placo — retrait enduit",
+      etapes: [
+        "Ouvrir la fissure en V avec un grattoir triangulaire",
+        "Dépoussiérer et appliquer un primaire d'accrochage",
+        "Poser une bande calicot avec enduit à joint",
+        "Laisser sécher 24h puis poncer grain 120",
+        "Appliquer 2 couches de peinture acrylique"
+      ],
+      materiaux: ["Enduit de rebouchage", "Bande calicot", "Peinture acrylique", "Papier de verre"],
+      cout_estime: "50-150€",
+      delai: "1-2 jours",
+      reference_dtu: "DTU 25.41",
+      conseils_pro: "Si la fissure dépasse 2mm ou revient après réparation, faire appel à un expert bâtiment pour vérifier les fondations."
+    };
+    setScanResult(enrichirDiagnostic(fakeRaw));
+  }, [enrichirDiagnostic, setScanResult]);
 
   // Mode actuel
   const [mode, setMode] = useState("diagnostic"); // diagnostic | mesure
@@ -1049,8 +1070,15 @@ export default function ScannerPage() {
           </label>
         </div>
 
+        {/* Bouton démo */}
+        {!photo && !scanResult && mode === "diagnostic" && (
+          <button onClick={runDemoScan} style={{ width: "100%", padding: "10px", borderRadius: 10, background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", color: "#5290E0", fontSize: 11, fontWeight: 600, cursor: "pointer", marginBottom: 8 }}>
+            Voir un exemple de diagnostic enrichi
+          </button>
+        )}
+
         {/* Conseil photo */}
-        {!photo && (
+        {!photo && !scanResult && (
           <div style={{ fontSize: 10, color: "rgba(240,237,230,0.3)", textAlign: "center", padding: "20px 30px", lineHeight: 1.6 }}>
             {"\u{1F4A1}"} Conseil : photographiez en lumière naturelle, de face, à 50cm du problème
           </div>
