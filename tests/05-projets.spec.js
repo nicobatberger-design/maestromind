@@ -10,10 +10,13 @@ test.describe("Projets", () => {
 
   test("formulaire nouveau projet visible", async ({ page }) => {
     await expect(page.getByText("Mes Projets")).toBeVisible();
-    await expect(page.getByText("NOUVEAU PROJET")).toBeVisible();
+    await expect(page.getByText("Nouveau projet").first()).toBeVisible();
   });
 
   test("créer un projet", async ({ page }) => {
+    // Ouvrir le formulaire
+    await page.getByText("Nouveau projet").first().click();
+    await page.waitForTimeout(500);
     // Cibler l'input par placeholder
     const nomInput = page.getByPlaceholder(/Réno salle de bain/i);
     await nomInput.fill("Réno cuisine");
@@ -25,13 +28,7 @@ test.describe("Projets", () => {
 
   test("message si aucun projet", async ({ page }) => {
     await page.evaluate(() => localStorage.removeItem("bl_projets"));
-    await page.reload({ waitUntil: "networkidle" });
-    await page.waitForTimeout(500);
-    for (const d of ["1", "2", "3", "4", "5", "6"]) {
-      await page.locator("button.bl-pin").filter({ hasText: new RegExp(`^${d}$`) }).click();
-      await page.waitForTimeout(150);
-    }
-    await page.waitForTimeout(2000);
+    await fullSetup(page);
     await navTo(page, "Projets");
     await expect(page.getByText("Aucun projet")).toBeVisible();
   });

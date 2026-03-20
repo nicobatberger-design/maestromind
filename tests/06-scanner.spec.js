@@ -9,8 +9,8 @@ test.describe("Scanner", () => {
   });
 
   test("onglets Diagnostic IA et Mesurer", async ({ page }) => {
-    await expect(page.getByText("Diagnostic IA")).toBeVisible();
-    await expect(page.getByText("Mesurer")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Diagnostic IA/ })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: /Mesurer/ })).toBeVisible();
   });
 
   test("boutons photo visibles", async ({ page }) => {

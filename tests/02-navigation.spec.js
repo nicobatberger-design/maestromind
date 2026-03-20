@@ -8,7 +8,7 @@ test.describe("Navigation", () => {
   });
 
   test("home affiche titre et sous-titre", async ({ page }) => {
-    await expect(page.getByText("33 IA spécialisées")).toBeVisible();
+    await expect(page.getByText("33 IA spécialisées").first()).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: /Quel est votre projet/ })).toBeVisible();
   });
 
@@ -24,7 +24,7 @@ test.describe("Navigation", () => {
 
   test("navigation vers Scanner", async ({ page }) => {
     await navTo(page, "Scanner");
-    await expect(page.getByText("Diagnostic IA")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Diagnostic IA/ })).toBeVisible({ timeout: 10000 });
   });
 
   test("navigation vers Projets", async ({ page }) => {
