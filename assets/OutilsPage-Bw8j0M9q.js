@@ -1,4 +1,4 @@
-import{n as e}from"./chunk-B3K2TuZy.js";import{n as t,t as n}from"./jsx-runtime-BQXCR5OR.js";import{t as r}from"./styles-cSd3u027.js";import{a as i,i as a,o as ee,r as o,s}from"./index-Csft_rB1.js";import{t as c}from"./Tooltip-xPZwVeyM.js";var l=e(t(),1),u=n(),d=`Tu es l'IA MÉTREUR EXPERT de MAESTROMIND, spécialiste des mesures et métrés dans le bâtiment.
+import{n as e}from"./chunk-B3K2TuZy.js";import{n as t,t as n}from"./jsx-runtime-BQXCR5OR.js";import{t as r}from"./styles-cSd3u027.js";import{a as i,i as a,o as ee,r as o,s}from"./index-BO27zY3T.js";import{t as c}from"./Tooltip-xPZwVeyM.js";var l=e(t(),1),u=n(),d=`Tu es l'IA MÉTREUR EXPERT de MAESTROMIND, spécialiste des mesures et métrés dans le bâtiment.
 
 TON RÔLE : Aider l'utilisateur à déterminer précisément les mesures nécessaires pour ses travaux.
 
