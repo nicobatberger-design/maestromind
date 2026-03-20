@@ -1,6 +1,6 @@
 /**
  * MAESTROMIND — Bases de données externes
- * Intégrations API ADEME (DPE, RGE, Aides)
+ * APIs : ADEME (DPE, RGE), Géorisques, DVF, Météo-France, Cadastre
  */
 
 const ADEME_BASE = "https://data.ademe.fr/data-fair/api/v1/datasets";
@@ -255,4 +255,273 @@ export const PRIX_TRAVAUX_2026 = {
     "Clôture PVC 1,50m": { unite: "ml", prix_bas: 40, prix_haut: 80, mo_incluse: true },
     "Portail alu motorisé": { unite: "U", prix_bas: 1500, prix_haut: 4000, mo_incluse: true },
   },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// API GÉORISQUES — Risques naturels et technologiques
+// Source : georisques.gouv.fr (BRGM) — Open Data, pas de clé
+// ═══════════════════════════════════════════════════════════════
+
+const GEORISQUES_BASE = "https://georisques.gouv.fr/api/v1";
+
+/**
+ * Risques par adresse (latitude/longitude)
+ * @param {number} lat - Latitude
+ * @param {number} lon - Longitude
+ * @returns {Promise<Object>} Risques identifiés
+ */
+export async function getRisquesByCoords(lat, lon) {
+  const url = `${GEORISQUES_BASE}/resultats_rapport_risques?latlon=${lon},${lat}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Erreur API Géorisques");
+  return await res.json();
+}
+
+/**
+ * Risques par code commune INSEE
+ * @param {string} codeInsee - Code INSEE commune (ex: "75056" pour Paris)
+ */
+export async function getRisquesByCommune(codeInsee) {
+  const [gaspar, radon, argiles] = await Promise.all([
+    fetch(`${GEORISQUES_BASE}/gaspar/risques?code_insee=${codeInsee}`).then(r => r.ok ? r.json() : { data: [] }),
+    fetch(`${GEORISQUES_BASE}/radon?code_insee=${codeInsee}`).then(r => r.ok ? r.json() : { data: [] }),
+    fetch(`${GEORISQUES_BASE}/mvt?code_insee=${codeInsee}`).then(r => r.ok ? r.json() : { data: [] }),
+  ]);
+
+  return {
+    risques_naturels: gaspar.data?.filter(r => r.risque_jo?.famille_risque_jo === "Naturel") || [],
+    risques_technologiques: gaspar.data?.filter(r => r.risque_jo?.famille_risque_jo === "Technologique") || [],
+    radon: radon.data?.[0] || null,
+    mouvements_terrain: argiles.data || [],
+  };
+}
+
+/**
+ * Zone sismique par code commune
+ */
+export async function getZoneSismique(codeInsee) {
+  const res = await fetch(`${GEORISQUES_BASE}/zonage_sismique?code_insee=${codeInsee}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.data?.[0] || null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// API DVF — Demandes de Valeurs Foncières (prix immobilier)
+// Source : api.gouv.fr — Open Data, pas de clé
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Transactions immobilières par commune et section cadastrale
+ * @param {string} codeInsee - Code INSEE commune
+ * @param {string} [annee] - Année (défaut: année en cours -1)
+ */
+export async function getTransactionsImmobilieres(codeInsee, annee) {
+  const y = annee || (new Date().getFullYear() - 1);
+  const url = `https://apidf-preprod.cerema.fr/dvf_opendata/mutations/?code_commune=${codeInsee}&annee_mutation=${y}&page_size=20&ordering=-date_mutation`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Erreur API DVF");
+  const data = await res.json();
+  return {
+    total: data.count,
+    transactions: (data.results || []).map(t => ({
+      date: t.date_mutation,
+      type: t.nature_mutation,
+      valeur: t.valeur_fonciere,
+      adresse: [t.adresse_numero, t.adresse_nom_voie, t.code_postal, t.nom_commune].filter(Boolean).join(" "),
+      surface: t.surface_reelle_bati,
+      pieces: t.nombre_pieces_principales,
+      terrain: t.surface_terrain,
+      typeBien: t.type_local,
+      prixM2: t.surface_reelle_bati > 0 ? Math.round(t.valeur_fonciere / t.surface_reelle_bati) : null,
+    })),
+  };
+}
+
+/**
+ * Prix moyen au m² par commune
+ */
+export async function getPrixMoyenM2(codeInsee) {
+  const { transactions } = await getTransactionsImmobilieres(codeInsee);
+  const ventes = transactions.filter(t => t.type === "Vente" && t.prixM2 && t.prixM2 > 500 && t.prixM2 < 20000);
+  if (ventes.length === 0) return null;
+  const avg = Math.round(ventes.reduce((s, t) => s + t.prixM2, 0) / ventes.length);
+  return { prixMoyenM2: avg, nbTransactions: ventes.length, commune: ventes[0]?.adresse?.split(" ").pop() };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// API MÉTÉO-FRANCE — Prévisions chantier
+// Source : Open-Meteo (wrapper gratuit Météo-France, pas de clé)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Prévisions météo 7 jours pour un chantier
+ * @param {number} lat - Latitude
+ * @param {number} lon - Longitude
+ * @returns {Promise<Object>} Prévisions et alertes chantier
+ */
+export async function getMeteoChantier(lat, lon) {
+  const url = `https://api.open-meteo.com/v1/meteofrance?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weathercode&timezone=Europe/Paris&forecast_days=7`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Erreur API Météo");
+  const data = await res.json();
+  const daily = data.daily;
+
+  const jours = daily.time.map((date, i) => {
+    const precip = daily.precipitation_sum[i];
+    const vent = daily.wind_speed_10m_max[i];
+    const tMin = daily.temperature_2m_min[i];
+    const tMax = daily.temperature_2m_max[i];
+
+    // Alertes chantier spécifiques BTP
+    const alertes = [];
+    if (precip > 10) alertes.push("Pluie forte — reporter bétonnage et peinture extérieure");
+    else if (precip > 2) alertes.push("Pluie — protéger matériaux, pas de travaux extérieurs sensibles");
+    if (vent > 60) alertes.push("Vent violent — pas de travaux en hauteur, sécuriser échafaudages");
+    else if (vent > 40) alertes.push("Vent fort — vigilance échafaudages et levage");
+    if (tMin < 0) alertes.push("Gel — pas de bétonnage ni mortier (DTU 21), protéger canalisations");
+    if (tMin < 5) alertes.push("Froid — rallonger temps de séchage béton/enduit (+50%)");
+    if (tMax > 35) alertes.push("Canicule — hydratation obligatoire, pas de bétonnage 12h-16h");
+    if (tMax > 30) alertes.push("Chaleur — bâcher béton frais, arroser régulièrement");
+
+    return {
+      date,
+      tMin: Math.round(tMin),
+      tMax: Math.round(tMax),
+      precipitation: Math.round(precip * 10) / 10,
+      vent: Math.round(vent),
+      code: daily.weathercode[i],
+      alertes,
+      travailOk: alertes.length === 0,
+    };
+  });
+
+  return {
+    latitude: lat,
+    longitude: lon,
+    jours,
+    joursOk: jours.filter(j => j.travailOk).length,
+    joursCritiques: jours.filter(j => j.alertes.length > 0),
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// API CADASTRE — Parcelles et adresses
+// Source : api-adresse.data.gouv.fr — Open Data, pas de clé
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Géocodage : adresse → coordonnées + code INSEE
+ * @param {string} adresse - Adresse à géocoder
+ */
+export async function geocodeAdresse(adresse) {
+  const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(adresse)}&limit=5`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Erreur géocodage");
+  const data = await res.json();
+  return (data.features || []).map(f => ({
+    label: f.properties.label,
+    codeInsee: f.properties.citycode,
+    codePostal: f.properties.postcode,
+    ville: f.properties.city,
+    lat: f.geometry.coordinates[1],
+    lon: f.geometry.coordinates[0],
+  }));
+}
+
+/**
+ * Reverse géocodage : coordonnées → adresse
+ */
+export async function reverseGeocode(lat, lon) {
+  const url = `https://api-adresse.data.gouv.fr/reverse/?lon=${lon}&lat=${lat}`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = await res.json();
+  const f = data.features?.[0];
+  if (!f) return null;
+  return {
+    label: f.properties.label,
+    codeInsee: f.properties.citycode,
+    codePostal: f.properties.postcode,
+    ville: f.properties.city,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AIDES FINANCIÈRES — Barèmes 2026
+// ═══════════════════════════════════════════════════════════════
+
+export const AIDES_2026 = {
+  maprimerenov: {
+    description: "MaPrimeRénov' — Aide principale rénovation énergétique",
+    conditions: "Propriétaire occupant ou bailleur, logement >15 ans",
+    plafonds: {
+      tres_modeste: { label: "Très modeste", plafond_idf: 23541, plafond_hors_idf: 17009, couleur: "Bleu" },
+      modeste: { label: "Modeste", plafond_idf: 28657, plafond_hors_idf: 21805, couleur: "Jaune" },
+      intermediaire: { label: "Intermédiaire", plafond_idf: 40018, plafond_hors_idf: 30427, couleur: "Violet" },
+      superieur: { label: "Supérieur", plafond_idf: 56130, plafond_hors_idf: null, couleur: "Rose" },
+    },
+    montants: {
+      isolation_murs_ext: { bleu: 75, jaune: 60, violet: 40, rose: 15, unite: "€/m²", max: "Selon surface" },
+      isolation_toiture: { bleu: 75, jaune: 60, violet: 40, rose: 15, unite: "€/m²" },
+      isolation_plancher: { bleu: 75, jaune: 60, violet: 40, rose: 15, unite: "€/m²" },
+      fenetres: { bleu: 100, jaune: 80, violet: 40, rose: 0, unite: "€/fenêtre" },
+      pac_air_eau: { bleu: 5000, jaune: 4000, violet: 3000, rose: 0, unite: "€ forfait" },
+      pac_geothermie: { bleu: 11000, jaune: 9000, violet: 6000, rose: 0, unite: "€ forfait" },
+      chaudiere_bois: { bleu: 8000, jaune: 6500, violet: 3000, rose: 0, unite: "€ forfait" },
+      vmc_double_flux: { bleu: 2500, jaune: 2000, violet: 1500, rose: 0, unite: "€ forfait" },
+      audit_energetique: { bleu: 500, jaune: 400, violet: 300, rose: 0, unite: "€ forfait" },
+    },
+  },
+  cee: {
+    description: "Certificats d'Économies d'Énergie — Primes énergie",
+    conditions: "Artisan RGE obligatoire, devis signé avant travaux",
+    exemples: {
+      isolation_combles: "12-20€/m²",
+      isolation_murs: "8-15€/m²",
+      pac: "2500-4000€",
+      fenetres: "40-80€/fenêtre",
+      chaudiere_bois: "800-1500€",
+    },
+  },
+  eco_ptz: {
+    description: "Éco-Prêt à Taux Zéro",
+    montant_max: 50000,
+    duree_max: "20 ans",
+    conditions: "Logement >2 ans, artisan RGE, pas de conditions de revenus",
+    montants: {
+      "1 action": 15000,
+      "2 actions": 25000,
+      "3 actions ou réno globale": 50000,
+    },
+  },
+  tva_reduite: {
+    description: "TVA réduite travaux rénovation",
+    taux: {
+      "5.5%": "Travaux d'amélioration énergétique (isolation, PAC, fenêtres...)",
+      "10%": "Travaux de rénovation (peinture, plomberie, électricité, carrelage...)",
+      "20%": "Construction neuve ou agrandissement >10% surface",
+    },
+    conditions: "Logement >2 ans, résidence principale ou secondaire, facture artisan",
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// BASE MATÉRIAUX ÉCO-RESPONSABLES
+// ═══════════════════════════════════════════════════════════════
+
+export const MATERIAUX_ECO = {
+  isolation: [
+    { nom: "Laine de bois", lambda: 0.038, classement_feu: "E", avantage: "Excellent déphasage thermique été", prix: "15-25€/m² (100mm)", impact_co2: "Très faible" },
+    { nom: "Ouate de cellulose", lambda: 0.039, classement_feu: "B-s2,d0", avantage: "Recyclée (papier journal), soufflable", prix: "10-18€/m² (100mm)", impact_co2: "Très faible" },
+    { nom: "Chanvre", lambda: 0.040, classement_feu: "E", avantage: "Régulateur humidité naturel", prix: "12-22€/m² (100mm)", impact_co2: "Négatif (stocke CO2)" },
+    { nom: "Liège expansé", lambda: 0.040, classement_feu: "E", avantage: "Imputrescible, phonique excellent", prix: "25-45€/m² (100mm)", impact_co2: "Faible" },
+    { nom: "Paille compressée", lambda: 0.052, classement_feu: "B-s1,d0", avantage: "Ultra local, quasi gratuit", prix: "5-10€/m² (360mm)", impact_co2: "Négatif" },
+  ],
+  structure: [
+    { nom: "Bois CLT (lamellé-croisé)", avantage: "Construction rapide, stocke CO2, léger", usage: "Murs porteurs, planchers, toiture" },
+    { nom: "Béton bas carbone CEM III", avantage: "-40% CO2 vs béton classique", usage: "Fondations, dalles" },
+    { nom: "Brique monomur", avantage: "Isolation intégrée R=1 à 3", usage: "Murs porteurs sans isolant additionnel" },
+    { nom: "Terre crue (pisé/BTC)", avantage: "Inertie thermique exceptionnelle, 0 CO2", usage: "Murs, cloisons, enduits" },
+  ],
 };
