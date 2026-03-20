@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export default function Tooltip({ id, text, position = "bottom" }) {
+export default function Tooltip({ id, text, position = "top" }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {

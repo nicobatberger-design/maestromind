@@ -239,6 +239,27 @@ button:active:not(.bl-pin) {
   color: var(--text-primary);
 }
 
+/* ── Scanner pulse + scan line ── */
+@keyframes scannerPulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+@keyframes scanLine {
+  0% { transform: translateY(-18px); opacity: 0; }
+  20% { opacity: 0.6; }
+  80% { opacity: 0.6; }
+  100% { transform: translateY(18px); opacity: 0; }
+}
+.scanner-pulse {
+  animation: scannerPulse 2.5s ease-in-out infinite;
+}
+
+/* ── Stat card gradient border on hover ── */
+.stat-card-hover:hover {
+  border-image: linear-gradient(135deg, rgba(201,168,76,0.4), rgba(82,195,122,0.3)) 1 !important;
+  border-color: rgba(201,168,76,0.3) !important;
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -30,8 +30,7 @@ export default function OutilsPage() {
   return (
     <div style={{ ...s.page, ...(page === "outils" ? s.pageActive : {}) }}>
       <div style={s.wrap}>
-        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 3 }}>Outils IA</div>
-        <div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 12 }}>Devis · Matériaux · Primes · Artisans · DPE</div>
+        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Outils IA</div>
         <div style={{ position: "relative" }}>
           <div style={{ display: "flex", gap: 5, marginBottom: 16, overflowX: "auto", scrollbarWidth: "none" }}>
             {[["devis", "Devis"], ["mat", "Matériaux"], ["primes", "Primes"], ["rge", "Artisan RGE"], ["dpe", "DPE"], ["planning", "Planning"], ["devis_pro", "Devis Pro"], ["rentabilite", "Rentabilité"], ["beton", "Béton"], ["escalier", "Escalier"], ["tuyau", "Tuyauterie"], ["securite", "Sécurité"]].map(([k, l]) => (
@@ -43,7 +42,7 @@ export default function OutilsPage() {
 
         {toolTab === "devis" && <div>
           <div style={{ fontSize: 9, color: "#C9A84C", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Coller votre devis ici</div>
-          <textarea style={{ ...s.ci, width: "100%", minHeight: 160, borderRadius: 12, padding: "12px 14px", marginBottom: 10, lineHeight: 1.6 }} value={devisText} onChange={e => setDevisText(e.target.value)} placeholder={"Posez carrelage salle de bain 8m²... fourniture et pose... 1 200€\nEvacuations sanitaires... 350€\n..."} />
+          <textarea style={{ ...s.ci, width: "100%", minHeight: 160, borderRadius: 12, padding: "12px 14px", marginBottom: 10, lineHeight: 1.6 }} value={devisText} onChange={e => setDevisText(e.target.value)} placeholder={"Exemple :\nPose carrelage sol 12m\u00B2 gr\u00E8s c\u00E9rame 60\u00D760\nFourniture : 35\u20AC/m\u00B2 = 420\u20AC\nMain d'\u0153uvre : 55\u20AC/m\u00B2 = 660\u20AC\nTotal TTC : 1 080\u20AC"} />
           <button style={devisLoading ? { ...s.greenBtn, opacity: 0.5 } : s.greenBtn} onClick={analyserDevis} disabled={devisLoading}>{devisLoading ? "Analyse en cours..." : "\u{1F50D} Analyser le devis"}</button>
           {devisResult && <div style={{ marginTop: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>

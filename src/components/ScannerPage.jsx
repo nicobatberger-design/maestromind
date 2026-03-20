@@ -1011,15 +1011,19 @@ export default function ScannerPage() {
         {mode === "diagnostic" && photo && <img src={photo} alt="photo" style={{ width: "100%", borderRadius: 12, marginBottom: 12, maxHeight: 240, objectFit: "cover" }} />}
 
         {!photo && (
-          <div style={{ width: "100%", aspectRatio: "4/3", background: "#0D1018", border: "1.5px dashed " + (mode === "mesure" ? "rgba(82,195,122,0.25)" : "rgba(201,168,76,0.18)"), borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke={mode === "mesure" ? "#52C37A" : "#C9A84C"} strokeWidth="1.4" strokeLinecap="round" style={{ opacity: 0.6, marginBottom: 10 }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
-            <p style={{ fontSize: 12, color: "rgba(240,237,230,0.5)" }}>{mode === "mesure" ? "Prenez une photo du mur ou de la piece" : "Photographiez le probleme"}</p>
+          <div style={{ width: "100%", aspectRatio: "4/3", background: mode === "mesure" ? "radial-gradient(ellipse at 50% 50%, rgba(82,195,122,0.06) 0%, #0D1018 70%)" : "radial-gradient(ellipse at 50% 50%, rgba(201,168,76,0.06) 0%, #0D1018 70%)", border: "1.5px dashed " + (mode === "mesure" ? "rgba(82,195,122,0.25)" : "rgba(201,168,76,0.18)"), borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+            <div className="scanner-pulse" style={{ position: "relative", marginBottom: 14 }}>
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke={mode === "mesure" ? "#52C37A" : "#C9A84C"} strokeWidth="1.2" strokeLinecap="round" style={{ opacity: 0.7 }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+              <div style={{ position: "absolute", top: "50%", left: "50%", width: 70, height: 2, marginLeft: -35, background: "linear-gradient(90deg, transparent, " + (mode === "mesure" ? "#52C37A" : "#C9A84C") + ", transparent)", opacity: 0.5, animation: "scanLine 2s ease-in-out infinite" }} />
+            </div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "rgba(240,237,230,0.65)", fontFamily: "'Syne',sans-serif", marginBottom: 4 }}>{mode === "mesure" ? "Prenez une photo du mur ou de la piece" : "\u{1F4F8} Pointez, photographiez, l'IA diagnostique"}</p>
+            {mode === "diagnostic" && <p style={{ fontSize: 10, color: "rgba(240,237,230,0.3)", textAlign: "center", lineHeight: 1.5 }}>Fissures, humidité, moisissures, défauts électriques...</p>}
           </div>
         )}
 
         {/* Boutons --- camera native du telephone */}
         <div style={{ display: "flex", gap: 10, marginBottom: 12, position: "relative" }}>
-          <Tooltip id="scanner-photo" text="Prenez en photo un problème — l'IA l'analyse en quelques secondes" />
+          <Tooltip id="scanner-photo" text="Prenez en photo un problème — l'IA l'analyse en quelques secondes" position="bottom" />
           <label style={{ flex: 1, background: mode === "mesure" ? "linear-gradient(135deg,#52C37A,#3A9B5A)" : "linear-gradient(135deg,#EDD060,#C9A84C)", border: "none", borderRadius: 12, padding: "14px", textAlign: "center", fontSize: 13, fontWeight: 800, color: mode === "mesure" ? "#F0EDE6" : "#06080D", cursor: "pointer", fontFamily: "'Syne',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
             {photo ? "Reprendre" : "Prendre photo"}

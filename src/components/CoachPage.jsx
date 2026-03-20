@@ -25,11 +25,11 @@ function formatAIText(text) {
 
 export default function CoachPage() {
   const {
-    page, curDiv, curIA, msgs, setMsgs, hist, setHist, input, setInput, loading, errMsg,
+    page, goPage, curDiv, curIA, msgs, setMsgs, hist, setHist, input, setInput, loading, errMsg,
     userType, voiceActive, msgCount, isPremium,
     msgsRef, chips,
     switchDiv, switchIA, send, sendWithPhoto, rateMsg,
-    startVoice, exportChatPDF, rangColor, saveConv, welcomeMsg,
+    startVoice, startUrgence, exportChatPDF, rangColor, saveConv, welcomeMsg,
   } = useApp();
 
   const [copiedIdx, setCopiedIdx] = useState(null);
@@ -132,6 +132,22 @@ export default function CoachPage() {
           ))}
         </div>
         {errMsg && <div style={s.errBox}>{errMsg}</div>}
+        {msgs.length <= 1 && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+            {[
+              { icon: "\u{1F4F8}", label: "Envoyer une photo", sub: "Diagnostic visuel", action: () => document.querySelector('input[type=file]')?.click() },
+              { icon: "\u{1F399}", label: "Parler à l'IA", sub: "Question vocale", action: startVoice },
+              { icon: "\u{1F4D0}", label: "Calculer", sub: "Matériaux & coûts", action: () => goPage("outils") },
+              { icon: "\u{1F198}", label: "Urgence", sub: "Aide immédiate", action: () => startUrgence("GAZ") },
+            ].map((a, i) => (
+              <div key={i} onClick={a.action} style={{ background: "rgba(15,19,28,0.6)", border: "0.5px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "12px 10px", cursor: "pointer", textAlign: "center" }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{a.icon}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(240,237,230,0.8)" }}>{a.label}</div>
+                <div style={{ fontSize: 9, color: "rgba(240,237,230,0.35)" }}>{a.sub}</div>
+              </div>
+            ))}
+          </div>
+        )}
         <div style={s.inputBar}>
           <textarea ref={textareaRef} style={{ ...s.ci, overflow: "hidden", maxHeight: 80 }} value={input} onChange={e => setInput(e.target.value)} placeholder={"Demandez \u00E0 " + IAS[curIA]?.name + "..."} rows={1} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
           <button onClick={startVoice} title="Parler \u00E0 l'IA" style={{ width: 44, height: 44, borderRadius: "50%", border: "0.5px solid " + (voiceActive ? "rgba(224,82,82,0.6)" : "rgba(201,168,76,0.22)"), background: voiceActive ? "rgba(224,82,82,0.15)" : "rgba(201,168,76,0.06)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, animation: voiceActive ? "voicePulse 0.8s ease-in-out infinite" : "none" }}>

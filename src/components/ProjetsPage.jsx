@@ -149,7 +149,13 @@ export default function ProjetsPage() {
           <div style={{ marginBottom: 10 }}><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Notes</div><textarea style={{ ...s.inp, minHeight: 60, resize: "none" }} value={projetNotes} onChange={e => setProjetNotes(e.target.value)} placeholder="Description, adresse, budget estimé..." /></div>
           <button style={s.greenBtn} onClick={ajouterProjet}>+ Créer le projet</button>
         </div>
-        {projets.length === 0 && <div style={{ textAlign: "center", padding: "32px 16px", color: "rgba(240,237,230,0.3)", fontSize: 12 }}>Aucun projet pour l'instant.<br />Créez votre premier projet ci-dessus.</div>}
+        {projets.length === 0 && (
+          <div style={{ textAlign: "center", padding: "30px 20px" }}>
+            <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.6 }}>{"\u{1F3D7}"}</div>
+            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 6, color: "rgba(240,237,230,0.6)" }}>Aucun projet en cours</div>
+            <div style={{ fontSize: 11, color: "rgba(240,237,230,0.35)", lineHeight: 1.6 }}>Créez votre premier projet ci-dessus pour suivre vos chantiers et générer des CR automatiques.</div>
+          </div>
+        )}
         {projets.map(p => <div key={p.id} style={{ ...s.card, marginBottom: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
             <div style={{ flex: 1 }}>

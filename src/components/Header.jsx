@@ -1,10 +1,25 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { PROFILS } from "../data/constants";
 import s from "../styles/index";
 
 export default function Header() {
   const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, theme, setTheme, modeChantier, setModeChantier, pdgUnlocked, setShowPinOverlay, setPinInput, setPinError } = useApp();
+
+  // Profile dropdown
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!showProfileMenu) return;
+    const handleClickOutside = (e) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside, true);
+    return () => document.removeEventListener("click", handleClickOutside, true);
+  }, [showProfileMenu]);
 
   // Easter egg: 5 rapid clicks on logo to show PIN overlay
   const [logoClicks, setLogoClicks] = useState(0);
@@ -58,10 +73,22 @@ export default function Header() {
           MAESTRO<span style={{ color: "#C9A84C" }}>MIND</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ display: "flex", background: "rgba(15,19,28,0.8)", border: "0.5px solid rgba(201,168,76,0.15)", borderRadius: 20, padding: 2, gap: 2 }}>
-            {["Particulier", "Artisan Pro", "Architecte", "Investisseur"].map(p => (
-              <button key={p} onClick={() => { setUserType(p); localStorage.setItem("bl_user_type", p); setMsgs([{ role: "ai", text: PROFILS[p].icon + " Mode " + p + " activé. Je m'adapte à votre profil." }]); setHist([]); }} style={{ padding: "3px 8px", borderRadius: 18, fontSize: 8, fontWeight: 700, cursor: "pointer", border: "none", background: userType === p ? "linear-gradient(135deg,#EDD060,#C9A84C)" : "transparent", color: userType === p ? "#06080D" : "rgba(240,237,230,0.4)", transition: "all 0.2s", whiteSpace: "nowrap" }}>{PROFILS[p].icon}</button>
-            ))}
+          <div ref={profileMenuRef} style={{ position: "relative" }}>
+            <button onClick={() => setShowProfileMenu(v => !v)} style={{ display: "flex", alignItems: "center", gap: 3, background: "rgba(15,19,28,0.8)", border: "0.5px solid rgba(201,168,76,0.15)", borderRadius: 20, padding: "4px 10px", cursor: "pointer", fontSize: 14 }}>
+              <span>{PROFILS[userType]?.icon}</span>
+              <span style={{ fontSize: 8, color: "rgba(240,237,230,0.4)" }}>{"\u25BC"}</span>
+            </button>
+            {showProfileMenu && (
+              <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 6, background: "rgba(15,19,28,0.95)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "0.5px solid rgba(201,168,76,0.2)", borderRadius: 14, padding: 6, zIndex: 200, minWidth: 160, boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
+                {["Particulier", "Artisan Pro", "Architecte", "Investisseur"].map(p => (
+                  <button key={p} onClick={() => { setUserType(p); localStorage.setItem("bl_user_type", p); setMsgs([{ role: "ai", text: PROFILS[p].icon + " Mode " + p + " activé. Je m'adapte à votre profil." }]); setHist([]); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 10px", borderRadius: 10, fontSize: 11, fontWeight: 600, cursor: "pointer", border: "none", background: userType === p ? "rgba(201,168,76,0.12)" : "transparent", color: userType === p ? "#C9A84C" : "rgba(240,237,230,0.6)", transition: "all 0.15s" }}>
+                    <span style={{ fontSize: 16 }}>{PROFILS[p].icon}</span>
+                    <span>{p}</span>
+                    {userType === p && <span style={{ marginLeft: "auto", fontSize: 10, color: "#C9A84C" }}>{"\u2713"}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div style={s.badge}>LIVE</div>
           <button onClick={() => { const next = !modeChantier; setModeChantier(next); localStorage.setItem("mm_mode_chantier", next ? "1" : "0"); }} title={modeChantier ? "Mode normal" : "Mode chantier (gros boutons)"} style={{ width: 28, height: 28, borderRadius: 8, background: modeChantier ? "rgba(232,135,58,0.25)" : "rgba(201,168,76,0.08)", border: modeChantier ? "0.5px solid rgba(232,135,58,0.6)" : "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>

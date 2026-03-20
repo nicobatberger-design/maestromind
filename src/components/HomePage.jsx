@@ -1,7 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { DIVISIONS, PROFILS } from "../data/constants";
 import s from "../styles/index";
+
+function useCountUp(target, duration = 1000) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (target === 0) { setCount(0); return; }
+    let start = 0;
+    const step = Math.ceil(target / (duration / 16));
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) { setCount(target); clearInterval(timer); }
+      else setCount(start);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [target, duration]);
+  return count;
+}
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -32,6 +48,22 @@ function getLastProject() {
     // Return the most recently modified/created project
     return projets[projets.length - 1];
   } catch { return null; }
+}
+
+function AnimatedStats({ analysisCount }) {
+  const iaCount = useCountUp(33, 1000);
+  const divCount = useCountUp(11, 1000);
+  const analCount = useCountUp(analysisCount, 1000);
+  return (
+    <div style={s.stats3}>
+      {[[iaCount, "IA actives"], [divCount, "Divisions"], [analysisCount === 0 ? "\u2014" : analCount, analysisCount === 0 ? "Lancez-vous !" : "Analyses"]].map(([v, l]) => (
+        <div key={l} className="stat-card-hover" style={s.sc}>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 17, fontWeight: 800, color: "#C9A84C" }}>{v}</div>
+          <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)", marginTop: 2 }}>{l}</div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function HomePage() {
@@ -84,9 +116,6 @@ export default function HomePage() {
           <span>Quel est votre projet ?</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
         </button>
-        <button onClick={genererCRJournalier} disabled={crJournalierLoading} style={{ width: "100%", background: "rgba(232,135,58,0.12)", border: "0.5px solid rgba(232,135,58,0.5)", borderRadius: 14, padding: "13px 18px", fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: "#E8873A", cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: crJournalierLoading ? 0.6 : 1 }}>
-          {crJournalierLoading ? "Génération en cours..." : "\u{1F4CB} Fin de journée — CR IA"}
-        </button>
         {showCRJournalier && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowCRJournalier(false)}>
           <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,19,28,0.95)", border: "0.5px solid rgba(232,135,58,0.3)", borderRadius: 20, padding: "24px 20px", maxWidth: 400, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
             <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 16, fontWeight: 800, color: "#E8873A", marginBottom: 14 }}>{"\u{1F4CB}"} Compte-rendu de journée</div>
@@ -106,14 +135,7 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      <div style={s.stats3}>
-        {[["33", "IA actives"], ["11", "Divisions"], [String(analysisCount), "Analyses"]].map(([v, l]) => (
-          <div key={l} style={s.sc}>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 17, fontWeight: 800, color: "#C9A84C" }}>{v}</div>
-            <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)", marginTop: 2 }}>{l}</div>
-          </div>
-        ))}
-      </div>
+      <AnimatedStats analysisCount={analysisCount} />
       <div style={s.secLbl}>Outils rapides</div>
       <div style={s.featGrid}>
         {(() => {
@@ -145,6 +167,10 @@ export default function HomePage() {
             <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>{t.sub}</div>
           </div>
         ))}
+      </div>
+      <div onClick={genererCRJournalier} style={{ margin: "0 16px 14px", background: "rgba(232,135,58,0.06)", border: "0.5px solid rgba(232,135,58,0.2)", borderRadius: 10, padding: "10px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, opacity: crJournalierLoading ? 0.6 : 1 }}>
+        <span style={{ fontSize: 14 }}>{"\u{1F4CB}"}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "#E8873A" }}>{crJournalierLoading ? "Génération en cours..." : "Générer le CR de journée \u2192"}</span>
       </div>
       <div style={s.secLbl}>Divisions IA</div>
       <div style={s.featGrid}>
