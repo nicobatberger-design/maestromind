@@ -111,6 +111,16 @@ export function AppProvider({ children }) {
   // Wire the ref so useChatState.startUrgence can call goPage
   useEffect(() => { goPageRef.current = goPage; }, [goPage]);
 
+  // ── Deep link : /#/coach?ia=xxx → sélection auto de l'IA ──
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const iaKey = params.get("ia");
+    if (iaKey && IAS[iaKey] && page === "coach") {
+      chatState.switchIA(iaKey);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Helpers ───────────────────────────────────────────────────
   const rangColor = (rang) => {
     if (rang === "G\u00e9n\u00e9ral") return "#C9A84C";

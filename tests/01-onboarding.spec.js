@@ -14,6 +14,7 @@ test.describe("Onboarding", () => {
       localStorage.setItem("bl_onboarded", "1");
       localStorage.setItem("rgpd_accepted", "1");
       localStorage.setItem("bl_user_type", "Particulier");
+      sessionStorage.setItem("mm_splash_done", "1");
     });
     await page.reload({ waitUntil: "networkidle" });
     await page.waitForTimeout(2000);
@@ -24,7 +25,7 @@ test.describe("Onboarding", () => {
 
   test("4 écrans d'onboarding complets", async ({ page }) => {
     await page.goto("/");
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000); // Attendre fin du splash screen
     // Écran 1 — Bienvenue
     await expect(page.getByText("MAESTROMIND")).toBeVisible();
     await page.getByText("Continuer").click();

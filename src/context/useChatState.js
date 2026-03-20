@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { IAS, DIVISIONS, PROFILS, buildSystemPrompt, getChips } from "../data/constants";
 import { streamChat } from "../utils/api";
-import { safeSetItem } from "../utils/storage";
+import { safeSetItem, addToOfflineQueue, getOfflineQueue, clearOfflineQueue } from "../utils/storage";
 import { writeMsgCount } from "./useUserState";
 
 export function useChatState({ userType, msgCount, setMsgCount, isPremium, showPaywall, setShowPaywall, profilIA, apiKey, goPageRef }) {
@@ -28,6 +28,19 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
   // Nettoyage SpeechRecognition sur unmount (évite fuite mémoire)
   useEffect(() => {
     return () => { if (voiceRef.current) { try { voiceRef.current.abort(); } catch {} voiceRef.current = null; } };
+  }, []);
+
+  // Notification retour en ligne — file d'attente hors-ligne
+  useEffect(() => {
+    const handleOnline = () => {
+      const queue = getOfflineQueue();
+      if (queue.length > 0) {
+        setMsgs(prev => [...prev, { role: "ai", text: `✓ Connexion rétablie — ${queue.length} message(s) en attente` }]);
+        clearOfflineQueue();
+      }
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
   }, []);
 
   // ── Memos ─────────────────────────────────────────────────────
@@ -125,6 +138,16 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
     const txt = input.trim();
     setInput("");
     setErrMsg("");
+
+    // Mode hors-ligne : file d'attente
+    if (!navigator.onLine) {
+      addToOfflineQueue({ text: txt, iaKey: curIA });
+      const offlineMsgs = [...msgs, { role: "user", text: txt }, { role: "ai", text: "📡 Message en file d'attente — il sera envoyé au retour de la connexion." }];
+      setMsgs(offlineMsgs);
+      saveConv(curIA, offlineMsgs);
+      return;
+    }
+
     const newMsgs = [...msgs, { role: "user", text: txt }];
     const newHist = [...hist, { role: "user", content: txt }];
     const nc = msgCount + 1; setMsgCount(nc); writeMsgCount(nc);

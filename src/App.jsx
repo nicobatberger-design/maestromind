@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { AppProvider, useApp } from "./context/AppContext";
 import s from "./styles/index";
 import { useRappelsToast, RappelToast } from "./components/RappelsChantier";
@@ -35,10 +35,90 @@ function LazyFallback() {
   );
 }
 
+// Splash screen animé au lancement
+function SplashScreen({ onDone }) {
+  const [phase, setPhase] = useState("in"); // "in" → "out" → done
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("out"), 1000);
+    const t2 = setTimeout(() => onDone(), 1500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [onDone]);
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 99999,
+      background: "#06080D",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      animation: phase === "in" ? "splashFadeIn 0.5s ease-out forwards" : "splashFadeOut 0.5s ease-in forwards",
+    }}>
+      {/* Injection des keyframes */}
+      <style>{`
+        @keyframes splashFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes splashFadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes splashLogoScale { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      `}</style>
+
+      {/* Logo carré doré avec M */}
+      <div style={{
+        width: 56, height: 56, borderRadius: 14,
+        background: "linear-gradient(135deg,#EDD060,#C9A84C,#7A6030)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        animation: "splashLogoScale 0.5s ease-out forwards",
+      }}>
+        <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 28, color: "#06080D" }}>M</span>
+      </div>
+
+      {/* Nom */}
+      <h1 style={{
+        fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 22,
+        background: "linear-gradient(135deg,#EDD060,#C9A84C,#7A6030)",
+        WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+        margin: "16px 0 6px",
+        animation: "splashLogoScale 0.5s ease-out 0.15s both",
+      }}>MAESTROMIND</h1>
+
+      {/* Sous-titre */}
+      <p style={{
+        fontFamily: "DM Sans,sans-serif", fontWeight: 400, fontSize: 13,
+        color: "rgba(240,237,230,0.45)", margin: 0,
+        animation: "splashLogoScale 0.5s ease-out 0.3s both",
+      }}>IA Bâtiment</p>
+    </div>
+  );
+}
+
 function AppContent() {
   const { onboardingDone, showPinOverlay, theme, modeChantier, goPage, switchIA, switchDiv } = useApp();
   const { toast, dismissToast } = useRappelsToast();
   const [showSearch, setShowSearch] = useState(false);
+  // Splash au retour d'un utilisateur déjà onboardé (1x par session)
+  const [showSplash, setShowSplash] = useState(() => {
+    if (!localStorage.getItem("bl_onboarded")) return false; // Nouveaux users → onboarding directement
+    if (sessionStorage.getItem("mm_splash_done")) return false;
+    return true;
+  });
+  const handleSplashDone = useState(() => () => { setShowSplash(false); try { sessionStorage.setItem("mm_splash_done", "1"); } catch {} })[0];
+
+  if (showSplash) return <SplashScreen onDone={handleSplashDone} />;
+
+  // Raccourcis clavier globaux
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl+K / Cmd+K → ouvrir/fermer la recherche
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setShowSearch((prev) => !prev);
+      }
+      // Escape → fermer la recherche si ouverte
+      if (e.key === "Escape" && showSearch) {
+        setShowSearch(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showSearch]);
 
   if (!onboardingDone) return <OnboardingScreen />;
 

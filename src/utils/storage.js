@@ -48,3 +48,20 @@ function cleanOldData() {
   // 2. Nettoyer le cache geoloc
   localStorage.removeItem('mm_geo_cache');
 }
+
+// ── File d'attente hors-ligne ──────────────────────────────────
+export function addToOfflineQueue(message) {
+  try {
+    const queue = JSON.parse(localStorage.getItem('mm_offline_queue') || '[]');
+    queue.push({ ...message, queuedAt: Date.now() });
+    safeSetItem('mm_offline_queue', JSON.stringify(queue));
+  } catch {}
+}
+
+export function getOfflineQueue() {
+  try { return JSON.parse(localStorage.getItem('mm_offline_queue') || '[]'); } catch { return []; }
+}
+
+export function clearOfflineQueue() {
+  localStorage.removeItem('mm_offline_queue');
+}

@@ -3,13 +3,14 @@
  * PIN supprimé comme écran bloquant — l'app s'ouvre directement après onboarding
  */
 
-/** Bypass onboarding + RGPD via localStorage */
+/** Bypass onboarding + RGPD + splash via localStorage */
 export async function setupLocalStorage(page) {
   await page.evaluate(() => {
     localStorage.setItem("bl_onboarded", "1");
     localStorage.setItem("rgpd_accepted", "1");
     localStorage.setItem("bl_user_type", "Particulier");
     localStorage.setItem("maestromind_key", "sk-ant-test-key-for-playwright");
+    sessionStorage.setItem("mm_splash_done", "1");
     // Dismiss all tooltips
     ["mm_tooltip_coach-divisions", "mm_tooltip_outils-tabs", "mm_tooltip_scanner-photo"].forEach(k =>
       localStorage.setItem(k, "1")
