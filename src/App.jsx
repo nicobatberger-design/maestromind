@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { AppProvider, useApp } from "./context/AppContext";
 import s from "./styles/index";
 import { useRappelsToast, RappelToast } from "./components/RappelsChantier";
@@ -21,6 +21,7 @@ const ProjetsPage = lazy(() => import("./components/ProjetsPage"));
 const DashboardPage = lazy(() => import("./components/DashboardPage"));
 const AuthPage = lazy(() => import("./components/AuthPage"));
 const SettingsPage = lazy(() => import("./components/SettingsPage"));
+import SearchOverlay from "./components/SearchOverlay";
 const ProjetChatOverlay = lazy(() => import("./components/ProjetChatOverlay"));
 const PaywallOverlay = lazy(() => import("./components/PaywallOverlay"));
 const RgpdBanner = lazy(() => import("./components/RgpdBanner"));
@@ -35,8 +36,9 @@ function LazyFallback() {
 }
 
 function AppContent() {
-  const { onboardingDone, showPinOverlay, theme, modeChantier } = useApp();
+  const { onboardingDone, showPinOverlay, theme, modeChantier, goPage, switchIA, switchDiv } = useApp();
   const { toast, dismissToast } = useRappelsToast();
+  const [showSearch, setShowSearch] = useState(false);
 
   if (!onboardingDone) return <OnboardingScreen />;
 
@@ -47,7 +49,7 @@ function AppContent() {
         <div style={{ position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)", width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle,rgba(201,168,76,0.09) 0%,transparent 70%)", pointerEvents: "none", animation: "orbFloat 7s ease-in-out infinite", zIndex: 0 }} />
         <div style={{ position: "absolute", bottom: 60, right: -80, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle,rgba(82,144,224,0.05) 0%,transparent 70%)", pointerEvents: "none", animation: "orbFloat 9s ease-in-out infinite 1.5s", zIndex: 0 }} />
 
-        <Header />
+        <Header onSearchClick={() => setShowSearch(true)} />
 
         <div style={s.pages}>
           <Suspense fallback={<LazyFallback />}>
@@ -76,6 +78,7 @@ function AppContent() {
       </Suspense>
 
       {showPinOverlay && <PinScreen overlay />}
+      <SearchOverlay visible={showSearch} onClose={() => setShowSearch(false)} onSelectIA={(key, isDiv) => { if (isDiv) { switchDiv(key); } else { switchIA(key); } goPage("coach"); }} />
     </>
   );
 }
