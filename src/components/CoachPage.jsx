@@ -30,7 +30,7 @@ export default function CoachPage() {
     userType, voiceActive, msgCount, isPremium, autoVoice,
     msgsRef, chips,
     switchDiv, switchIA, send, sendWithPhoto, rateMsg,
-    startVoice, startUrgence, exportChatPDF, rangColor, saveConv, welcomeMsg, clearHistory,
+    startVoice, startUrgence, exportChatPDF, rangColor, saveConv, welcomeMsg, clearHistory, toggleFavori, isFavori,
   } = useApp();
 
   const [copiedIdx, setCopiedIdx] = useState(null);
@@ -142,7 +142,7 @@ export default function CoachPage() {
                 </svg>
               </div>
               <div style={{ maxWidth: "88%" }}>
-                <div style={m.role === "ai" ? s.bubA : s.bubU} dangerouslySetInnerHTML={{ __html: formatAIText(m.text) }} />
+                <div className={m.role === "ai" && m.text !== "..." && loading && i === msgs.length - 1 ? "streaming-cursor" : ""} style={m.role === "ai" ? s.bubA : s.bubU} dangerouslySetInnerHTML={{ __html: m.text === "..." ? '<div class="mm-skeleton" style="height:14px;width:60%;margin-bottom:6px"></div><div class="mm-skeleton" style="height:14px;width:80%"></div>' : formatAIText(m.text) }} />
                 {m.role === "ai" && m.text !== "..." && <div style={{ display: "flex", gap: 6, marginTop: 5, paddingLeft: 2 }}>
                   {isTTSSupported() && <button onClick={() => toggleSpeak(m.text, i)} style={{ background: speakingIdx === i ? "rgba(201,168,76,0.15)" : "transparent", border: "0.5px solid " + (speakingIdx === i ? "#C9A84C" : "rgba(255,255,255,0.07)"), borderRadius: 20, padding: "2px 8px", fontSize: 10, color: speakingIdx === i ? "#C9A84C" : "rgba(240,237,230,0.3)", cursor: "pointer", transition: "all 0.2s", animation: speakingIdx === i ? "voicePulse 1.2s ease-in-out infinite" : "none" }}>
                     {speakingIdx === i ? "⏹ Stop" : "🔊 Écouter"}
@@ -152,6 +152,7 @@ export default function CoachPage() {
                   </button>
                   <button onClick={() => rateMsg(i, 1)} style={{ background: m.rated === 1 ? "rgba(82,195,122,0.15)" : "transparent", border: "0.5px solid " + (m.rated === 1 ? "#52C37A" : "rgba(255,255,255,0.07)"), borderRadius: 20, padding: "2px 8px", fontSize: 11, color: m.rated === 1 ? "#52C37A" : "rgba(240,237,230,0.3)", cursor: "pointer" }}>{"\u{1F44D}"}</button>
                   <button onClick={() => rateMsg(i, -1)} style={{ background: m.rated === -1 ? "rgba(224,82,82,0.12)" : "transparent", border: "0.5px solid " + (m.rated === -1 ? "#E05252" : "rgba(255,255,255,0.07)"), borderRadius: 20, padding: "2px 8px", fontSize: 11, color: m.rated === -1 ? "#E05252" : "rgba(240,237,230,0.3)", cursor: "pointer" }}>{"\u{1F44E}"}</button>
+                  <button onClick={() => toggleFavori(m, curIA)} style={{ background: isFavori(m.text, curIA) ? "rgba(201,168,76,0.15)" : "transparent", border: "0.5px solid " + (isFavori(m.text, curIA) ? "#C9A84C" : "rgba(255,255,255,0.07)"), borderRadius: 20, padding: "2px 8px", fontSize: 11, color: isFavori(m.text, curIA) ? "#C9A84C" : "rgba(240,237,230,0.3)", cursor: "pointer" }}>{isFavori(m.text, curIA) ? "★" : "☆"}</button>
                 </div>}
               </div>
             </div>

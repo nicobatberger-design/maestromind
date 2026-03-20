@@ -63,6 +63,34 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
     setHist([]);
   }, [curIA, userType, welcomeMsg]);
 
+  // ── Favoris ─────────────────────────────────────────────────
+  const [favoris, setFavoris] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("bl_favoris") || "[]"); } catch { return []; }
+  });
+
+  const toggleFavori = useCallback((msg, iaKey) => {
+    setFavoris(prev => {
+      const exists = prev.findIndex(f => f.text === msg.text && f.ia === iaKey);
+      let updated;
+      if (exists >= 0) {
+        updated = prev.filter((_, i) => i !== exists);
+      } else {
+        updated = [{ text: msg.text, ia: iaKey, iaName: IAS[iaKey]?.name || iaKey, date: new Date().toLocaleDateString("fr-FR"), timestamp: Date.now() }, ...prev].slice(0, 50);
+      }
+      localStorage.setItem("bl_favoris", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const isFavori = useCallback((text, iaKey) => {
+    return favoris.some(f => f.text === text && f.ia === iaKey);
+  }, [favoris]);
+
+  const clearFavoris = useCallback(() => {
+    setFavoris([]);
+    localStorage.setItem("bl_favoris", "[]");
+  }, []);
+
   const switchDiv = useCallback((div) => {
     saveConv(curIA, msgs);
     setCurDiv(div);
@@ -188,5 +216,6 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
     switchDiv, switchIA, send, sendWithPhoto, rateMsg,
     startVoice, startUrgence,
     saveConv, loadConv, welcomeMsg, clearHistory, clearAllHistory,
+    favoris, toggleFavori, isFavori, clearFavoris,
   };
 }
