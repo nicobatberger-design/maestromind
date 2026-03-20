@@ -51,7 +51,7 @@ function getLastProject() {
 }
 
 function AnimatedStats({ analysisCount }) {
-  const iaCount = useCountUp(33, 1000);
+  const iaCount = useCountUp(40, 1000);
   const divCount = useCountUp(11, 1000);
   const analCount = useCountUp(analysisCount, 1000);
   const statColors = ["#C9A84C", "#5290E0", "#52C37A"];
@@ -97,7 +97,7 @@ export default function HomePage() {
       <div style={{ ...s.hero, padding: "26px 16px 20px" }}>
         <div style={{ color: "rgba(240,237,230,0.45)", fontSize: 13, marginBottom: 6, letterSpacing: "0.02em" }}>{PROFILS[userType]?.icon} {getGreeting()} !</div>
         <div className="gold-text" style={{ fontFamily: "'Syne',sans-serif", fontSize: 26, fontWeight: 800, lineHeight: 1.1, marginBottom: 6 }}>MAESTROMIND</div>
-        <div style={{ color: "rgba(240,237,230,0.4)", fontSize: 11, marginBottom: 20, letterSpacing: "0.03em" }}>33 IA spécialisées — Normes DTU — 11 divisions</div>
+        <div style={{ color: "rgba(240,237,230,0.4)", fontSize: 11, marginBottom: 20, letterSpacing: "0.03em" }}>40 IA spécialisées — Normes DTU — 11 divisions</div>
 
         {/* Last project quick access */}
         {lastProject && (
@@ -191,6 +191,36 @@ export default function HomePage() {
             <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>{info.ias.length} IA</div>
           </div>
         ))}
+      </div>
+      {/* Astuce du jour */}
+      <div style={{ padding: "0 16px 16px" }}>
+        <div className="liquid-glass" style={{ borderRadius: 16, padding: "16px 18px", border: "0.5px solid rgba(201,168,76,0.15)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.12)", border: "0.5px solid rgba(201,168,76,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round"><path d="M12 2v1M12 21v1M4.22 4.22l.71.71M18.36 18.36l.71.71M1 12h1M21 12h1M4.22 19.78l.71-.71M18.36 5.64l.71-.71"/><circle cx="12" cy="12" r="5"/></svg>
+            </div>
+            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, color: "#C9A84C", letterSpacing: 1 }}>ASTUCE DU JOUR</div>
+          </div>
+          {(() => {
+            const tips = [
+              { title: "Peinture : la règle des 2 couches", text: "Appliquez toujours une sous-couche avant la peinture de finition. Résultat : meilleure couvrante, moins de couches, économie de 20% de peinture." },
+              { title: "Carrelage : double encollage", text: "Pour les carreaux >30cm, appliquez la colle au sol ET au dos du carreau. C'est obligatoire DTU 52.1 et évite 90% des décollements." },
+              { title: "Électricité : toujours vérifier", text: "Avant toute intervention, coupez le disjoncteur ET vérifiez l'absence de tension avec un VAT. Un testeur coûte 15€, une électrocution peut être fatale." },
+              { title: "Humidité : aérez 10 min/jour", text: "Ouvrir les fenêtres 10 minutes chaque matin réduit l'humidité de 15-20%. Moins de moisissures, meilleure qualité d'air, économie sur la VMC." },
+              { title: "Isolation : les combles d'abord", text: "30% de la chaleur s'échappe par le toit. Isoler les combles (R≥7 m²K/W) est le meilleur rapport coût/économie : 20-40€/m² pour -30% de chauffage." },
+              { title: "Placo : la vis tous les 30cm", text: "DTU 25.41 : vis LB25 tous les 300mm en rives, 500mm en champ. Serrer jusqu'à affleurement, JAMAIS traverser le carton. Un bon vissage = zéro fissure." },
+              { title: "Devis : comparez 3 minimum", text: "Ne signez jamais le premier devis. 3 devis comparatifs révèlent les écarts de prix (parfois 40%) et les oublis de prestations." },
+            ];
+            const today = new Date().getDay();
+            const tip = tips[today % tips.length];
+            return (
+              <>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3 }}>{tip.title}</div>
+                <div style={{ fontSize: 11, color: "rgba(240,237,230,0.55)", lineHeight: 1.6 }}>{tip.text}</div>
+              </>
+            );
+          })()}
+        </div>
       </div>
       <div style={s.secLbl}>Pas sûr par où commencer ?</div>
       <div style={{ padding: "0 16px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
