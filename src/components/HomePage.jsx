@@ -1,8 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { PROFILS } from "../data/constants";
 import { getContexteLocal, resumeMeteo } from "../utils/geolocation";
 import s from "../styles/index";
+
+/* ── Keyframes pour le spinner pull-to-refresh ── */
+const pullRefreshStyle = document.getElementById("pull-refresh-style") || (() => {
+  const el = document.createElement("style");
+  el.id = "pull-refresh-style";
+  el.textContent = `@keyframes ptr-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
+  document.head.appendChild(el);
+  return el;
+})();
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -31,6 +40,9 @@ export default function HomePage() {
   const [showUrgence, setShowUrgence] = useState(false);
   const [geoContexte, setGeoContexte] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
+  const [ptrActive, setPtrActive] = useState(false); // pull-to-refresh en cours
+  const ptrStart = useRef(null); // position Y du touchstart
+  const ptrContainer = useRef(null); // ref du conteneur principal
 
   useEffect(() => { if (page === "home") setLastProject(getLastProject()); }, [page]);
 
@@ -42,10 +54,45 @@ export default function HomePage() {
     } catch {} finally { setGeoLoading(false); }
   }, []);
 
+  // ── Pull-to-refresh : gestion tactile ──
+  const handleTouchStart = useCallback((e) => {
+    // Enregistrer la position de départ si on est en haut de page
+    const el = ptrContainer.current;
+    if (el && el.scrollTop <= 0) {
+      ptrStart.current = e.touches[0].clientY;
+    } else {
+      ptrStart.current = null;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((e) => {
+    if (ptrStart.current === null || ptrActive) return;
+    const deltaY = e.changedTouches[0].clientY - ptrStart.current;
+    if (deltaY > 60) {
+      // Seuil atteint → déclencher le rafraîchissement
+      setPtrActive(true);
+      // Retour haptique léger
+      try { navigator.vibrate(15); } catch {}
+      // Rafraîchir les données
+      chargerMeteo();
+      setLastProject(getLastProject());
+      // Masquer le spinner après 1 seconde
+      setTimeout(() => setPtrActive(false), 1000);
+    }
+    ptrStart.current = null;
+  }, [ptrActive, chargerMeteo]);
+
   const tip = TIPS[new Date().getDay() % TIPS.length];
 
   return (
-    <div style={{ ...s.page, ...(page === "home" ? s.pageActive : {}) }}>
+    <div ref={ptrContainer} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} style={{ ...s.page, ...(page === "home" ? s.pageActive : {}) }}>
+
+      {/* ── Spinner pull-to-refresh ── */}
+      {ptrActive && (
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 4px" }}>
+          <div style={{ width: 24, height: 24, border: "2.5px solid rgba(201,168,76,0.2)", borderTop: "2.5px solid #C9A84C", borderRadius: "50%", animation: "ptr-spin 0.7s linear infinite" }} />
+        </div>
+      )}
 
       {/* ── Hero ── */}
       <div style={{ padding: "28px 20px 20px" }}>

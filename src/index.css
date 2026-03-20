@@ -329,6 +329,24 @@ button:active:not(.bl-pin) {
   animation: blink 0.8s step-end infinite;
 }
 
+/* ── Indicateur de streaming (dots animés) ── */
+@keyframes typingDots {
+  0%, 20% { content: '●○○'; }
+  40% { content: '●●○'; }
+  60% { content: '●●●'; }
+  80% { content: '○●●'; }
+  100% { content: '○○●'; }
+}
+.streaming-indicator::before {
+  content: '●○○';
+  animation: typingDots 1.2s steps(1) infinite;
+  color: #C9A84C;
+  font-size: 8px;
+  letter-spacing: 3px;
+  display: block;
+  margin-top: 6px;
+}
+
 /* ── Gradient text pour titres premium ── */
 .gold-text {
   background: linear-gradient(135deg, #EDD060 0%, #C9A84C 40%, #F5E6A3 60%, #C9A84C 80%, #7A6030 100%);

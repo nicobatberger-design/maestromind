@@ -1,7 +1,23 @@
+import { useRef, useState, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 
 export default function PaywallOverlay() {
   const { showPaywall, setShowPaywall, msgCount } = useApp();
+
+  // Swipe-down pour fermer l'overlay
+  const touchStartY = useRef(null);
+  const [dragY, setDragY] = useState(0);
+  const onTouchStart = useCallback(e => { touchStartY.current = e.touches[0].clientY; }, []);
+  const onTouchMove = useCallback(e => {
+    if (touchStartY.current === null) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) setDragY(delta);
+  }, []);
+  const onTouchEnd = useCallback(() => {
+    if (dragY > 100) setShowPaywall(false);
+    setDragY(0);
+    touchStartY.current = null;
+  }, [dragY, setShowPaywall]);
 
   if (!showPaywall) return null;
 
@@ -9,7 +25,9 @@ export default function PaywallOverlay() {
   const pct = (used / 5) * 100;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,13,0.94)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 9997, padding: "0 32px" }}>
+    <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} style={{ position: "fixed", inset: 0, background: "rgba(6,8,13,0.94)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 9997, padding: "0 32px", transform: `translateY(${dragY}px)`, transition: dragY === 0 ? "transform 0.25s ease" : "none" }}>
+      {/* Indicateur de glissement */}
+      <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)", margin: "8px auto 4px", position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)" }} />
       <div style={{ fontSize: 52, marginBottom: 16 }}>{"\u{1F513}"}</div>
       <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, color: "#C9A84C", marginBottom: 12, textAlign: "center" }}>Limite atteinte</div>
 

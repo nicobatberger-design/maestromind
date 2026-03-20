@@ -12,6 +12,21 @@ export default function ProjetChatOverlay() {
     else { speak(text, () => setSpeakingIdx(idx), () => setSpeakingIdx(null)); }
   }, [speakingIdx]);
 
+  // Swipe-down pour fermer l'overlay
+  const touchStartY = useRef(null);
+  const [dragY, setDragY] = useState(0);
+  const onTouchStart = useCallback(e => { touchStartY.current = e.touches[0].clientY; }, []);
+  const onTouchMove = useCallback(e => {
+    if (touchStartY.current === null) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) setDragY(delta);
+  }, []);
+  const onTouchEnd = useCallback(() => {
+    if (dragY > 100) setProjetChat(null);
+    setDragY(0);
+    touchStartY.current = null;
+  }, [dragY, setProjetChat]);
+
   useEffect(() => {
     msgsEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [projetChatMsgs]);
@@ -19,7 +34,9 @@ export default function ProjetChatOverlay() {
   if (!projetChat) return null;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,13,0.98)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", display: "flex", flexDirection: "column", zIndex: 9994, maxWidth: 430, margin: "0 auto" }}>
+    <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} style={{ position: "fixed", inset: 0, background: "rgba(6,8,13,0.98)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", display: "flex", flexDirection: "column", zIndex: 9994, maxWidth: 430, margin: "0 auto", transform: `translateY(${dragY}px)`, transition: dragY === 0 ? "transform 0.25s ease" : "none" }}>
+      {/* Indicateur de glissement */}
+      <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)", margin: "8px auto 4px" }} />
       <div style={{ padding: "14px 16px 10px", display: "flex", alignItems: "center", gap: 10, borderBottom: "0.5px solid rgba(201,168,76,0.15)", flexShrink: 0 }}>
         <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#EDD060,#C9A84C,#7A6030)", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#080A0F" strokeWidth="2.2" strokeLinecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg></div>
         <div style={{ flex: 1 }}><div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700 }}>{projetChat.nom}</div><div style={{ fontSize: 10, color: "#C9A84C" }}>IA dédiée · {projetChat.type}</div></div>
