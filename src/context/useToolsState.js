@@ -119,13 +119,42 @@ export function useToolsState({ apiKey, profilIA }) {
     let dims = `Surface : ${calcSurface}m\u00b2. Hauteur sous plafond : ${hauteur}m.`;
     if (pente > 0) dims += ` ATTENTION : toit/plafond en pente \u00e0 ${pente}\u00b0 \u2014 la hauteur varie. Calcule la surface r\u00e9elle en tenant compte de la pente (surface rampant = surface au sol / cos(pente)). Adapte les longueurs de plaques/rails en cons\u00e9quence.`;
     if (longueur > 0) dims += ` Longueur lin\u00e9aire de la cloison/mur : ${longueur}m.`;
-    const typesAvecHauteur = ["Placo BA13", "Peinture", "Carrelage", "Enduit", "Isolation murs"];
-    if (typesAvecHauteur.includes(calcType)) dims += ` La hauteur impacte le choix des plaques (standard 2.50m, haute 2.60m, 2.70m, 3m). Si hauteur > 2.50m, pr\u00e9cise qu'il faut des plaques plus grandes et adapte les quantit\u00e9s de rails/montants.`;
+    const typesAvecHauteur = ["Placo BA13", "Peinture", "Peinture plafond", "Carrelage mural", "Carrelage sol", "Enduit", "Isolation murs (ITI)", "Isolation murs (ITE)", "Cloison BA13", "Doublage BA13+isolant", "Crépi façade", "Parement pierre", "Lambris plafond"];
+    if (typesAvecHauteur.includes(calcType)) dims += ` La hauteur impacte le choix des plaques (standard 2.50m, haute 2.60m, 2.70m, 3m). Si hauteur > 2.50m, précise qu'il faut des plaques plus grandes et adapte les quantités de rails/montants.`;
+    if (calcType.includes("plafond") || calcType.includes("Plafond")) dims += ` FAUX PLAFOND : détaille l'ossature complète (porteurs, entretoises, suspentes, cornières de rive, tiges filetées) + dalles avec les quantités exactes par m².`;
     try {
       const r = await withRetry(() => fetch(apiURL(), {
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1200,
-          system: `${profilIA()}\nTu es un expert en quantitatifs mat\u00e9riaux b\u00e2timent France 2026. Tu connais parfaitement les dimensions standard des mat\u00e9riaux (plaques BA13 : 1200x2500, 1200x2600, 1200x2700, 1200x3000 ; rails R48/R70 en 3m ; montants M48/M70 en 2.50/2.60/2.70/3m ; etc.). IMPORTANT : adapte tes recommandations \u00e0 la HAUTEUR et \u00e0 la PENTE indiqu\u00e9es. PRIX R\u00c9F\u00c9RENCE 2026 (sources prix-travaux-m2.com/allotravaux.com) : BA13 standard fourniture 2,50-9\u20ac/plaque \u00b7 BA13 fourni-pos\u00e9 27-41\u20ac/m\u00b2 \u00b7 Carrelage gr\u00e8s c\u00e9rame pos\u00e9 55-120\u20ac/m\u00b2 \u00b7 Carrelage standard pos\u00e9 60-75\u20ac/m\u00b2 \u00b7 Isolation fourniture seule 5-60\u20ac/m\u00b2 \u00b7 Isolation fourni-pos\u00e9 25-120\u20ac/m\u00b2. R\u00e9ponds UNIQUEMENT en JSON valide : {"materiaux":[{"nom":"Produit pr\u00e9cis avec dimensions","quantite":"X unit\u00e9s (d\u00e9tail calcul)","prixEstime":"X\u20ac","conseil":"marque/ref recommand\u00e9e"}],"total":"X\u20ac","conseil":"conseil pratique incluant mise en oeuvre"}`,
+          system: `${profilIA()}\nTu es un expert métreur-vérificateur en quantitatifs matériaux bâtiment France 2026. Tu maîtrises TOUS les corps de métier.
+
+PLACO/CLOISONS : plaques BA13 1200×2500/2600/2700/3000 · rails R48/R70 en 3m · montants M48/M70 · vis LB25 25/vis par plaque · bande à joints · enduit (2 passes).
+
+FAUX PLAFOND SUSPENDU DALLES 600×600 (ossature T24) : porteurs T24 3,6m = 0,84/m² · entretoises 1200mm = 1,7/m² · entretoises 600mm = 0,85/m² · suspentes réglables = 1/ml porteur · cornières de rive 3,05m = périmètre/3,05 · tiges filetées M6 = 1/m² · dalles 600×600 = surface/0,36 (+5% casse). PRIX 2026 : porteur T24 3,6m 13€ · entretoise 1200mm 4,50€ · entretoise 600mm 2,20€ · suspente 0,87€ · cornière rive 3m 8,40€ · dalle minérale 600×600 3-8€/u · dalle acoustique 5-12€/u.
+
+FAUX PLAFOND BA13 : fourrures F530 tous les 500mm · suspentes + tiges tous les 1,2m · plaques BA13 · vis TTPC.
+
+CARRELAGE : colle C1 intérieur sec / C2 humide / C2S1 grand format · joints 3mm sol / 1,5mm mur · croisillons · seuil alu · primaire accrochage. Grès cérame 60×60 15-35€/m² · faïence murale 8-20€/m².
+
+PEINTURE : sous-couche 0,1L/m² · peinture 2 couches 0,2L/m² · bâches · ruban masquage · rouleau + manchon. Acrylique mate 4-8€/m² · satin lessivable 6-10€/m².
+
+PARQUET/SOL : sous-couche 2-4€/m² · parquet stratifié 12-25€/m² · plinthes · barres de seuil · film PE. Sol vinyle 8-20€/m² · béton ciré 40-80€/m².
+
+ISOLATION : laine roche/verre rouleau 5-12€/m² · PSE 6-10€/m² · pare-vapeur · adhésif · fixations. ITI = doublage collé ou ossature. ITE = PSE + enduit 80-150€/m² ou bardage.
+
+TOITURE : tuiles 1-3€/u (12-15 tuiles/m²) · ardoises 2-5€/u (20-30/m²) · liteaux · écran sous-toiture · faîtières · closoirs. Bac acier 15-30€/m².
+
+PLOMBERIE : tubes PER Ø16/20 1-3€/ml · raccords · colliers · manchons. Cuivre Ø12/14/16/18 3-8€/ml. Évacuation PVC Ø40/100 2-6€/ml.
+
+ÉLECTRICITÉ : câble R2V 1,5mm² 0,55€/ml · 2,5mm² 0,85€/ml · gaine ICTA 0,30€/ml · boîtiers · prises Legrand 3-8€ · inter 4-10€ · disjoncteurs 8-12€ · différentiel 30mA 25-45€.
+
+MENUISERIE : fenêtre PVC double vitrage 150-400€/u · porte intérieure bloc-porte 80-250€ · porte entrée 300-1500€ · volet roulant 150-400€.
+
+TERRASSE : lame bois composite 25-60€/m² · lambourdes · plots réglables 3-8€/u (4-5/m²) · vis inox.
+
+BÉTON : C25 = 300kg ciment + 780kg sable + 1150kg gravier + 150L eau par m³. Treillis soudé ST25 4-8€/m².
+
+Réponds UNIQUEMENT en JSON valide : {"materiaux":[{"nom":"Produit précis avec dimensions","quantite":"X unités (détail calcul)","prixEstime":"X€","conseil":"marque/ref recommandée"}],"total":"X€","conseil":"conseil pratique incluant mise en oeuvre"}`,
           messages: [{ role: "user", content: `Calcule les mat\u00e9riaux pour ${calcType}. ${dims} Inclus pertes standards (10-15%). Prix march\u00e9 France 2026 actualis\u00e9s. Produits disponibles Leroy Merlin/Castorama/Brico D\u00e9p\u00f4t. D\u00e9taille chaque produit avec ses dimensions exactes et la marque recommand\u00e9e.` }] }) }));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setCalcResult(parseAIJson(data?.content?.[0]?.text));
