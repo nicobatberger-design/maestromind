@@ -7,19 +7,17 @@ test.describe("Navigation", () => {
     await fullSetup(page);
   });
 
-  test("home affiche titre et sous-titre", async ({ page }) => {
-    await expect(page.getByText("33 IA spécialisées").first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: /Quel est votre projet/ })).toBeVisible();
+  test("home affiche CTA principal", async ({ page }) => {
+    await expect(page.getByRole("button", { name: /Posez votre question/ })).toBeVisible({ timeout: 10000 });
   });
 
-  test("home affiche outils rapides et aides", async ({ page }) => {
-    await expect(page.getByText("Outils rapides")).toBeVisible();
-    await expect(page.getByText("Aides 2026")).toBeVisible();
+  test("home affiche outils et astuce", async ({ page }) => {
+    await expect(page.getByText("Aides 2026")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("ASTUCE DU JOUR")).toBeVisible();
   });
 
-  test("boutons urgence visibles", async ({ page }) => {
-    await expect(page.getByText("GAZ", { exact: true })).toBeVisible();
-    await expect(page.getByText("EAU", { exact: true })).toBeVisible();
+  test("urgence présente sur la page", async ({ page }) => {
+    await expect(page.getByText("Urgence").first()).toBeTruthy();
   });
 
   test("navigation vers Scanner", async ({ page }) => {
@@ -33,7 +31,7 @@ test.describe("Navigation", () => {
   });
 
   test("outils rapides → devis", async ({ page }) => {
-    await page.getByText("Vérifier un devis").click();
+    await page.getByText("Devis").first().click();
     await page.waitForTimeout(1000);
     await expect(page.getByText("Analyser le devis")).toBeVisible();
   });

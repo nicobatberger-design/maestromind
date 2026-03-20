@@ -19,7 +19,7 @@ test.describe("Onboarding", () => {
     await page.waitForTimeout(2000);
 
     // Doit arriver directement sur la home (plus de PIN bloquant)
-    await expect(page.getByRole("button", { name: /Quel est votre projet/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Posez votre question/ })).toBeVisible();
   });
 
   test("4 écrans d'onboarding complets", async ({ page }) => {

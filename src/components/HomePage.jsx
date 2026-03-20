@@ -1,23 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
-import { DIVISIONS, PROFILS } from "../data/constants";
+import { PROFILS } from "../data/constants";
 import s from "../styles/index";
-
-function useCountUp(target, duration = 1000) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (target === 0) { setCount(0); return; }
-    let start = 0;
-    const step = Math.ceil(target / (duration / 16));
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= target) { setCount(target); clearInterval(timer); }
-      else setCount(start);
-    }, 16);
-    return () => clearInterval(timer);
-  }, [target, duration]);
-  return count;
-}
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -26,219 +10,131 @@ function getGreeting() {
   return "Bonsoir";
 }
 
-function getAnalysisCount() {
-  try {
-    let count = parseInt(localStorage.getItem("mm_analysis_count") || "0");
-    return count;
-  } catch { return 0; }
-}
-
-function incrementAnalysisCount() {
-  try {
-    const c = getAnalysisCount() + 1;
-    localStorage.setItem("mm_analysis_count", String(c));
-    return c;
-  } catch { return 0; }
-}
-
 function getLastProject() {
-  try {
-    const projets = JSON.parse(localStorage.getItem("bl_projets") || "[]");
-    if (projets.length === 0) return null;
-    // Return the most recently modified/created project
-    return projets[projets.length - 1];
-  } catch { return null; }
+  try { const p = JSON.parse(localStorage.getItem("bl_projets") || "[]"); return p.length ? p[0] : null; } catch { return null; }
 }
 
-function AnimatedStats({ analysisCount }) {
-  const iaCount = useCountUp(40, 1000);
-  const divCount = useCountUp(11, 1000);
-  const analCount = useCountUp(analysisCount, 1000);
-  const statColors = ["#C9A84C", "#5290E0", "#52C37A"];
-  return (
-    <div style={s.stats3}>
-      {[[iaCount, "IA actives"], [divCount, "Divisions"], [analysisCount === 0 ? "\u2014" : analCount, analysisCount === 0 ? "Lancez-vous !" : "Analyses"]].map(([v, l], i) => (
-        <div key={l} className="stat-card-hover liquid-glass" style={{ ...s.sc, borderColor: statColors[i] + "18" }}>
-          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 20, fontWeight: 800, color: statColors[i], textShadow: "0 0 20px " + statColors[i] + "33" }}>{v}</div>
-          <div style={{ fontSize: 9, color: "rgba(240,237,230,0.45)", marginTop: 3, letterSpacing: "0.5px", fontWeight: 600 }}>{l}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
+const TIPS = [
+  { title: "Peinture : sous-couche d'abord", text: "Résultat meilleur, moins de couches, -20% de peinture." },
+  { title: "Carrelage >30cm : double encollage", text: "Colle au sol ET au dos. Obligatoire DTU 52.1." },
+  { title: "Électricité : coupez + vérifiez", text: "Disjoncteur OFF + testeur VAT avant toute intervention." },
+  { title: "Humidité : aérez 10 min/jour", text: "-15% d'humidité, moins de moisissures." },
+  { title: "Isolation : les combles d'abord", text: "30% de chaleur par le toit. R≥7 = -30% de chauffage." },
+  { title: "Devis : comparez 3 minimum", text: "Écarts de 40% possibles entre artisans." },
+  { title: "Vis placo : tous les 30cm", text: "DTU 25.41 — affleurement, jamais traverser le carton." },
+];
 
 export default function HomePage() {
-  const { page, goPage, switchDiv, userType, startUrgence, setToolTab, projets, crJournalierResult, crJournalierLoading, showCRJournalier, setShowCRJournalier, genererCRJournalier } = useApp();
-  const [analysisCount, setAnalysisCount] = useState(getAnalysisCount);
+  const { page, goPage, userType, startUrgence, setToolTab, crJournalierLoading, showCRJournalier, setShowCRJournalier, crJournalierResult, genererCRJournalier } = useApp();
   const [lastProject, setLastProject] = useState(getLastProject);
+  const [showUrgence, setShowUrgence] = useState(false);
 
-  // Update analysis count on page focus (in case it was updated elsewhere)
-  useEffect(() => {
-    if (page === "home") {
-      setAnalysisCount(getAnalysisCount());
-      setLastProject(getLastProject());
-    }
-  }, [page]);
+  useEffect(() => { if (page === "home") setLastProject(getLastProject()); }, [page]);
 
-  // Track analysis count from msgCount (obfusqué base64)
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("bl_mc_v2");
-      const count = raw ? parseInt(atob(raw), 10) || 0 : 0;
-      if (count > analysisCount) {
-        localStorage.setItem("mm_analysis_count", String(count));
-        setAnalysisCount(count);
-      }
-    } catch {}
-  }, []);
+  const tip = TIPS[new Date().getDay() % TIPS.length];
 
   return (
     <div style={{ ...s.page, ...(page === "home" ? s.pageActive : {}) }}>
-      <div style={{ ...s.hero, padding: "26px 16px 20px" }}>
-        <div style={{ color: "rgba(240,237,230,0.45)", fontSize: 13, marginBottom: 6, letterSpacing: "0.02em" }}>{PROFILS[userType]?.icon} {getGreeting()} !</div>
-        <div className="gold-text" style={{ fontFamily: "'Syne',sans-serif", fontSize: 26, fontWeight: 800, lineHeight: 1.1, marginBottom: 6 }}>MAESTROMIND</div>
-        <div style={{ color: "rgba(240,237,230,0.4)", fontSize: 11, marginBottom: 20, letterSpacing: "0.03em" }}>40 IA spécialisées — Normes DTU — 11 divisions</div>
 
-        {/* Last project quick access */}
-        {lastProject && (
-          <div onClick={() => goPage("projets")} style={{ background: "rgba(201,168,76,0.06)", border: "0.5px solid rgba(201,168,76,0.18)", borderRadius: 12, padding: "10px 14px", marginBottom: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "border-color 0.2s" }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(201,168,76,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
+      {/* ── Hero ── */}
+      <div style={{ padding: "28px 20px 20px" }}>
+        <div style={{ color: "rgba(240,237,230,0.4)", fontSize: 13, marginBottom: 6 }}>{PROFILS[userType]?.icon} {getGreeting()} !</div>
+        <div className="gold-text" style={{ fontFamily: "'Syne',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.1, marginBottom: 20 }}>MAESTROMIND</div>
+
+        {/* CTA principal */}
+        <button className="gold-btn" style={{ ...s.cta, borderRadius: 16, padding: "16px 20px", marginBottom: 0 }} onClick={() => goPage("coach")}>
+          <span style={{ fontSize: 14 }}>Posez votre question</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+        </button>
+      </div>
+
+      {/* ── 3 actions rapides (scanner / question / devis) ── */}
+      <div style={{ padding: "0 20px 16px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        {[
+          { label: "Scanner", sub: "Photo → diagnostic", color: "#5290E0", action: () => goPage("scanner"), icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5290E0" strokeWidth="1.8" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
+          { label: "Devis", sub: "Vérifier les prix", color: "#E8873A", action: () => { goPage("outils"); setToolTab("devis"); }, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8873A" strokeWidth="1.8" strokeLinecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> },
+          { label: "Matériaux", sub: "Calculer", color: "#52C37A", action: () => { goPage("outils"); setToolTab("mat"); }, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#52C37A" strokeWidth="1.8" strokeLinecap="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg> },
+        ].map((a, i) => (
+          <div key={i} className="liquid-glass" onClick={a.action} style={{ borderRadius: 14, padding: "14px 8px", cursor: "pointer", textAlign: "center", border: "0.5px solid " + a.color + "1A" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: a.color + "10", border: "0.5px solid " + a.color + "25", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>{a.icon}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Syne',sans-serif" }}>{a.label}</div>
+            <div style={{ fontSize: 9, color: "rgba(240,237,230,0.35)", marginTop: 1 }}>{a.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Dernier projet ── */}
+      {lastProject && (
+        <div style={{ padding: "0 20px 12px" }}>
+          <div onClick={() => goPage("projets")} className="liquid-glass" style={{ borderRadius: 14, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(139,92,246,0.1)", border: "0.5px solid rgba(139,92,246,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 9, color: "rgba(240,237,230,0.35)", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>Dernier projet</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#C9A84C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lastProject.nom || lastProject.type || "Projet"}</div>
+              <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>Projet en cours</div>
+              <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lastProject.nom || lastProject.type}</div>
             </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(240,237,230,0.2)" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
-        )}
+        </div>
+      )}
 
-        <button style={s.cta} onClick={() => goPage("coach")}>
-          <span>Quel est votre projet ?</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-        </button>
-        {showCRJournalier && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowCRJournalier(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,19,28,0.95)", border: "0.5px solid rgba(232,135,58,0.3)", borderRadius: 20, padding: "24px 20px", maxWidth: 400, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 16, fontWeight: 800, color: "#E8873A", marginBottom: 14 }}>{"\u{1F4CB}"} Compte-rendu de journée</div>
-            <div style={{ fontSize: 12, color: "rgba(240,237,230,0.7)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{crJournalierResult || "Chargement..."}</div>
-            <button onClick={() => setShowCRJournalier(false)} style={{ width: "100%", marginTop: 16, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.1)", color: "rgba(240,237,230,0.5)", fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Fermer</button>
+      {/* ── Astuce du jour ── */}
+      <div style={{ padding: "0 20px 12px" }}>
+        <div className="liquid-glass" style={{ borderRadius: 14, padding: "14px 16px", border: "0.5px solid rgba(201,168,76,0.12)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <span style={{ fontSize: 9, fontWeight: 700, color: "#C9A84C", letterSpacing: 1.5 }}>ASTUCE DU JOUR</span>
           </div>
-        </div>}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, textTransform: "uppercase", color: "#E05252", marginBottom: 10 }}>Urgence</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-            {[
-              ["GAZ", "#E05252", <svg key="g" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E05252" strokeWidth="2" strokeLinecap="round"><path d="M12 12c-2-2.67-4-4.33-4-6a4 4 0 0 1 8 0c0 1.67-2 3.33-4 6z"/><path d="M12 21a8 8 0 0 0 8-8c0-3.5-2-6.5-4-9l-4 5-4-5c-2 2.5-4 5.5-4 9a8 8 0 0 0 8 8z"/></svg>],
-              ["EAU", "#5290E0", <svg key="e" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5290E0" strokeWidth="2" strokeLinecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>],
-              ["\u00C9LECTRICIT\u00C9", "#E8873A", <svg key="l" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8873A" strokeWidth="2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>],
-            ].map(([label, color, icon]) => (
-              <button key={label} className="liquid-glass" onClick={() => startUrgence(label)} style={{ background: color + "0A", border: "0.5px solid " + color + "44", borderRadius: 14, padding: "14px 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: color + "15", border: "0.5px solid " + color + "33", display: "flex", alignItems: "center", justifyContent: "center" }}>{icon}</div>
-                <span style={{ fontSize: 9, fontWeight: 800, color, letterSpacing: 1.5 }}>{label}</span>
-              </button>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{tip.title}</div>
+          <div style={{ fontSize: 11, color: "rgba(240,237,230,0.45)", lineHeight: 1.5 }}>{tip.text}</div>
+        </div>
+      </div>
+
+      {/* ── Outils (liste compacte) ── */}
+      <div style={{ padding: "0 20px 12px" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "rgba(240,237,230,0.3)", marginBottom: 8 }}>Outils</div>
+        {[
+          { label: "Aides 2026", sub: "MaPrimeRénov' + CEE", color: "#52C37A", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52C37A" strokeWidth="1.8" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, action: () => { goPage("outils"); setToolTab("primes"); } },
+          { label: "Artisan RGE", sub: "Vérifier un artisan", color: "#5290E0", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5290E0" strokeWidth="1.8" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>, action: () => { goPage("outils"); setToolTab("rge"); } },
+          { label: "Certificat DTU", sub: "PDF de conformité", color: "#C9A84C", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>, action: () => goPage("cert") },
+          { label: "Boutique", sub: "Matériaux partenaires", color: "#C9A84C", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>, action: () => goPage("shop") },
+        ].map((t, i) => (
+          <div key={i} onClick={t.action} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", cursor: "pointer", borderBottom: i < 3 ? "0.5px solid rgba(255,255,255,0.04)" : "none" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: t.color + "10", border: "0.5px solid " + t.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{t.icon}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 500 }}>{t.label}</div>
+              <div style={{ fontSize: 10, color: "rgba(240,237,230,0.35)" }}>{t.sub}</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(240,237,230,0.15)" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Urgence (compact, collapsed) ── */}
+      <div style={{ padding: "0 20px 16px" }}>
+        <div onClick={() => setShowUrgence(!showUrgence)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 0", cursor: "pointer" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E05252" strokeWidth="2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#E05252" }}>Urgence</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(224,82,82,0.4)" strokeWidth="2" strokeLinecap="round" style={{ marginLeft: "auto", transform: showUrgence ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.25s" }}><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        {showUrgence && (
+          <div style={{ display: "flex", gap: 8, animation: "fadeSlideUp 0.25s ease-out" }}>
+            {[["GAZ","#E05252"],["EAU","#5290E0"],["ÉLECTRICITÉ","#E8873A"]].map(([label, color]) => (
+              <button key={label} onClick={() => startUrgence(label)} style={{ flex: 1, padding: "10px 6px", borderRadius: 10, background: color + "0A", border: "0.5px solid " + color + "33", cursor: "pointer", fontSize: 10, fontWeight: 800, color, letterSpacing: 1, textAlign: "center" }}>{label}</button>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* ── CR modal ── */}
+      {showCRJournalier && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowCRJournalier(false)}>
+        <div onClick={e => e.stopPropagation()} style={{ background: "rgba(15,19,28,0.95)", border: "0.5px solid rgba(232,135,58,0.3)", borderRadius: 20, padding: "24px 20px", maxWidth: 400, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 16, fontWeight: 800, color: "#E8873A", marginBottom: 14 }}>Compte-rendu de journée</div>
+          <div style={{ fontSize: 12, color: "rgba(240,237,230,0.7)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{crJournalierResult || "Chargement..."}</div>
+          <button onClick={() => setShowCRJournalier(false)} style={{ width: "100%", marginTop: 16, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.1)", color: "rgba(240,237,230,0.5)", fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Fermer</button>
         </div>
-      </div>
-      <AnimatedStats analysisCount={analysisCount} />
-      <div style={s.secLbl}>Outils rapides</div>
-      <div className="stagger-enter" style={s.featGrid}>
-        {(() => {
-          const svgIcon = (paths, color) => (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths}</svg>
-          );
-          const allTools = {
-            devisPro: { label: "Devis Pro", sub: "Devis professionnel", color: "#E8873A", iconSvg: (c) => svgIcon(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></>, c), action: () => { goPage("outils"); setToolTab("devis_pro"); } },
-            rentabilite: { label: "Rentabilité", sub: "Calcul marge artisan", color: "#52C37A", iconSvg: (c) => svgIcon(<><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></>, c), action: () => { goPage("outils"); setToolTab("rentabilite"); } },
-            devis: { label: "Vérifier un devis", sub: "Prix justes ?", color: "#E8873A", iconSvg: (c) => svgIcon(<><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /></>, c), action: () => { goPage("outils"); setToolTab("devis"); } },
-            mat: { label: "Calculer matériaux", sub: "Quantités exactes", color: "#52C37A", iconSvg: (c) => svgIcon(<><path d="M21 3H3v7h18V3z" /><path d="M21 14H3v7h18v-7z" /><path d="M12 3v7" /><path d="M12 14v7" /><path d="M3 10l4-4" /><path d="M7 10l4-4" /></>, c), action: () => { goPage("outils"); setToolTab("mat"); } },
-            primes: { label: "Aides 2026", sub: "MaPrimeRénov' CEE", color: "#52C37A", iconSvg: (c) => svgIcon(<><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>, c), action: () => { goPage("outils"); setToolTab("primes"); } },
-            rge: { label: "Vérifier artisan", sub: "RGE & légitimité", color: "#5290E0", iconSvg: (c) => svgIcon(<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><polyline points="9 12 11 14 15 10" /></>, c), action: () => { goPage("outils"); setToolTab("rge"); } },
-            shop: { label: "Boutique", sub: "Matériaux partenaires", color: "#C9A84C", iconSvg: (c) => svgIcon(<><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></>, c), action: () => { goPage("shop"); } },
-            cert: { label: "Certificat DTU", sub: "Validation conformité", color: "#C9A84C", iconSvg: (c) => svgIcon(<><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></>, c), action: () => { goPage("cert"); } },
-            planning: { label: "Planning", sub: "Planifier chantier", color: "#8B5CF6", iconSvg: (c) => svgIcon(<><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></>, c), action: () => { goPage("outils"); setToolTab("planning"); } },
-          };
-          const PROFIL_ORDER = {
-            "Artisan Pro": ["devisPro", "rentabilite", "mat", "planning", "devis", "cert"],
-            "Architecte": ["cert", "rge", "planning", "primes", "mat", "shop"],
-            "Investisseur": ["primes", "rge", "devis", "shop", "mat", "cert"],
-            "Particulier": ["devis", "mat", "primes", "rge", "shop", "cert"],
-          };
-          const order = PROFIL_ORDER[userType] || PROFIL_ORDER["Particulier"];
-          return order.map(k => allTools[k]).filter(Boolean);
-        })().map((t, i) => (
-          <div key={i} className="bl-fc" style={s.fc} onClick={t.action}>
-            <div style={{ ...s.fi, background: t.color + "18", border: "0.5px solid " + t.color + "44" }}>
-              {t.iconSvg ? t.iconSvg(t.color) : <span style={{ fontSize: 18 }}>{t.icon}</span>}
-            </div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, marginBottom: 2 }}>{t.label}</div>
-            <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>{t.sub}</div>
-          </div>
-        ))}
-      </div>
-      <div onClick={genererCRJournalier} style={{ margin: "0 16px 14px", background: "rgba(232,135,58,0.06)", border: "0.5px solid rgba(232,135,58,0.2)", borderRadius: 10, padding: "10px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, opacity: crJournalierLoading ? 0.6 : 1 }}>
-        <span style={{ fontSize: 14 }}>{"\u{1F4CB}"}</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: "#E8873A" }}>{crJournalierLoading ? "Génération en cours..." : "Générer le CR de journée \u2192"}</span>
-      </div>
-      <div style={s.secLbl}>Divisions IA</div>
-      <div style={s.featGrid}>
-        {Object.entries(DIVISIONS).map(([div, info], i) => (
-          <div key={div} className="bl-fc" style={i === 0 ? s.fcHi : s.fc} onClick={() => { goPage("coach"); switchDiv(div); }}>
-            <div style={{ ...s.fi, background: info.color + "18", border: "0.5px solid " + info.color + "44" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={info.color} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2" /></svg>
-            </div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{div}</div>
-            <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>{info.ias.length} IA</div>
-          </div>
-        ))}
-      </div>
-      {/* Astuce du jour */}
-      <div style={{ padding: "0 16px 16px" }}>
-        <div className="liquid-glass" style={{ borderRadius: 16, padding: "16px 18px", border: "0.5px solid rgba(201,168,76,0.15)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.12)", border: "0.5px solid rgba(201,168,76,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round"><path d="M12 2v1M12 21v1M4.22 4.22l.71.71M18.36 18.36l.71.71M1 12h1M21 12h1M4.22 19.78l.71-.71M18.36 5.64l.71-.71"/><circle cx="12" cy="12" r="5"/></svg>
-            </div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, color: "#C9A84C", letterSpacing: 1 }}>ASTUCE DU JOUR</div>
-          </div>
-          {(() => {
-            const tips = [
-              { title: "Peinture : la règle des 2 couches", text: "Appliquez toujours une sous-couche avant la peinture de finition. Résultat : meilleure couvrante, moins de couches, économie de 20% de peinture." },
-              { title: "Carrelage : double encollage", text: "Pour les carreaux >30cm, appliquez la colle au sol ET au dos du carreau. C'est obligatoire DTU 52.1 et évite 90% des décollements." },
-              { title: "Électricité : toujours vérifier", text: "Avant toute intervention, coupez le disjoncteur ET vérifiez l'absence de tension avec un VAT. Un testeur coûte 15€, une électrocution peut être fatale." },
-              { title: "Humidité : aérez 10 min/jour", text: "Ouvrir les fenêtres 10 minutes chaque matin réduit l'humidité de 15-20%. Moins de moisissures, meilleure qualité d'air, économie sur la VMC." },
-              { title: "Isolation : les combles d'abord", text: "30% de la chaleur s'échappe par le toit. Isoler les combles (R≥7 m²K/W) est le meilleur rapport coût/économie : 20-40€/m² pour -30% de chauffage." },
-              { title: "Placo : la vis tous les 30cm", text: "DTU 25.41 : vis LB25 tous les 300mm en rives, 500mm en champ. Serrer jusqu'à affleurement, JAMAIS traverser le carton. Un bon vissage = zéro fissure." },
-              { title: "Devis : comparez 3 minimum", text: "Ne signez jamais le premier devis. 3 devis comparatifs révèlent les écarts de prix (parfois 40%) et les oublis de prestations." },
-            ];
-            const today = new Date().getDay();
-            const tip = tips[today % tips.length];
-            return (
-              <>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3 }}>{tip.title}</div>
-                <div style={{ fontSize: 11, color: "rgba(240,237,230,0.55)", lineHeight: 1.6 }}>{tip.text}</div>
-              </>
-            );
-          })()}
-        </div>
-      </div>
-      <div style={s.secLbl}>Pas sûr par où commencer ?</div>
-      <div style={{ padding: "0 16px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
-        {[
-          { emoji: "\u{1F4F8}", title: "J'ai un problème", sub: "Photographiez-le \u2192 diagnostic IA instantané", action: () => goPage("scanner") },
-          { emoji: "\u{1F4C4}", title: "J'ai un devis", sub: "Collez-le \u2192 analyse prix et anomalies", action: () => { goPage("outils"); setToolTab("devis"); } },
-          { emoji: "\u{1F4AC}", title: "J'ai une question", sub: "Posez-la \u2192 33 IA spécialisées répondent", action: () => goPage("coach") },
-        ].map((item, i) => (
-          <div key={i} className="bl-fc" onClick={item.action} style={{ ...s.card, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", padding: "14px 16px" }}>
-            <div style={{ fontSize: 24, flexShrink: 0 }}>{item.emoji}</div>
-            <div>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{item.title}</div>
-              <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>{item.sub}</div>
-            </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.4)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginLeft: "auto" }}><polyline points="9 18 15 12 9 6" /></svg>
-          </div>
-        ))}
-      </div>
+      </div>}
     </div>
   );
 }

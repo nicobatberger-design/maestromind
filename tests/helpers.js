@@ -9,6 +9,7 @@ export async function setupLocalStorage(page) {
     localStorage.setItem("bl_onboarded", "1");
     localStorage.setItem("rgpd_accepted", "1");
     localStorage.setItem("bl_user_type", "Particulier");
+    localStorage.setItem("maestromind_key", "sk-ant-test-key-for-playwright");
     // Dismiss all tooltips
     ["mm_tooltip_coach-divisions", "mm_tooltip_outils-tabs", "mm_tooltip_scanner-photo"].forEach(k =>
       localStorage.setItem(k, "1")
