@@ -54,12 +54,13 @@ function AnimatedStats({ analysisCount }) {
   const iaCount = useCountUp(33, 1000);
   const divCount = useCountUp(11, 1000);
   const analCount = useCountUp(analysisCount, 1000);
+  const statColors = ["#C9A84C", "#5290E0", "#52C37A"];
   return (
     <div style={s.stats3}>
-      {[[iaCount, "IA actives"], [divCount, "Divisions"], [analysisCount === 0 ? "\u2014" : analCount, analysisCount === 0 ? "Lancez-vous !" : "Analyses"]].map(([v, l]) => (
-        <div key={l} className="stat-card-hover" style={s.sc}>
-          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 17, fontWeight: 800, color: "#C9A84C" }}>{v}</div>
-          <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)", marginTop: 2 }}>{l}</div>
+      {[[iaCount, "IA actives"], [divCount, "Divisions"], [analysisCount === 0 ? "\u2014" : analCount, analysisCount === 0 ? "Lancez-vous !" : "Analyses"]].map(([v, l], i) => (
+        <div key={l} className="stat-card-hover liquid-glass" style={{ ...s.sc, borderColor: statColors[i] + "18" }}>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 20, fontWeight: 800, color: statColors[i], textShadow: "0 0 20px " + statColors[i] + "33" }}>{v}</div>
+          <div style={{ fontSize: 9, color: "rgba(240,237,230,0.45)", marginTop: 3, letterSpacing: "0.5px", fontWeight: 600 }}>{l}</div>
         </div>
       ))}
     </div>
@@ -93,10 +94,10 @@ export default function HomePage() {
 
   return (
     <div style={{ ...s.page, ...(page === "home" ? s.pageActive : {}) }}>
-      <div style={s.hero}>
-        <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 12, marginBottom: 4 }}>{PROFILS[userType]?.icon} {getGreeting()} !</div>
-        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, lineHeight: 1.15, marginBottom: 5 }}>MAESTRO<span style={{ color: "#C9A84C" }}>MIND</span></div>
-        <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 11, marginBottom: 18 }}>33 IA spécialisées — Normes DTU — 11 divisions</div>
+      <div style={{ ...s.hero, padding: "26px 16px 20px" }}>
+        <div style={{ color: "rgba(240,237,230,0.45)", fontSize: 13, marginBottom: 6, letterSpacing: "0.02em" }}>{PROFILS[userType]?.icon} {getGreeting()} !</div>
+        <div className="gold-text" style={{ fontFamily: "'Syne',sans-serif", fontSize: 26, fontWeight: 800, lineHeight: 1.1, marginBottom: 6 }}>MAESTROMIND</div>
+        <div style={{ color: "rgba(240,237,230,0.4)", fontSize: 11, marginBottom: 20, letterSpacing: "0.03em" }}>33 IA spécialisées — Normes DTU — 11 divisions</div>
 
         {/* Last project quick access */}
         {lastProject && (
@@ -123,13 +124,17 @@ export default function HomePage() {
             <button onClick={() => setShowCRJournalier(false)} style={{ width: "100%", marginTop: 16, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.1)", color: "rgba(240,237,230,0.5)", fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Fermer</button>
           </div>
         </div>}
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#E05252", marginBottom: 8 }}>{"\u{1F6A8}"} Urgence</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 7 }}>
-            {[["\u{1F534}", "GAZ", "rgba(224,82,82,0.12)", "rgba(224,82,82,0.5)", "#E05252"], ["\u{1F535}", "EAU", "rgba(82,144,224,0.12)", "rgba(82,144,224,0.5)", "#5290E0"], ["\u26A1", "\u00C9LECTRICIT\u00C9", "rgba(232,135,58,0.12)", "rgba(232,135,58,0.5)", "#E8873A"]].map(([icon, label, bg, border, color]) => (
-              <button key={label} onClick={() => startUrgence(label)} style={{ background: bg, border: "0.5px solid " + border, borderRadius: 12, padding: "12px 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <span style={{ fontSize: 18 }}>{icon}</span>
-                <span style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: 1 }}>{label}</span>
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, textTransform: "uppercase", color: "#E05252", marginBottom: 10 }}>Urgence</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            {[
+              ["GAZ", "#E05252", <svg key="g" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E05252" strokeWidth="2" strokeLinecap="round"><path d="M12 12c-2-2.67-4-4.33-4-6a4 4 0 0 1 8 0c0 1.67-2 3.33-4 6z"/><path d="M12 21a8 8 0 0 0 8-8c0-3.5-2-6.5-4-9l-4 5-4-5c-2 2.5-4 5.5-4 9a8 8 0 0 0 8 8z"/></svg>],
+              ["EAU", "#5290E0", <svg key="e" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5290E0" strokeWidth="2" strokeLinecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>],
+              ["\u00C9LECTRICIT\u00C9", "#E8873A", <svg key="l" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8873A" strokeWidth="2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>],
+            ].map(([label, color, icon]) => (
+              <button key={label} className="liquid-glass" onClick={() => startUrgence(label)} style={{ background: color + "0A", border: "0.5px solid " + color + "44", borderRadius: 14, padding: "14px 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: color + "15", border: "0.5px solid " + color + "33", display: "flex", alignItems: "center", justifyContent: "center" }}>{icon}</div>
+                <span style={{ fontSize: 9, fontWeight: 800, color, letterSpacing: 1.5 }}>{label}</span>
               </button>
             ))}
           </div>
@@ -137,7 +142,7 @@ export default function HomePage() {
       </div>
       <AnimatedStats analysisCount={analysisCount} />
       <div style={s.secLbl}>Outils rapides</div>
-      <div style={s.featGrid}>
+      <div className="stagger-enter" style={s.featGrid}>
         {(() => {
           const svgIcon = (paths, color) => (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths}</svg>

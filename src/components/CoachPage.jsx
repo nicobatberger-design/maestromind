@@ -159,17 +159,17 @@ export default function CoachPage() {
         </div>
         {errMsg && <div style={s.errBox}>{errMsg}</div>}
         {msgs.length <= 1 && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+          <div className="stagger-enter" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
             {[
-              { icon: "\u{1F4F8}", label: "Photo diagnostic", sub: "Diagnostic visuel", action: () => document.querySelector('input[type=file]')?.click() },
-              { icon: "\u{1F399}", label: "Question vocale", sub: "Parlez à l'IA", action: startVoice },
-              { icon: "\u{1F4D0}", label: "Calculer", sub: "Matériaux & coûts", action: () => goPage("outils") },
-              { icon: "\u{1F198}", label: "Urgence", sub: "Aide immédiate", action: () => startUrgence("GAZ") },
+              { label: "Photo diagnostic", sub: "Diagnostic visuel", color: "#5290E0", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5290E0" strokeWidth="1.8" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>, action: () => document.querySelector('input[type=file]')?.click() },
+              { label: "Question vocale", sub: "Parlez à l'IA", color: "#52C37A", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#52C37A" strokeWidth="1.8" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>, action: startVoice },
+              { label: "Calculer", sub: "Matériaux & coûts", color: "#E8873A", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8873A" strokeWidth="1.8" strokeLinecap="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>, action: () => goPage("outils") },
+              { label: "Urgence", sub: "Aide immédiate", color: "#E05252", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E05252" strokeWidth="1.8" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>, action: () => startUrgence("GAZ") },
             ].map((a, i) => (
-              <div key={i} onClick={a.action} style={{ background: "rgba(15,19,28,0.6)", border: "0.5px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "12px 10px", cursor: "pointer", textAlign: "center" }}>
-                <div style={{ fontSize: 20, marginBottom: 4 }}>{a.icon}</div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(240,237,230,0.8)" }}>{a.label}</div>
-                <div style={{ fontSize: 9, color: "rgba(240,237,230,0.35)" }}>{a.sub}</div>
+              <div key={i} className="liquid-glass" onClick={a.action} style={{ background: a.color + "08", border: "0.5px solid " + a.color + "22", borderRadius: 14, padding: "14px 12px", cursor: "pointer", textAlign: "center" }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: a.color + "12", border: "0.5px solid " + a.color + "28", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>{a.icon}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(240,237,230,0.85)", fontFamily: "'Syne',sans-serif" }}>{a.label}</div>
+                <div style={{ fontSize: 9, color: "rgba(240,237,230,0.35)", marginTop: 2 }}>{a.sub}</div>
               </div>
             ))}
           </div>
