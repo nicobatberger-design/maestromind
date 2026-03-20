@@ -8,6 +8,7 @@ import OnboardingScreen from "./components/OnboardingScreen";
 import PinScreen from "./components/PinScreen";
 import Header from "./components/Header";
 import NavBar from "./components/NavBar";
+import Toast from "./components/Toast";
 
 // Chargés à la demande (code splitting)
 const HomePage = lazy(() => import("./components/HomePage"));
@@ -60,6 +61,7 @@ function AppContent() {
         </div>
 
         <NavBar />
+        <Toast />
       </div>
 
       <Suspense fallback={null}>

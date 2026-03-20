@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
+import { triggerToast } from "./Toast";
 import s from "../styles/index";
 import RappelsChantier from "./RappelsChantier";
 
@@ -47,6 +48,9 @@ export default function ProjetsPage() {
   const [modalPhoto, setModalPhoto] = useState(null); // { dataUrl, tag, date }
   const pendingFileRef = useRef(null);
   const fileInputRefs = useRef({});
+
+  // Form visibility
+  const [showForm, setShowForm] = useState(false);
 
   // Task state
   const [taskInputs, setTaskInputs] = useState({}); // { [projetId]: "text" }
@@ -140,15 +144,23 @@ export default function ProjetsPage() {
       <div style={s.wrap}>
         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 3 }}>Mes Projets</div>
         <div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 14 }}>Suivi de vos chantiers</div>
-        <div style={s.card}>
-          <div style={{ fontSize: 9, color: "#C9A84C", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Nouveau projet</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Nom du projet</div><input style={s.inp} value={projetNom} onChange={e => setProjetNom(e.target.value)} placeholder="Ex: Réno salle de bain" /></div>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Type</div><select style={s.inp} value={projetType} onChange={e => setProjetType(e.target.value)}>{["Rénovation", "Construction", "Isolation", "Plomberie", "Électricité", "Peinture", "Carrelage", "Aménagement", "Autre"].map(t => <option key={t}>{t}</option>)}</select></div>
+        {!showForm && (
+          <button onClick={() => setShowForm(true)} style={{ width: "100%", background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.25)", borderRadius: 14, padding: "14px 18px", fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: "#C9A84C", cursor: "pointer", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <span style={{ fontSize: 16 }}>+</span> Nouveau projet
+          </button>
+        )}
+        {showForm && <div style={s.card}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontSize: 9, color: "#C9A84C", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Nouveau projet</div>
+            <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: "none", color: "rgba(240,237,230,0.4)", cursor: "pointer", fontSize: 16, padding: 0 }}>{"\u2715"}</button>
           </div>
-          <div style={{ marginBottom: 10 }}><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Notes</div><textarea style={{ ...s.inp, minHeight: 60, resize: "none" }} value={projetNotes} onChange={e => setProjetNotes(e.target.value)} placeholder="Description, adresse, budget estimé..." /></div>
-          <button style={s.greenBtn} onClick={ajouterProjet}>+ Créer le projet</button>
-        </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "capitalize", letterSpacing: 0.5 }}>Nom du projet</div><input style={s.inp} value={projetNom} onChange={e => setProjetNom(e.target.value)} placeholder="Ex: Réno salle de bain" /></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "capitalize", letterSpacing: 0.5 }}>Type</div><select style={s.inp} value={projetType} onChange={e => setProjetType(e.target.value)}>{["Rénovation", "Construction neuve", "Extension", "Aménagement", "Isolation", "Toiture", "Électricité", "Plomberie", "Peinture", "Carrelage", "Autre"].map(t => <option key={t}>{t}</option>)}</select></div>
+          </div>
+          <div style={{ marginBottom: 10 }}><div style={{ fontSize: 9, color: "rgba(240,237,230,0.38)", marginBottom: 4, textTransform: "capitalize", letterSpacing: 0.5 }}>Notes</div><textarea style={{ ...s.inp, minHeight: 60, resize: "none" }} value={projetNotes} onChange={e => setProjetNotes(e.target.value)} placeholder="Description, adresse, budget estimé..." /></div>
+          <button style={s.greenBtn} onClick={() => { ajouterProjet(); setShowForm(false); triggerToast("Projet créé !"); }}>+ Créer le projet</button>
+        </div>}
         {projets.length === 0 && (
           <div style={{ textAlign: "center", padding: "30px 20px" }}>
             <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.6 }}>{"\u{1F3D7}"}</div>

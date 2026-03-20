@@ -1018,6 +1018,20 @@ export default function ScannerPage() {
             </div>
             <p style={{ fontSize: 13, fontWeight: 700, color: "rgba(240,237,230,0.65)", fontFamily: "'Syne',sans-serif", marginBottom: 4 }}>{mode === "mesure" ? "Prenez une photo du mur ou de la piece" : "\u{1F4F8} Pointez, photographiez, l'IA diagnostique"}</p>
             {mode === "diagnostic" && <p style={{ fontSize: 10, color: "rgba(240,237,230,0.3)", textAlign: "center", lineHeight: 1.5 }}>Fissures, humidité, moisissures, défauts électriques...</p>}
+            {mode === "diagnostic" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12, opacity: 0.5 }}>
+                {[
+                  ["\u{1F50D}", "Fissures"],
+                  ["\u{1F4A7}", "Humidité"],
+                  ["\u26A1", "Électrique"],
+                  ["\u{1F527}", "Plomberie"],
+                ].map(([icon, label]) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: "rgba(240,237,230,0.5)" }}>
+                    <span style={{ fontSize: 12 }}>{icon}</span> {label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -1034,6 +1048,13 @@ export default function ScannerPage() {
             <input type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhoto} />
           </label>
         </div>
+
+        {/* Conseil photo */}
+        {!photo && (
+          <div style={{ fontSize: 10, color: "rgba(240,237,230,0.3)", textAlign: "center", padding: "20px 30px", lineHeight: 1.6 }}>
+            {"\u{1F4A1}"} Conseil : photographiez en lumière naturelle, de face, à 50cm du problème
+          </div>
+        )}
 
         {/* === RESULTATS DIAGNOSTIC === */}
         {mode === "diagnostic" && scanLoading && <div style={{ background: "#181D28", borderRadius: 12, padding: 14, textAlign: "center", fontSize: 12, color: "rgba(240,237,230,0.5)", marginBottom: 12 }}>L'IA analyse votre photo...</div>}

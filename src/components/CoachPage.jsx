@@ -135,8 +135,8 @@ export default function CoachPage() {
         {msgs.length <= 1 && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
             {[
-              { icon: "\u{1F4F8}", label: "Envoyer une photo", sub: "Diagnostic visuel", action: () => document.querySelector('input[type=file]')?.click() },
-              { icon: "\u{1F399}", label: "Parler à l'IA", sub: "Question vocale", action: startVoice },
+              { icon: "\u{1F4F8}", label: "Photo diagnostic", sub: "Diagnostic visuel", action: () => document.querySelector('input[type=file]')?.click() },
+              { icon: "\u{1F399}", label: "Question vocale", sub: "Parlez à l'IA", action: startVoice },
               { icon: "\u{1F4D0}", label: "Calculer", sub: "Matériaux & coûts", action: () => goPage("outils") },
               { icon: "\u{1F198}", label: "Urgence", sub: "Aide immédiate", action: () => startUrgence("GAZ") },
             ].map((a, i) => (

@@ -94,7 +94,7 @@ export default function HomePage() {
   return (
     <div style={{ ...s.page, ...(page === "home" ? s.pageActive : {}) }}>
       <div style={s.hero}>
-        <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 12, marginBottom: 4 }}>{PROFILS[userType]?.icon} {getGreeting()}, {userType}</div>
+        <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 12, marginBottom: 4 }}>{PROFILS[userType]?.icon} {userType === "Particulier" ? `${getGreeting()} !` : `${getGreeting()}, ${userType}`}</div>
         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, lineHeight: 1.15, marginBottom: 5 }}>MAESTRO<span style={{ color: "#C9A84C" }}>MIND</span></div>
         <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 11, marginBottom: 18 }}>33 IA spécialisées — Normes DTU — 11 divisions</div>
 
@@ -139,16 +139,19 @@ export default function HomePage() {
       <div style={s.secLbl}>Outils rapides</div>
       <div style={s.featGrid}>
         {(() => {
+          const svgIcon = (paths, color) => (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths}</svg>
+          );
           const allTools = {
-            devisPro: { label: "Devis Pro", sub: "Devis professionnel", color: "#E8873A", icon: "\u{1F4C4}", action: () => { goPage("outils"); setToolTab("devis_pro"); } },
-            rentabilite: { label: "Rentabilité", sub: "Calcul marge artisan", color: "#52C37A", icon: "\u{1F4CA}", action: () => { goPage("outils"); setToolTab("rentabilite"); } },
-            devis: { label: "Vérifier un devis", sub: "Prix justes ?", color: "#E8873A", icon: "\u{1F4CB}", action: () => { goPage("outils"); setToolTab("devis"); } },
-            mat: { label: "Calculer matériaux", sub: "Quantités exactes", color: "#52C37A", icon: "\u{1F4D0}", action: () => { goPage("outils"); setToolTab("mat"); } },
-            primes: { label: "Aides 2026", sub: "MaPrimeRénov' CEE", color: "#52C37A", icon: "\u{1F4B0}", action: () => { goPage("outils"); setToolTab("primes"); } },
-            rge: { label: "Vérifier artisan", sub: "RGE & légitimité", color: "#5290E0", icon: "\u{1F6E1}\uFE0F", action: () => { goPage("outils"); setToolTab("rge"); } },
-            shop: { label: "Boutique", sub: "Matériaux partenaires", color: "#C9A84C", icon: "\u{1F6D2}", action: () => { goPage("shop"); } },
-            cert: { label: "Certificat DTU", sub: "Validation conformité", color: "#C9A84C", icon: "\u{1F3C5}", action: () => { goPage("cert"); } },
-            planning: { label: "Planning", sub: "Planifier chantier", color: "#8B5CF6", icon: "\u{1F4C5}", action: () => { goPage("outils"); setToolTab("planning"); } },
+            devisPro: { label: "Devis Pro", sub: "Devis professionnel", color: "#E8873A", iconSvg: (c) => svgIcon(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></>, c), action: () => { goPage("outils"); setToolTab("devis_pro"); } },
+            rentabilite: { label: "Rentabilité", sub: "Calcul marge artisan", color: "#52C37A", iconSvg: (c) => svgIcon(<><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></>, c), action: () => { goPage("outils"); setToolTab("rentabilite"); } },
+            devis: { label: "Vérifier un devis", sub: "Prix justes ?", color: "#E8873A", iconSvg: (c) => svgIcon(<><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /></>, c), action: () => { goPage("outils"); setToolTab("devis"); } },
+            mat: { label: "Calculer matériaux", sub: "Quantités exactes", color: "#52C37A", iconSvg: (c) => svgIcon(<><path d="M21 3H3v7h18V3z" /><path d="M21 14H3v7h18v-7z" /><path d="M12 3v7" /><path d="M12 14v7" /><path d="M3 10l4-4" /><path d="M7 10l4-4" /></>, c), action: () => { goPage("outils"); setToolTab("mat"); } },
+            primes: { label: "Aides 2026", sub: "MaPrimeRénov' CEE", color: "#52C37A", iconSvg: (c) => svgIcon(<><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>, c), action: () => { goPage("outils"); setToolTab("primes"); } },
+            rge: { label: "Vérifier artisan", sub: "RGE & légitimité", color: "#5290E0", iconSvg: (c) => svgIcon(<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><polyline points="9 12 11 14 15 10" /></>, c), action: () => { goPage("outils"); setToolTab("rge"); } },
+            shop: { label: "Boutique", sub: "Matériaux partenaires", color: "#C9A84C", iconSvg: (c) => svgIcon(<><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></>, c), action: () => { goPage("shop"); } },
+            cert: { label: "Certificat DTU", sub: "Validation conformité", color: "#C9A84C", iconSvg: (c) => svgIcon(<><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></>, c), action: () => { goPage("cert"); } },
+            planning: { label: "Planning", sub: "Planifier chantier", color: "#8B5CF6", iconSvg: (c) => svgIcon(<><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></>, c), action: () => { goPage("outils"); setToolTab("planning"); } },
           };
           const PROFIL_ORDER = {
             "Artisan Pro": ["devisPro", "rentabilite", "mat", "planning", "devis", "cert"],
@@ -161,7 +164,7 @@ export default function HomePage() {
         })().map((t, i) => (
           <div key={i} className="bl-fc" style={s.fc} onClick={t.action}>
             <div style={{ ...s.fi, background: t.color + "18", border: "0.5px solid " + t.color + "44" }}>
-              <span style={{ fontSize: 18 }}>{t.icon}</span>
+              {t.iconSvg ? t.iconSvg(t.color) : <span style={{ fontSize: 18 }}>{t.icon}</span>}
             </div>
             <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, marginBottom: 2 }}>{t.label}</div>
             <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>{t.sub}</div>
