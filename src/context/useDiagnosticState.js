@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { IAS } from "../data/constants";
 import { apiURL, apiHeaders, withRetry } from "../utils/api";
+import { PRIX_TRAVAUX_2026, DIAGNOSTICS_OBLIGATOIRES, AIDES_2026 } from "../utils/databases";
 
 function parseAIJson(text) {
   const clean = (text || "").replace(/```json|```/g, "").trim();
@@ -56,6 +57,58 @@ export function useDiagnosticState({ apiKey }) {
   useEffect(() => { arModeRef.current = arModeType; }, [arModeType]);
   useEffect(() => { arShelfTypeRef.current = arShelfType; }, [arShelfType]);
 
+  // ── Enrichir le résultat diagnostic avec les bases de données ──
+  const enrichirDiagnostic = useCallback((result) => {
+    if (!result || result.urgence === "ERREUR") return result;
+    const enrichi = { ...result };
+
+    // 1. Prix travaux liés
+    const prixLies = [];
+    const titleLower = (result.titre || "").toLowerCase();
+    const matLower = (result.materiaux || []).join(" ").toLowerCase();
+    const all = titleLower + " " + matLower;
+
+    Object.entries(PRIX_TRAVAUX_2026).forEach(([cat, items]) => {
+      Object.entries(items).forEach(([nom, data]) => {
+        const nomL = nom.toLowerCase();
+        // Match si le titre ou matériaux contiennent des mots clés du prix
+        const keywords = nomL.split(" ").filter(w => w.length > 3);
+        const match = keywords.some(k => all.includes(k));
+        if (match && prixLies.length < 5) {
+          prixLies.push({ nom, ...data, categorie: cat });
+        }
+      });
+    });
+    if (prixLies.length > 0) enrichi.prix_reference = prixLies;
+
+    // 2. Diagnostics obligatoires potentiels
+    const diagsLies = [];
+    if (all.includes("amiante") || all.includes("fibro")) {
+      diagsLies.push(DIAGNOSTICS_OBLIGATOIRES.travaux.find(d => d.nom.includes("Amiante")));
+    }
+    if (all.includes("plomb") || all.includes("peinture ancienne")) {
+      diagsLies.push(DIAGNOSTICS_OBLIGATOIRES.travaux.find(d => d.nom.includes("Plomb")));
+    }
+    if (all.includes("humid") || all.includes("fissure") || all.includes("isol")) {
+      diagsLies.push({ nom: "DPE recommandé", obligatoire: false, condition: "Pour évaluer la performance énergétique après travaux", prix: "100-250€" });
+    }
+    if (diagsLies.filter(Boolean).length > 0) enrichi.diagnostics_lies = diagsLies.filter(Boolean);
+
+    // 3. Aides financières potentielles
+    const aidesLiees = [];
+    if (all.includes("isol") || all.includes("thermique") || all.includes("fenêtre") || all.includes("chauff")) {
+      aidesLiees.push({ nom: "MaPrimeRénov'", detail: "Jusqu'à 75€/m² selon revenus", lien: "france-renov.gouv.fr" });
+      aidesLiees.push({ nom: "CEE", detail: "Prime énergie cumulable", lien: "Demandez à votre artisan RGE" });
+      aidesLiees.push({ nom: "TVA 5.5%", detail: "Au lieu de 20% sur travaux d'amélioration énergétique" });
+    } else if (all.includes("plomb") || all.includes("électri") || all.includes("plomberi")) {
+      aidesLiees.push({ nom: "TVA 10%", detail: "Travaux de rénovation (logement >2 ans)" });
+      aidesLiees.push({ nom: "Éco-PTZ", detail: "Prêt à taux zéro jusqu'à 50 000€" });
+    }
+    if (aidesLiees.length > 0) enrichi.aides_potentielles = aidesLiees;
+
+    return enrichi;
+  }, []);
+
   // ── Analyser Photo (Scanner) ──────────────────────────────────
   const analyserPhoto = useCallback(async (dataUrl, iaKey) => {
     setScanLoading(true);
@@ -77,11 +130,12 @@ export function useDiagnosticState({ apiKey }) {
       });
       const data = await r.json();
       if (data.error) throw new Error(data.error.message);
-      setScanResult(parseAIJson(data?.content?.[0]?.text));
+      const rawResult = parseAIJson(data?.content?.[0]?.text);
+      setScanResult(enrichirDiagnostic(rawResult));
     } catch (e) {
       setScanResult({ urgence: "ERREUR", titre: "Analyse impossible", etapes: [e.message] });
     } finally { setScanLoading(false); }
-  }, [apiKey, scanIA]);
+  }, [apiKey, scanIA, enrichirDiagnostic]);
 
   // ── DPE Calcul ────────────────────────────────────────────────
   const calcDPE = useCallback(() => {

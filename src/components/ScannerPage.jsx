@@ -1076,6 +1076,43 @@ export default function ScannerPage() {
                 <button key={k} onClick={() => { goPage("coach"); switchIA(k); }} style={{ padding: "5px 11px", borderRadius: 20, fontSize: 10, fontWeight: 600, cursor: "pointer", border: "0.5px solid " + (IAS[k]?.color || "#C9A84C") + "66", background: (IAS[k]?.color || "#C9A84C") + "14", color: IAS[k]?.color || "#C9A84C" }}>{IAS[k]?.name?.replace("IA ", "") || k}</button>
               ))}
             </div>
+
+            {/* ── Données enrichies depuis les bases ── */}
+            {scanResult.prix_reference && scanResult.prix_reference.length > 0 && (
+              <div style={{ marginTop: 12, borderTop: "0.5px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
+                <div style={{ fontSize: 9, color: "#52C37A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Prix référence 2026 (fourni-posé TTC)</div>
+                {scanResult.prix_reference.map((p, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: i < scanResult.prix_reference.length - 1 ? "0.5px solid rgba(255,255,255,0.03)" : "none" }}>
+                    <span style={{ fontSize: 11, color: "rgba(240,237,230,0.6)" }}>{p.nom}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#52C37A" }}>{p.prix_bas}-{p.prix_haut}€/{p.unite}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {scanResult.diagnostics_lies && scanResult.diagnostics_lies.length > 0 && (
+              <div style={{ marginTop: 10, borderTop: "0.5px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
+                <div style={{ fontSize: 9, color: "#E8873A", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Diagnostics à prévoir</div>
+                {scanResult.diagnostics_lies.map((d, i) => (
+                  <div key={i} style={{ fontSize: 11, color: "rgba(240,237,230,0.6)", padding: "3px 0", display: "flex", gap: 6 }}>
+                    <span style={{ color: d.obligatoire ? "#E05252" : "#E8873A", fontWeight: 700, fontSize: 9, flexShrink: 0 }}>{d.obligatoire ? "OBLIGATOIRE" : "RECOMMANDÉ"}</span>
+                    <span>{d.nom} — {d.prix || d.condition}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {scanResult.aides_potentielles && scanResult.aides_potentielles.length > 0 && (
+              <div style={{ marginTop: 10, borderTop: "0.5px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
+                <div style={{ fontSize: 9, color: "#5290E0", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Aides financières possibles</div>
+                {scanResult.aides_potentielles.map((a, i) => (
+                  <div key={i} style={{ fontSize: 11, color: "rgba(240,237,230,0.6)", padding: "3px 0" }}>
+                    <span style={{ fontWeight: 700, color: "#5290E0" }}>{a.nom}</span> — {a.detail}
+                    {a.lien && <span style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", marginLeft: 4 }}>({a.lien})</span>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
