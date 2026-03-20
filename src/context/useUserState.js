@@ -37,6 +37,9 @@ export function useUserState() {
   // ── Mode Chantier ───────────────────────────────────────────
   const [modeChantier, setModeChantier] = useState(() => localStorage.getItem("mm_mode_chantier") === "1");
 
+  // ── Lecture vocale auto ────────────────────────────────────
+  const [autoVoice, setAutoVoice] = useState(() => localStorage.getItem("mm_auto_voice") === "1");
+
   // ── Helpers ───────────────────────────────────────────────────
   const profilIA = useCallback(() => ({
     "Particulier":  "PROFIL UTILISATEUR : Particulier / non-professionnel. Langage simple et accessible, pas de jargon sans explication. Indiquer quand il faut imp\u00e9rativement faire appel \u00e0 un professionnel.",
@@ -80,5 +83,6 @@ export function useUserState() {
     profilIA, profilPDFLabel,
     handlePin, handlePinDel,
     modeChantier, setModeChantier,
+    autoVoice, setAutoVoice,
   };
 }

@@ -1,10 +1,16 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useApp } from "../context/AppContext";
+import { speak, stop, isTTSSupported } from "../utils/tts";
 import s from "../styles/index";
 
 export default function ProjetChatOverlay() {
   const { projetChat, setProjetChat, projetChatMsgs, projetChatInput, setProjetChatInput, projetChatLoading, sendProjetChat } = useApp();
   const msgsEndRef = useRef(null);
+  const [speakingIdx, setSpeakingIdx] = useState(null);
+  const toggleSpeak = useCallback((text, idx) => {
+    if (speakingIdx === idx) { stop(); setSpeakingIdx(null); }
+    else { speak(text, () => setSpeakingIdx(idx), () => setSpeakingIdx(null)); }
+  }, [speakingIdx]);
 
   useEffect(() => {
     msgsEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -23,7 +29,14 @@ export default function ProjetChatOverlay() {
         {projetChatMsgs.map((m, i) => (
           <div key={i} style={m.role === "ai" ? s.msgA : s.msgU}>
             <div style={s.mav}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round">{m.role === "ai" ? <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> : <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>}</svg></div>
-            <div style={m.role === "ai" ? s.bubA : s.bubU} dangerouslySetInnerHTML={{ __html: m.text === "..." ? "<span>...</span>" : m.text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br/>") }} />
+            <div>
+              <div style={m.role === "ai" ? s.bubA : s.bubU} dangerouslySetInnerHTML={{ __html: m.text === "..." ? "<span>...</span>" : m.text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br/>") }} />
+              {m.role === "ai" && m.text !== "..." && isTTSSupported() && (
+                <button onClick={() => toggleSpeak(m.text, i)} style={{ marginTop: 4, background: speakingIdx === i ? "rgba(201,168,76,0.15)" : "transparent", border: "0.5px solid " + (speakingIdx === i ? "#C9A84C" : "rgba(255,255,255,0.07)"), borderRadius: 20, padding: "2px 8px", fontSize: 10, color: speakingIdx === i ? "#C9A84C" : "rgba(240,237,230,0.3)", cursor: "pointer" }}>
+                  {speakingIdx === i ? "⏹ Stop" : "🔊 Écouter"}
+                </button>
+              )}
+            </div>
           </div>
         ))}
         <div ref={msgsEndRef} />

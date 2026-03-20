@@ -4,7 +4,7 @@ import { PROFILS } from "../data/constants";
 import s from "../styles/index";
 
 export default function Header() {
-  const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, theme, setTheme, modeChantier, setModeChantier, pdgUnlocked, setShowPinOverlay, setPinInput, setPinError } = useApp();
+  const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, theme, setTheme, modeChantier, setModeChantier, autoVoice, setAutoVoice, pdgUnlocked, setShowPinOverlay, setPinInput, setPinError } = useApp();
 
   // Profile dropdown
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -92,6 +92,9 @@ export default function Header() {
           </div>
           <button onClick={() => { const next = !modeChantier; setModeChantier(next); localStorage.setItem("mm_mode_chantier", next ? "1" : "0"); }} title={modeChantier ? "Mode normal" : "Mode chantier (gros boutons)"} style={{ width: 28, height: 28, borderRadius: 8, background: modeChantier ? "rgba(232,135,58,0.25)" : "rgba(201,168,76,0.08)", border: modeChantier ? "0.5px solid rgba(232,135,58,0.6)" : "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={modeChantier ? "#E8873A" : "#C9A84C"} strokeWidth="2" strokeLinecap="round"><path d="M2 18v3h20v-3"/><path d="M4 18v-3.7a8 8 0 0 1 4.5-7.2L10 6h4l1.5 1.1A8 8 0 0 1 20 14.3V18"/></svg>
+          </button>
+          <button onClick={() => { const next = !autoVoice; setAutoVoice(next); localStorage.setItem("mm_auto_voice", next ? "1" : "0"); }} title={autoVoice ? "Désactiver lecture vocale" : "Activer lecture vocale auto"} style={{ width: 28, height: 28, borderRadius: 8, background: autoVoice ? "rgba(82,195,122,0.2)" : "rgba(201,168,76,0.08)", border: autoVoice ? "0.5px solid rgba(82,195,122,0.5)" : "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={autoVoice ? "#52C37A" : "#C9A84C"} strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" />{autoVoice && <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />}</svg>
           </button>
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title={theme === "dark" ? "Mode clair" : "Mode sombre"} style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>
             {theme === "dark" ? "\u2600\uFE0F" : "\uD83C\uDF19"}

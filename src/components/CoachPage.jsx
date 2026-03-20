@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { IAS, DIVISIONS } from "../data/constants";
+import { speak, stop, isTTSSupported } from "../utils/tts";
 import Tooltip from "./Tooltip";
 import s from "../styles/index";
 
@@ -26,14 +27,36 @@ function formatAIText(text) {
 export default function CoachPage() {
   const {
     page, goPage, curDiv, curIA, msgs, setMsgs, hist, setHist, input, setInput, loading, errMsg,
-    userType, voiceActive, msgCount, isPremium,
+    userType, voiceActive, msgCount, isPremium, autoVoice,
     msgsRef, chips,
     switchDiv, switchIA, send, sendWithPhoto, rateMsg,
     startVoice, startUrgence, exportChatPDF, rangColor, saveConv, welcomeMsg,
   } = useApp();
 
   const [copiedIdx, setCopiedIdx] = useState(null);
+  const [speakingIdx, setSpeakingIdx] = useState(null);
   const textareaRef = useRef(null);
+
+  // TTS : lire ou arrêter un message
+  const toggleSpeak = useCallback((text, idx) => {
+    if (speakingIdx === idx) {
+      stop();
+      setSpeakingIdx(null);
+    } else {
+      speak(text, () => setSpeakingIdx(idx), () => setSpeakingIdx(null));
+    }
+  }, [speakingIdx]);
+
+  // Auto-voice : lire la dernière réponse IA automatiquement
+  const lastMsgRef = useRef(null);
+  useEffect(() => {
+    if (!autoVoice || !msgs.length || loading) return;
+    const last = msgs[msgs.length - 1];
+    if (last.role === "ai" && last.text !== "..." && last.text !== lastMsgRef.current) {
+      lastMsgRef.current = last.text;
+      speak(last.text, () => setSpeakingIdx(msgs.length - 1), () => setSpeakingIdx(null));
+    }
+  }, [msgs, loading, autoVoice]);
 
   // Copy message text to clipboard
   const copyMessage = useCallback(async (text, idx) => {
@@ -121,6 +144,9 @@ export default function CoachPage() {
               <div style={{ maxWidth: "88%" }}>
                 <div style={m.role === "ai" ? s.bubA : s.bubU} dangerouslySetInnerHTML={{ __html: formatAIText(m.text) }} />
                 {m.role === "ai" && m.text !== "..." && <div style={{ display: "flex", gap: 6, marginTop: 5, paddingLeft: 2 }}>
+                  {isTTSSupported() && <button onClick={() => toggleSpeak(m.text, i)} style={{ background: speakingIdx === i ? "rgba(201,168,76,0.15)" : "transparent", border: "0.5px solid " + (speakingIdx === i ? "#C9A84C" : "rgba(255,255,255,0.07)"), borderRadius: 20, padding: "2px 8px", fontSize: 10, color: speakingIdx === i ? "#C9A84C" : "rgba(240,237,230,0.3)", cursor: "pointer", transition: "all 0.2s", animation: speakingIdx === i ? "voicePulse 1.2s ease-in-out infinite" : "none" }}>
+                    {speakingIdx === i ? "⏹ Stop" : "🔊 Écouter"}
+                  </button>}
                   <button onClick={() => copyMessage(m.text, i)} style={{ background: copiedIdx === i ? "rgba(82,195,122,0.15)" : "transparent", border: "0.5px solid " + (copiedIdx === i ? "#52C37A" : "rgba(255,255,255,0.07)"), borderRadius: 20, padding: "2px 8px", fontSize: 10, color: copiedIdx === i ? "#52C37A" : "rgba(240,237,230,0.3)", cursor: "pointer", transition: "all 0.2s" }}>
                     {copiedIdx === i ? "\u2713 Copie" : "\u{1F4CB} Copier"}
                   </button>
