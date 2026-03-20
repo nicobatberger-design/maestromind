@@ -4,7 +4,7 @@ import { PROFILS } from "../data/constants";
 import s from "../styles/index";
 
 export default function Header() {
-  const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, theme, setTheme, modeChantier, setModeChantier, autoVoice, setAutoVoice, pdgUnlocked, setShowPinOverlay, setPinInput, setPinError } = useApp();
+  const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, theme, setTheme, modeChantier, setModeChantier, autoVoice, setAutoVoice, pdgUnlocked, setShowPinOverlay, setPinInput, setPinError, user } = useApp();
 
   // Profile dropdown
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -98,6 +98,9 @@ export default function Header() {
           </button>
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title={theme === "dark" ? "Mode clair" : "Mode sombre"} style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>
             {theme === "dark" ? "\u2600\uFE0F" : "\uD83C\uDF19"}
+          </button>
+          <button onClick={() => goPage("auth")} title={user ? "Mon compte" : "Se connecter"} style={{ width: 28, height: 28, borderRadius: 8, background: user ? "rgba(82,195,122,0.15)" : "rgba(201,168,76,0.08)", border: user ? "0.5px solid rgba(82,195,122,0.4)" : "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={user ? "#52C37A" : "#C9A84C"} strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </button>
           {pdgUnlocked && (
             <button onClick={() => goPage("dashboard")} title="Dashboard PDG" style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>

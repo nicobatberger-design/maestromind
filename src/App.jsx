@@ -19,6 +19,7 @@ const CertPage = lazy(() => import("./components/CertPage"));
 const OutilsPage = lazy(() => import("./components/OutilsPage"));
 const ProjetsPage = lazy(() => import("./components/ProjetsPage"));
 const DashboardPage = lazy(() => import("./components/DashboardPage"));
+const AuthPage = lazy(() => import("./components/AuthPage"));
 const ProjetChatOverlay = lazy(() => import("./components/ProjetChatOverlay"));
 const PaywallOverlay = lazy(() => import("./components/PaywallOverlay"));
 const RgpdBanner = lazy(() => import("./components/RgpdBanner"));
@@ -57,6 +58,7 @@ function AppContent() {
             <OutilsPage />
             <ProjetsPage />
             <DashboardPage />
+            <AuthPage />
           </Suspense>
         </div>
 

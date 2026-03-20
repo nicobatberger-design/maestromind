@@ -30,7 +30,7 @@ export default function CoachPage() {
     userType, voiceActive, msgCount, isPremium, autoVoice,
     msgsRef, chips,
     switchDiv, switchIA, send, sendWithPhoto, rateMsg,
-    startVoice, startUrgence, exportChatPDF, rangColor, saveConv, welcomeMsg,
+    startVoice, startUrgence, exportChatPDF, rangColor, saveConv, welcomeMsg, clearHistory,
   } = useApp();
 
   const [copiedIdx, setCopiedIdx] = useState(null);
@@ -110,7 +110,7 @@ export default function CoachPage() {
             {msgs.length > 1 && <button onClick={exportChatPDF} title="Exporter en PDF" style={{ background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2.2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>
             </button>}
-            {msgs.length > 1 && <button onClick={() => { saveConv(curIA, msgs); setMsgs([{ role: "ai", text: welcomeMsg(curIA, userType) }]); setHist([]); localStorage.removeItem("mm_chat_" + curIA); }} title="Effacer la conversation" style={{ background: "rgba(224,82,82,0.06)", border: "0.5px solid rgba(224,82,82,0.25)", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+            {msgs.length > 1 && <button onClick={() => { if (window.confirm("Effacer cette conversation ?")) clearHistory(curIA); }} title="Effacer la conversation" style={{ background: "rgba(224,82,82,0.06)", border: "0.5px solid rgba(224,82,82,0.25)", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E05252" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></svg>
             </button>}
           </div>

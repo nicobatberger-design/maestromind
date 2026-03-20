@@ -1,63 +1,75 @@
 # PDG DASHBOARD — MAESTROMIND
-> Rapport généré le **mardi 17 mars 2026 à 21:58**
+> Rapport généré le **vendredi 20 mars 2026**
 > `npm run dev:auto` pour mettre à jour
 
 ---
 
-## Score santé : 🟠 58/100
+## Score santé : 🟢 87/100
 
 | Métrique | Valeur |
 |---|---|
-| Score global | **58/100** |
-| Checks OK | 17/24 |
-| Points critiques manquants | **2** |
-| Features roadmap terminées | 8/32 (25%) |
-| Taille App.jsx | 78.0 KB |
+| Score global | **87/100** |
+| Checks OK | 23/26 |
+| Points critiques manquants | **0** |
+| Features roadmap terminées | 23/42 (55%) |
+| Tests Playwright | 35+ |
+| Composants React | 22 |
+| IA spécialisées | 33 |
 
-> ⚠️ **2 point(s) critique(s) avant lancement public**
-
----
-
-## Fonctionnalités actives ✅
-
-| Fonctionnalité | Priorité |
-|---|---|
-| PIN PDG hashé (SHA-256) | critique |
-| Variables d'environnement .env | critique |
-| Bandeau RGPD / consentement CNIL | critique |
-| Paywall doux (modal Premium) | fort |
-| Tracking UTM liens boutique | fort |
-| Onboarding 3 écrans | fort |
-| Rating réponses IA (👍/👎) | moyen |
-| Retry automatique erreurs réseau | moyen |
-| Stripe abonnements Premium | fort |
-| 32 IA avec system prompts distincts | — |
-| Chat conversationnel Anthropic | — |
-| Scanner photo IA (vision API) | — |
-| Certificats DTU PDF (jsPDF) | — |
-| Simulateur DPE | — |
-| PIN PDG 6 chiffres | — |
-| Design glassmorphism + animations | — |
-| Boutique 3 partenaires | — |
+> ✅ **Tous les points critiques sont résolus — prêt pour lancement beta**
 
 ---
 
-## Améliorations disponibles
+## Fonctionnalités actives ✅ (23)
 
-### Auto-patchables immédiatement (npm run build-feature)
-
-| Feature | Description | Sévérité |
+| Fonctionnalité | Sprint | Priorité |
 |---|---|---|
+| PIN PDG hashé SHA-256 | S1 | critique |
+| Variables d'environnement .env | S1 | critique |
+| Backend API proxy Vercel | S1 | critique |
+| Bandeau RGPD / consentement CNIL | S1 | critique |
+| Auth Supabase (email/password) | S1 | critique |
+| Paywall doux (modal Premium tous les 5 msg) | S2 | fort |
+| Tracking UTM liens boutique | S2 | fort |
+| Stripe checkout Premium | S2 | fort |
+| Onboarding 5 écrans | S3 | fort |
+| Rating réponses IA (👍/👎) | S3 | moyen |
+| Historique conversations persistant | S3 | fort |
+| Retry automatique erreurs réseau | S4 | moyen |
+| Calcul matériaux avancé (50+ types) | S4 | fort |
+| 33 IA spécialisées (11 divisions) | — | — |
+| Chat conversationnel streaming SSE | — | — |
+| Scanner photo IA (caméra native + vision) | — | — |
+| Certificats DTU PDF (jsPDF dark gold) | — | — |
+| Simulateur DPE + aides 2026 | — | — |
+| Input vocal + synthèse vocale TTS | — | — |
+| Projets chantier + CR PDF + rappels | — | — |
+| Mode Chantier (gros boutons) | — | — |
+| 12 onglets outils | — | — |
+| PWA installable + service worker | — | — |
 
+---
+
+## En cours de développement 🔧
+
+| Feature | Description | Statut |
+|---|---|---|
+| `S1-05` | Rate limiting & quota IA (Supabase) | À faire |
+| `S3-02` | Profil utilisateur personnalisé | À faire |
+| `S3-05` | Notifications push PWA | À faire |
+
+---
+
+## Améliorations restantes
 
 ### Développement manuel requis
 
 | Feature | Description | Sévérité |
 |---|---|---|
-| `S1-03` | Backend API proxy Anthropic | critique |
-| `S1-04` | Authentification utilisateurs | critique |
-| `S3-03` | Historique conversations persistant | fort |
-| `S4-01` | Calculateur matériaux automatique | fort |
+| `S1-05` | Rate limiting & quota par utilisateur | fort |
+| `S2-04` | API Boutique réelle (Leroy Merlin) | fort |
+| `S2-05` | Leads artisans RGE | fort |
+| `S3-02` | Profil utilisateur personnalisé | fort |
 | `S4-03` | Partage de certificats (URL unique) | fort |
 | `S5-01` | Géolocalisation artisans RGE | moyen |
 | `S6-02` | Éditeur system prompts PDG | moyen |
@@ -68,22 +80,40 @@
 
 | Sprint | Objectif | Avancement |
 |---|---|---|
-| Sprint 1 | Sécurité & Auth | █████░░░░░ 50% |
-| Sprint 2 | Monétisation | ███░░░░░░░ 33% |
-| Sprint 3 | Engagement | ███░░░░░░░ 29% |
-| Sprint 4 | Fonctionnalités métier | ██░░░░░░░░ 17% |
+| Sprint 1 | Sécurité & Auth | ████████░░ 83% |
+| Sprint 2 | Monétisation | █████░░░░░ 50% |
+| Sprint 3 | Engagement | █████░░░░░ 57% |
+| Sprint 4 | Fonctionnalités métier | ████░░░░░░ 43% |
 | Sprint 5 | Expansion | ░░░░░░░░░░ 0% |
-| Sprint 6 | Intelligence IA | ░░░░░░░░░░ 0% |
+| Sprint 6 | Intelligence IA | █░░░░░░░░░ 17% |
 | Sprint 7 | Scale | ░░░░░░░░░░ 0% |
+
+---
+
+## Design & Stack
+
+| Élément | Valeur |
+|---|---|
+| Framework | React 19 + Vite 8 |
+| API | Claude Sonnet 4 via proxy Vercel |
+| Paiements | Stripe Checkout |
+| Auth | Supabase |
+| Tests | Playwright (35+ E2E) |
+| Frontend | GitHub Pages |
+| API hosting | Vercel Serverless |
+| Style | Glassmorphism dark gold |
 
 ---
 
 ## Commandes
 
 ```bash
-npm run dev:auto        # Ce rapport
-npm run build-feature   # Appliquer les améliorations
-npm run dev             # Lancer l'app
+npm run dev             # Dev server (port 5173)
+npm run build           # Build production
+npm run dev:auto        # Ce rapport + améliorations
+npx playwright test     # Tests E2E (35+)
+npx gh-pages -d dist    # Déployer frontend
+npx vercel --prod       # Déployer API
 ```
 
-*MAESTROMIND v0.9.0 — Confidentiel PDG*
+*MAESTROMIND v1.0.0 — Confidentiel PDG*

@@ -12,5 +12,44 @@
       "Agent(*)"
     ],
     "deny": []
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const{execSync:x}=require('child_process');const P='C:/Users/Nico/Desktop/bricolensai Vclaude';const r=(c)=>{try{return x(c,{cwd:P,encoding:'utf8',timeout:90000}).trim();}catch(e){return e.stdout?.trim()||'ERREUR';}};const lines=[];lines.push('=== MAESTROMIND - Rapport auto ===');lines.push('');lines.push('--- Git Status ---');lines.push(r('git status --short')||'(clean)');lines.push('');lines.push('--- 5 derniers commits ---');lines.push(r('git log --oneline -5'));lines.push('');lines.push('--- Build ---');const b=r('npm run build 2>&1');lines.push(b.includes('built in')?'BUILD: OK':('BUILD ECHEC: '+b.split('\\n').slice(-5).join(' ')));lines.push('');lines.push('--- Sante projet ---');const fs=require('fs');const comps=fs.readdirSync(P+'/src/components').filter(f=>f.endsWith('.jsx')).length;const tests=fs.readdirSync(P+'/tests').filter(f=>f.includes('.spec.')).length;lines.push('Composants: '+comps);lines.push('Tests: '+tests);lines.push('dist/: '+(fs.existsSync(P+'/dist')?'OK':'MANQUANT'));lines.push('node_modules: '+(fs.existsSync(P+'/node_modules')?'OK':'MANQUANT'));lines.push('==================================');console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:lines.join('\\n')}}));\"",
+            "timeout": 120,
+            "statusMessage": "Analyse MAESTROMIND..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const j=JSON.parse(d);const f=j.tool_input?.file_path||j.tool_response?.filePath||'';if(/\\.(jsx|js|ts|tsx|css|json)$/.test(f)&&f.includes('bricolensai')){const{execSync}=require('child_process');try{execSync('npm run build',{cwd:'C:/Users/Nico/Desktop/bricolensai Vclaude',stdio:'pipe',timeout:60000});console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'PostToolUse',additionalContext:'Auto-build: OK'}}));}catch(e){console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'PostToolUse',additionalContext:'Auto-build ECHEC: '+e.stderr?.toString().split('\\n').slice(-5).join(' ')}}));}}else{console.log('{}');}}catch(e){console.log('{}');}})\"",
+            "timeout": 60,
+            "statusMessage": "Auto-build..."
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreCompact\",\"additionalContext\":\"IMPORTANT avant compaction: Preserver le contexte MAESTROMIND - etat git, derniers changements, bugs en cours, et toutes les decisions techniques prises dans cette conversation.\"}}'",
+            "timeout": 5,
+            "statusMessage": "Sauvegarde contexte..."
+          }
+        ]
+      }
+    ]
   }
 }

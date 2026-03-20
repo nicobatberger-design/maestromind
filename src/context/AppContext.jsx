@@ -7,11 +7,12 @@ import { useUserState } from "./useUserState";
 import { useChatState } from "./useChatState";
 import { useToolsState } from "./useToolsState";
 import { useDiagnosticState } from "./useDiagnosticState";
+import { useAuthState } from "./useAuthState";
 
 const IS_DEV = import.meta.env.DEV;
 
-const ROUTE_TO_PAGE = { "/": "home", "/coach": "coach", "/scanner": "scanner", "/shop": "shop", "/cert": "cert", "/outils": "outils", "/projets": "projets", "/dashboard": "dashboard" };
-const PAGE_TO_ROUTE = { home: "/", coach: "/coach", scanner: "/scanner", shop: "/shop", cert: "/cert", outils: "/outils", projets: "/projets", dashboard: "/dashboard" };
+const ROUTE_TO_PAGE = { "/": "home", "/coach": "coach", "/scanner": "scanner", "/shop": "shop", "/cert": "cert", "/outils": "outils", "/projets": "projets", "/dashboard": "dashboard", "/auth": "auth" };
+const PAGE_TO_ROUTE = { home: "/", coach: "/coach", scanner: "/scanner", shop: "/shop", cert: "/cert", outils: "/outils", projets: "/projets", dashboard: "/dashboard", auth: "/auth" };
 
 const AppContext = createContext(null);
 
@@ -77,6 +78,7 @@ export function AppProvider({ children }) {
   // ── Sub-hooks ─────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════
 
+  const authState = useAuthState();
   const userState = useUserState();
   const { userType, msgCount, setMsgCount, isPremium, showPaywall, setShowPaywall, profilIA, profilPDFLabel } = userState;
 
@@ -242,6 +244,7 @@ export function AppProvider({ children }) {
     // Misc
     rangColor,
     // ── Spread sub-hooks ──────────────────────────────────────
+    ...authState,
     ...userState,
     ...chatState,
     ...toolsState,

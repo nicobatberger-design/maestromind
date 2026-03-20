@@ -1,0 +1,142 @@
+import { useState } from "react";
+import { useApp } from "../context/AppContext";
+import { resetPassword } from "../utils/supabase";
+import s from "../styles/index";
+
+export default function AuthPage() {
+  const { page, goPage, user, login, register, logout, authError, setAuthError, isSupabaseConfigured } = useApp();
+  const [mode, setMode] = useState("login"); // login | register | reset
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [nom, setNom] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  if (page !== "auth") return null;
+
+  // Déjà connecté
+  if (user) return (
+    <div style={{ ...s.page, ...s.pageActive }}>
+      <div style={s.wrap}>
+        <div style={authStyles.container}>
+          <div style={authStyles.avatar}>{user.user_metadata?.nom?.[0]?.toUpperCase() || "U"}</div>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
+            {user.user_metadata?.nom || "Utilisateur"}
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 24 }}>{user.email}</div>
+          <button onClick={logout} style={authStyles.logoutBtn}>Se déconnecter</button>
+          <button onClick={() => goPage("home")} style={{ ...authStyles.skipBtn, marginTop: 10 }}>Retour à l'accueil</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Supabase pas configuré
+  if (!isSupabaseConfigured) return (
+    <div style={{ ...s.page, ...s.pageActive }}>
+      <div style={s.wrap}>
+        <div style={authStyles.container}>
+          <div style={authStyles.icon}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+            Comptes utilisateurs
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", textAlign: "center", lineHeight: 1.6, marginBottom: 24 }}>
+            La création de comptes sera bientôt disponible. En attendant, profitez de toutes les fonctionnalités en mode invité.
+          </div>
+          <button onClick={() => goPage("home")} style={authStyles.goldBtn}>Continuer en mode invité</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email.trim() || (mode !== "reset" && !password.trim())) return;
+    setLoading(true);
+    setAuthError("");
+    try {
+      if (mode === "login") {
+        await login(email, password);
+        goPage("home");
+      } else if (mode === "register") {
+        await register(email, password, nom);
+        goPage("home");
+      } else {
+        await resetPassword(email);
+        setResetSent(true);
+      }
+    } catch {} finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ ...s.page, ...s.pageActive }}>
+      <div style={s.wrap}>
+        <div style={authStyles.container}>
+          <div style={authStyles.icon}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 4 }}>
+            MAESTRO<span style={{ color: "#C9A84C" }}>MIND</span>
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 24 }}>
+            {mode === "login" ? "Connectez-vous à votre compte" : mode === "register" ? "Créez votre compte gratuit" : "Réinitialisez votre mot de passe"}
+          </div>
+
+          {resetSent ? (
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "#52C37A", marginBottom: 16 }}>Un email de réinitialisation a été envoyé à {email}</div>
+              <button onClick={() => { setMode("login"); setResetSent(false); }} style={authStyles.skipBtn}>Retour à la connexion</button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+              {mode === "register" && (
+                <input type="text" placeholder="Votre nom" value={nom} onChange={e => setNom(e.target.value)} style={{ ...s.inp, marginBottom: 10 }} />
+              )}
+              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={{ ...s.inp, marginBottom: 10 }} autoComplete="email" />
+              {mode !== "reset" && (
+                <input type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} style={{ ...s.inp, marginBottom: 6 }} autoComplete={mode === "register" ? "new-password" : "current-password"} />
+              )}
+              {mode === "login" && (
+                <div style={{ textAlign: "right", marginBottom: 14 }}>
+                  <button type="button" onClick={() => { setMode("reset"); setAuthError(""); }} style={authStyles.link}>Mot de passe oublié ?</button>
+                </div>
+              )}
+              {authError && <div style={{ ...s.errBox, marginBottom: 10 }}>{authError}</div>}
+              <button type="submit" disabled={loading} style={{ ...authStyles.goldBtn, opacity: loading ? 0.6 : 1 }}>
+                {loading ? "..." : mode === "login" ? "Se connecter" : mode === "register" ? "Créer mon compte" : "Envoyer le lien"}
+              </button>
+            </form>
+          )}
+
+          {!resetSent && (
+            <div style={{ marginTop: 16, fontSize: 11, color: "rgba(240,237,230,0.5)" }}>
+              {mode === "login" ? (
+                <>Pas encore de compte ? <button type="button" onClick={() => { setMode("register"); setAuthError(""); }} style={authStyles.link}>Créer un compte</button></>
+              ) : mode === "register" ? (
+                <>Déjà un compte ? <button type="button" onClick={() => { setMode("login"); setAuthError(""); }} style={authStyles.link}>Se connecter</button></>
+              ) : (
+                <button type="button" onClick={() => { setMode("login"); setAuthError(""); }} style={authStyles.link}>Retour à la connexion</button>
+              )}
+            </div>
+          )}
+
+          <button onClick={() => goPage("home")} style={{ ...authStyles.skipBtn, marginTop: 20 }}>
+            Continuer sans compte
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const authStyles = {
+  container: { display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 40 },
+  icon: { width: 64, height: 64, background: "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))", border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 },
+  avatar: { width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg,#EDD060,#C9A84C,#7A6030)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, color: "#06080D", marginBottom: 12 },
+  goldBtn: { width: "100%", background: "linear-gradient(135deg,#EDD060,#C9A84C,#8A6820)", border: "none", borderRadius: 14, padding: 13, fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: "#06080D", cursor: "pointer", boxShadow: "0 4px 24px rgba(201,168,76,0.32)" },
+  logoutBtn: { width: "100%", background: "rgba(224,82,82,0.08)", border: "0.5px solid rgba(224,82,82,0.35)", borderRadius: 14, padding: 13, fontSize: 13, fontWeight: 700, color: "#E05252", cursor: "pointer" },
+  skipBtn: { background: "none", border: "none", color: "rgba(240,237,230,0.4)", fontSize: 11, cursor: "pointer", padding: "6px 0" },
+  link: { background: "none", border: "none", color: "#C9A84C", fontSize: 11, cursor: "pointer", padding: 0, textDecoration: "underline" },
+};

@@ -8,7 +8,7 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
   const [curDiv, setCurDiv] = useState("M\u00e9tier");
   const [curIA, setCurIA] = useState("coach");
   const [msgs, setMsgs] = useState(() => {
-    try { const s = localStorage.getItem("mm_chat_coach"); if (s) { const p = JSON.parse(s); if (p.length) return p; } } catch {}
+    try { const s = localStorage.getItem("bl_chat_coach"); if (s) { const p = JSON.parse(s); if (p.length) return p; } } catch {}
     return [{ role: "ai", text: "Bonjour ! Je suis votre Coach Expert B\u00e2timent. Quel est votre projet ?" }];
   });
   const [hist, setHist] = useState([]);
@@ -38,13 +38,30 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
     return `${p.icon} Bonjour ! Je suis ${ia.name}. Je m'adapte \u00e0 votre niveau \u2014 de la solution la plus simple \u00e0 la plus compl\u00e8te. Quel est votre projet ?`;
   }, []);
 
+  const STORAGE_PREFIX = "bl_chat_";
+  const MAX_MESSAGES = 50;
+
   const saveConv = useCallback((iaKey, messages) => {
-    try { localStorage.setItem("mm_chat_" + iaKey, JSON.stringify(messages.slice(-40))); } catch {}
+    try { localStorage.setItem(STORAGE_PREFIX + iaKey, JSON.stringify(messages.slice(-MAX_MESSAGES))); } catch {}
   }, []);
 
   const loadConv = useCallback((iaKey) => {
-    try { const s = localStorage.getItem("mm_chat_" + iaKey); return s ? JSON.parse(s) : null; } catch { return null; }
+    try { const s = localStorage.getItem(STORAGE_PREFIX + iaKey); return s ? JSON.parse(s) : null; } catch { return null; }
   }, []);
+
+  const clearHistory = useCallback((iaKey) => {
+    try { localStorage.removeItem(STORAGE_PREFIX + iaKey); } catch {}
+    if (iaKey === curIA) {
+      setMsgs([{ role: "ai", text: welcomeMsg(iaKey, userType) }]);
+      setHist([]);
+    }
+  }, [curIA, userType, welcomeMsg]);
+
+  const clearAllHistory = useCallback(() => {
+    Object.keys(IAS).forEach(k => { try { localStorage.removeItem(STORAGE_PREFIX + k); } catch {} });
+    setMsgs([{ role: "ai", text: welcomeMsg(curIA, userType) }]);
+    setHist([]);
+  }, [curIA, userType, welcomeMsg]);
 
   const switchDiv = useCallback((div) => {
     saveConv(curIA, msgs);
@@ -170,6 +187,6 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
     currentIA, chips,
     switchDiv, switchIA, send, sendWithPhoto, rateMsg,
     startVoice, startUrgence,
-    saveConv, loadConv, welcomeMsg,
+    saveConv, loadConv, welcomeMsg, clearHistory, clearAllHistory,
   };
 }
