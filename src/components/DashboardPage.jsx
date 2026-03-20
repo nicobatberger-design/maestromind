@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
-import { IAS, DIVISIONS } from "../data/constants";
+import { IAS, DIVISIONS, getCustomPrompts, saveCustomPrompt, resetCustomPrompt } from "../data/constants";
 import s from "../styles/index";
 
 export default function DashboardPage() {
   const { page, projets, userType } = useApp();
   const [stats, setStats] = useState(null);
+  const [editIA, setEditIA] = useState(null);
+  const [editPrompt, setEditPrompt] = useState("");
+  const [customPrompts, setCustomPrompts] = useState({});
 
   useEffect(() => {
     if (page !== "dashboard") return;
@@ -30,7 +33,28 @@ export default function DashboardPage() {
     });
 
     setStats({ msgCount, positives, negatives, satisfaction, topIAs, convCount, totalMsgs, projetsCount: projets.length });
+    setCustomPrompts(getCustomPrompts());
   }, [page, projets]);
+
+  const openEditIA = useCallback((iaKey) => {
+    const custom = getCustomPrompts();
+    setEditIA(iaKey);
+    setEditPrompt(custom[iaKey] || IAS[iaKey]?.sys || "");
+  }, []);
+
+  const saveEditIA = useCallback(() => {
+    if (!editIA) return;
+    saveCustomPrompt(editIA, editPrompt);
+    setCustomPrompts(getCustomPrompts());
+    setEditIA(null);
+  }, [editIA, editPrompt]);
+
+  const resetEditIA = useCallback(() => {
+    if (!editIA) return;
+    resetCustomPrompt(editIA);
+    setEditPrompt(IAS[editIA]?.sys || "");
+    setCustomPrompts(getCustomPrompts());
+  }, [editIA]);
 
   if (!stats) return null;
 
@@ -80,6 +104,41 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* Éditeur System Prompts */}
+        <div style={{ fontSize: 9, color: "#C9A84C", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginTop: 20, marginBottom: 10 }}>Éditeur IA — System Prompts</div>
+        <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", marginBottom: 10 }}>Modifiez les prompts des 33 IA en temps réel. Les changements sont appliqués immédiatement.</div>
+
+        {editIA ? (
+          <div style={{ ...s.card, border: "0.5px solid rgba(201,168,76,0.4)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: IAS[editIA]?.color || "#C9A84C" }}>{IAS[editIA]?.name}</div>
+              {customPrompts[editIA] && <span style={{ fontSize: 8, padding: "1px 6px", borderRadius: 10, background: "rgba(82,195,122,0.1)", color: "#52C37A", border: "0.5px solid rgba(82,195,122,0.3)" }}>personnalisé</span>}
+            </div>
+            <textarea value={editPrompt} onChange={e => setEditPrompt(e.target.value)} style={{ ...s.inp, minHeight: 160, resize: "vertical", lineHeight: 1.5, fontSize: 10 }} />
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              <button onClick={saveEditIA} style={{ flex: 1, padding: 10, borderRadius: 10, fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer", background: "rgba(82,195,122,0.08)", border: "0.5px solid rgba(82,195,122,0.4)", color: "#52C37A" }}>Sauvegarder</button>
+              <button onClick={resetEditIA} style={{ padding: 10, borderRadius: 10, fontSize: 11, fontWeight: 600, cursor: "pointer", background: "rgba(224,82,82,0.06)", border: "0.5px solid rgba(224,82,82,0.25)", color: "#E05252" }}>Reset</button>
+              <button onClick={() => setEditIA(null)} style={{ padding: 10, borderRadius: 10, fontSize: 11, fontWeight: 600, cursor: "pointer", background: "transparent", border: "0.5px solid rgba(255,255,255,0.08)", color: "rgba(240,237,230,0.4)" }}>Fermer</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {Object.entries(DIVISIONS).map(([div, info]) => (
+              <div key={div}>
+                <div style={{ fontSize: 9, color: info.color, fontWeight: 700, marginTop: 8, marginBottom: 4 }}>{div}</div>
+                {info.ias.map(k => (
+                  <button key={k} onClick={() => openEditIA(k)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 10px", borderRadius: 8, marginBottom: 3, cursor: "pointer", background: customPrompts[k] ? "rgba(82,195,122,0.04)" : "rgba(15,19,28,0.5)", border: customPrompts[k] ? "0.5px solid rgba(82,195,122,0.2)" : "0.5px solid rgba(255,255,255,0.05)", textAlign: "left" }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: IAS[k]?.color || "#C9A84C", flexShrink: 0 }} />
+                    <div style={{ flex: 1, fontSize: 11, color: "rgba(240,237,230,0.7)", fontWeight: 500 }}>{IAS[k]?.name}</div>
+                    {customPrompts[k] && <span style={{ fontSize: 7, color: "#52C37A" }}>modifié</span>}
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(240,237,230,0.2)" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

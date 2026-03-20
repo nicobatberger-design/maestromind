@@ -241,8 +241,25 @@ export const SHELF_TYPES = {
 
 export const PDG_PIN_HASH = import.meta.env.VITE_PDG_PIN_HASH || "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92";
 
+// Prompts personnalisés par le PDG (localStorage)
+const CUSTOM_PROMPTS_KEY = "mm_custom_prompts";
+export function getCustomPrompts() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_PROMPTS_KEY)) || {}; } catch { return {}; }
+}
+export function saveCustomPrompt(iaKey, prompt) {
+  const all = getCustomPrompts();
+  if (prompt.trim()) { all[iaKey] = prompt; } else { delete all[iaKey]; }
+  localStorage.setItem(CUSTOM_PROMPTS_KEY, JSON.stringify(all));
+}
+export function resetCustomPrompt(iaKey) {
+  const all = getCustomPrompts();
+  delete all[iaKey];
+  localStorage.setItem(CUSTOM_PROMPTS_KEY, JSON.stringify(all));
+}
+
 export function buildSystemPrompt(iaKey, profileType) {
-  const base = IAS[iaKey]?.sys || "";
+  const custom = getCustomPrompts()[iaKey];
+  const base = custom || IAS[iaKey]?.sys || "";
   const profil = PROFILS[profileType] || PROFILS["Particulier"];
   return base + profil.suffix;
 }
