@@ -13,7 +13,7 @@ export default defineConfig({
       manifest: {
         name: 'MAESTROMIND — IA Bâtiment',
         short_name: 'MAESTROMIND',
-        description: '32 IA spécialisées bâtiment : diagnostic, normes DTU, scanner AR, devis et plus.',
+        description: '40 IA spécialisées bâtiment : diagnostic, normes DTU, scanner, devis IA et plus.',
         theme_color: '#C9A84C',
         background_color: '#06080D',
         display: 'standalone',
@@ -38,6 +38,47 @@ export default defineConfig({
             options: {
               cacheName: 'google-fonts-cache',
               expiration: { maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: { maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/data\.ademe\.fr\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'ademe-api-cache',
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/georisques\.gouv\.fr\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'georisques-cache',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/api\.open-meteo\.com\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'meteo-cache',
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 3 },
+              networkTimeoutSeconds: 5,
+            },
+          },
+          {
+            urlPattern: /^https:\/\/api-adresse\.data\.gouv\.fr\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'adresse-cache',
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
         ],
