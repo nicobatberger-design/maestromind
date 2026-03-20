@@ -25,13 +25,40 @@ function getLastProject() {
 }
 
 const TIPS = [
-  { title: "Peinture : sous-couche d'abord", text: "Résultat meilleur, moins de couches, -20% de peinture." },
-  { title: "Carrelage >30cm : double encollage", text: "Colle au sol ET au dos. Obligatoire DTU 52.1." },
-  { title: "Électricité : coupez + vérifiez", text: "Disjoncteur OFF + testeur VAT avant toute intervention." },
-  { title: "Humidité : aérez 10 min/jour", text: "-15% d'humidité, moins de moisissures." },
-  { title: "Isolation : les combles d'abord", text: "30% de chaleur par le toit. R≥7 = -30% de chauffage." },
-  { title: "Devis : comparez 3 minimum", text: "Écarts de 40% possibles entre artisans." },
-  { title: "Vis placo : tous les 30cm", text: "DTU 25.41 — affleurement, jamais traverser le carton." },
+  /* ── Sécurité (8) ── */
+  { cat: "Sécurité", title: "Amiante : stop avant 1997", text: "Bâtiment avant 1997 = diagnostic amiante obligatoire avant travaux." },
+  { cat: "Sécurité", title: "Électricité : coupez + testez", text: "Disjoncteur OFF + testeur VAT avant toute intervention." },
+  { cat: "Sécurité", title: "Hauteur >3m = harnais", text: "Harnais EN 361 + point d'ancrage obligatoire. Échelle = 3 points d'appui." },
+  { cat: "Sécurité", title: "Gaz : 1 odeur = 0 action", text: "Ne touchez rien, ouvrez les fenêtres, évacuez, appelez le 18." },
+  { cat: "Sécurité", title: "EPI minimum chantier", text: "Lunettes, gants, chaussures S3, casque si risque de chute d'objets." },
+  { cat: "Sécurité", title: "Poussière = masque FFP2", text: "Ponçage, découpe, démolition : masque FFP2 minimum obligatoire." },
+  { cat: "Sécurité", title: "Produits chimiques : ventilation", text: "Colles, solvants, décapants : fenêtres ouvertes + gants nitrile." },
+  { cat: "Sécurité", title: "Échafaudage : garde-corps", text: "Hauteur >2m = garde-corps 1m + lisse intermédiaire + plinthe." },
+  /* ── Économies (7) ── */
+  { cat: "Économies", title: "Isolation combles = -30% chauffage", text: "30% de chaleur part par le toit. R≥7 m²K/W recommandé." },
+  { cat: "Économies", title: "-1°C = -7% de chauffage", text: "Programmez 19°C jour, 16°C nuit. Chaque degré compte." },
+  { cat: "Économies", title: "MaPrimeRénov' 2026", text: "Jusqu'à 75€/m² selon revenus. RDV France Rénov' obligatoire." },
+  { cat: "Économies", title: "CEE cumulable", text: "Prime énergie cumulable avec MaPrimeRénov'. Comparez les offres." },
+  { cat: "Économies", title: "TVA 5.5% travaux énergie", text: "Isolation, chauffage, fenêtres : TVA réduite si logement >2 ans." },
+  { cat: "Économies", title: "Comparez 3 devis minimum", text: "Écarts de 40% possibles entre artisans. Négociez toujours." },
+  { cat: "Économies", title: "Éco-PTZ jusqu'à 50 000€", text: "Prêt à taux zéro pour rénovation énergétique. Sans condition de revenus." },
+  /* ── Technique (8) ── */
+  { cat: "Technique", title: "Peinture : sous-couche d'abord", text: "Résultat meilleur, moins de couches, -20% de peinture." },
+  { cat: "Technique", title: "Carrelage >30cm : double encollage", text: "Colle au sol ET au dos. Obligatoire DTU 52.1." },
+  { cat: "Technique", title: "Vis placo : tous les 30cm", text: "DTU 25.41 — affleurement, jamais traverser le carton." },
+  { cat: "Technique", title: "Humidité : aérez 10 min/jour", text: "-15% d'humidité, moins de moisissures." },
+  { cat: "Technique", title: "Ragréage avant pose sol", text: "Planéité ≤5mm sous règle 2m. Sinon ragréage autolissant." },
+  { cat: "Technique", title: "Joints carrelage ≥3mm", text: "DTU 52.1 : joint minimum 3mm sol, 1.5mm mur. Fractionnement 25m²." },
+  { cat: "Technique", title: "Câbles : respectez les sections", text: "1.5mm² éclairage, 2.5mm² prises, 6mm² cuisinière. NFC 15-100." },
+  { cat: "Technique", title: "Pente évacuation : 1cm/m", text: "DTU 60.11 : pente minimum, Ø100 pour WC, Ø40 pour lavabo." },
+  /* ── Diagnostic (7) ── */
+  { cat: "Diagnostic", title: "Fissure <0.2mm = cosmétique", text: "Simple rebouchage. >0.3mm = expert bâtiment sous 30 jours." },
+  { cat: "Diagnostic", title: "Tache plafond = fuite active", text: "Cerne brun = récurrent. Cherchez la source au-dessus." },
+  { cat: "Diagnostic", title: "Moisissures = pont thermique", text: "Coins haut des murs : isolation + VMC. Pas juste javelliser." },
+  { cat: "Diagnostic", title: "Efflorescence = remontées", text: "Taches blanches murs bas = capillarité. Traitement hydrofuge." },
+  { cat: "Diagnostic", title: "Prise qui chauffe = danger", text: "Coupez le circuit immédiatement. Électricien en urgence." },
+  { cat: "Diagnostic", title: "Disjoncteur saute souvent", text: "Surcharge ou court-circuit. Vérifiez les appareils branchés." },
+  { cat: "Diagnostic", title: "Odeur humide cave = ventilation", text: "VMC ou grilles de ventilation. Déshumidificateur si >65%." },
 ];
 
 export default function HomePage() {

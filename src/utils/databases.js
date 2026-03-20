@@ -507,6 +507,45 @@ export const AIDES_2026 = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// AIDES RÉGIONALES 2026 — Majorations, aides complémentaires, plafonds
+// ═══════════════════════════════════════════════════════════════
+
+export const AIDES_REGIONALES_2026 = {
+  // Coefficients multiplicateurs selon la région (coût de la vie, zone climatique)
+  majorations: {
+    "Île-de-France": 1.25,
+    "PACA": 1.10,
+    "Auvergne-Rhône-Alpes": 1.05,
+    "Occitanie": 1.0,
+    "Nouvelle-Aquitaine": 1.0,
+    "Bretagne": 1.0,
+    "Hauts-de-France": 1.05,
+    "Grand Est": 1.0,
+    "Normandie": 1.0,
+    "Pays de la Loire": 1.0,
+    "Centre-Val de Loire": 1.0,
+    "Bourgogne-Franche-Comté": 1.0,
+    "Corse": 1.15,
+  },
+  // Aides complémentaires cumulables avec MaPrimeRénov'
+  aides_supplementaires: [
+    { nom: "Éco-Rénov Sérénité", montant: "3 500 - 15 000€", condition: "Revenus modestes, DPE initial F/G, parcours accompagné", cumulable: "MaPrimeRénov' + CEE" },
+    { nom: "Chèque énergie", montant: "48 - 277€/an", condition: "Revenus <11 000€/UC", cumulable: "Toutes aides" },
+    { nom: "Prêt Avance Rénovation", montant: "Jusqu'à 70 000€", condition: "Propriétaires modestes, remboursé à la vente", cumulable: "MaPrimeRénov'" },
+    { nom: "Aide Action Logement", montant: "Jusqu'à 20 000€", condition: "Salariés secteur privé, rénovation énergétique", cumulable: "MaPrimeRénov' + CEE" },
+    { nom: "TVA 5.5%", montant: "Réduction TVA 20% → 5.5%", condition: "Travaux amélioration énergétique, logement >2 ans", cumulable: "Toutes aides" },
+    { nom: "Exonération taxe foncière", montant: "50-100% pendant 3 ans", condition: "Travaux >10 000€, décision commune", cumulable: "Toutes aides" },
+  ],
+  // Plafonds MaPrimeRénov' 2026 par catégorie de revenus
+  plafonds_maprimerenov_2026: {
+    "Très modeste": { isolation_m2: 25, pac_air: 5000, pac_geo: 11000, vmc: 2500, fenetres: 100, chauffe_eau: 1200 },
+    "Modeste": { isolation_m2: 20, pac_air: 4000, pac_geo: 9000, vmc: 2000, fenetres: 80, chauffe_eau: 800 },
+    "Intermédiaire": { isolation_m2: 15, pac_air: 3000, pac_geo: 6000, vmc: 1500, fenetres: 40, chauffe_eau: 400 },
+    "Aisé": { isolation_m2: 0, pac_air: 0, pac_geo: 0, vmc: 0, fenetres: 0, chauffe_eau: 0 },
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════
 // BASE MATÉRIAUX ÉCO-RESPONSABLES
 // ═══════════════════════════════════════════════════════════════
 
@@ -524,4 +563,50 @@ export const MATERIAUX_ECO = {
     { nom: "Brique monomur", avantage: "Isolation intégrée R=1 à 3", usage: "Murs porteurs sans isolant additionnel" },
     { nom: "Terre crue (pisé/BTC)", avantage: "Inertie thermique exceptionnelle, 0 CO2", usage: "Murs, cloisons, enduits" },
   ],
+};
+
+// ═══════════════════════════════════════════════════════════════
+// BASE MATÉRIAUX CONSTRUCTEURS 2026 — Prix régionaux + références
+// Régions : idf = Île-de-France, paca = PACA, province = Reste France
+// ═══════════════════════════════════════════════════════════════
+
+export const MATERIAUX_CONSTRUCTEURS_2026 = {
+  placo: {
+    "BA13 Standard Placo®": { ref: "PLACO-BA13-STD", prix: { idf: 10.50, paca: 9.80, province: 8.50 }, unite: "plaque 1.2×2.5m", certif: ["NF", "CE"] },
+    "BA13 Hydro Placo®": { ref: "PLACO-BA13-H1", prix: { idf: 14.00, paca: 13.00, province: 11.50 }, unite: "plaque", certif: ["NF", "CE"] },
+    "BA13 Phonique Placo®": { ref: "PLACO-BA13-PHO", prix: { idf: 17.00, paca: 16.00, province: 14.50 }, unite: "plaque", certif: ["NF"] },
+    "Rail R48 Placo®": { ref: "PLACO-R48", prix: { idf: 2.80, paca: 2.60, province: 2.30 }, unite: "ml", certif: ["CE"] },
+    "Montant M48 Placo®": { ref: "PLACO-M48", prix: { idf: 3.30, paca: 3.10, province: 2.80 }, unite: "ml", certif: ["CE"] },
+  },
+  isolation: {
+    "Isover LV 100mm": { ref: "ISO-LV100", lambda: 0.032, prix: { idf: 12.00, paca: 11.00, province: 9.50 }, unite: "m²", certif: ["ACERMI"] },
+    "Isover LR 100mm panneau": { ref: "ISO-LR100", lambda: 0.035, prix: { idf: 14.00, paca: 13.00, province: 11.00 }, unite: "m²", certif: ["ACERMI"] },
+    "Rockwool Rockmur 100mm": { ref: "RW-RM100", lambda: 0.034, prix: { idf: 13.50, paca: 12.50, province: 10.50 }, unite: "m²", certif: ["ACERMI"] },
+    "PSE Knauf Th38 60mm": { ref: "KN-TH38-60", lambda: 0.038, prix: { idf: 11.00, paca: 10.00, province: 8.50 }, unite: "m²", certif: ["ACERMI", "CE"] },
+    "Ouate cellulose soufflée": { ref: "ECO-OUATE", lambda: 0.039, prix: { idf: 22.00, paca: 20.00, province: 18.00 }, unite: "m² (200mm)", certif: ["ACERMI"] },
+  },
+  electricite: {
+    "Prise 2P+T Legrand Céliane": { ref: "LEG-CEL-2PT", prix: { idf: 8.50, paca: 7.80, province: 6.90 }, unite: "pièce", certif: ["NF"] },
+    "Inter VA Legrand Céliane": { ref: "LEG-CEL-VA", prix: { idf: 10.00, paca: 9.20, province: 8.20 }, unite: "pièce", certif: ["NF"] },
+    "Disjoncteur 16A Legrand": { ref: "LEG-DJ16", prix: { idf: 13.00, paca: 12.00, province: 10.50 }, unite: "pièce", certif: ["NF", "CE"] },
+    "Diff 30mA AC Legrand": { ref: "LEG-DIFF30", prix: { idf: 48.00, paca: 45.00, province: 40.00 }, unite: "pièce", certif: ["NF"] },
+    "Câble R2V 3G1.5 100m": { ref: "NEXANS-R2V-1.5", prix: { idf: 82.00, paca: 78.00, province: 68.00 }, unite: "100m", certif: ["NF", "CE"] },
+    "Câble R2V 3G2.5 100m": { ref: "NEXANS-R2V-2.5", prix: { idf: 118.00, paca: 110.00, province: 95.00 }, unite: "100m", certif: ["NF", "CE"] },
+  },
+  carrelage: {
+    "Grès cérame 60×60 standard": { ref: "GC-6060-STD", prix: { idf: 28.00, paca: 25.00, province: 20.00 }, unite: "m²", certif: ["CE"] },
+    "Faïence murale 30×60": { ref: "FM-3060", prix: { idf: 18.00, paca: 16.00, province: 13.00 }, unite: "m²", certif: ["CE"] },
+    "Mortier-colle C2 Weber": { ref: "WEBER-C2", prix: { idf: 18.00, paca: 16.50, province: 14.50 }, unite: "sac 25kg", certif: ["NF"] },
+    "Joint Mapei Keracolor": { ref: "MAPEI-KC", prix: { idf: 12.00, paca: 11.00, province: 9.50 }, unite: "sac 5kg", certif: ["CE"] },
+  },
+  peinture: {
+    "Dulux Valentine Crème de Lait": { ref: "DV-CDL", prix: { idf: 42.00, paca: 39.00, province: 35.00 }, unite: "pot 2.5L (~20m²)", certif: ["NF Environnement"] },
+    "Tollens Idrotop Satin": { ref: "TOL-IDRO", prix: { idf: 55.00, paca: 50.00, province: 45.00 }, unite: "pot 3L (~24m²)", certif: ["Écolabel"] },
+    "V33 Sous-couche universelle": { ref: "V33-SC", prix: { idf: 28.00, paca: 26.00, province: 22.00 }, unite: "pot 2.5L (~25m²)", certif: ["NF"] },
+  },
+  plomberie: {
+    "Mitigeur lavabo Grohe Eurosmart": { ref: "GROHE-EURO-L", prix: { idf: 85.00, paca: 78.00, province: 65.00 }, unite: "pièce", certif: ["NF", "ACS"] },
+    "Mitigeur douche Hansgrohe": { ref: "HG-DU-THERMO", prix: { idf: 195.00, paca: 180.00, province: 155.00 }, unite: "pièce", certif: ["NF"] },
+    "Tube PER 16mm 50m": { ref: "PER-16-50", prix: { idf: 45.00, paca: 42.00, province: 38.00 }, unite: "couronne 50m", certif: ["NF", "ACS"] },
+  },
 };
