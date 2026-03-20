@@ -26,7 +26,9 @@ function parseAIJson(text) {
   return null;
 }
 
-function createThumbnail(dataUrl, size = 100) {
+const MAX_THUMB_SIZE = 100 * 1024; // 100KB max par miniature en base64
+
+function createThumbnail(dataUrl, size = 80) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -38,7 +40,12 @@ function createThumbnail(dataUrl, size = 100) {
       const sx = (img.width - min) / 2;
       const sy = (img.height - min) / 2;
       ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
-      resolve(canvas.toDataURL("image/jpeg", 0.6));
+      let result = canvas.toDataURL("image/jpeg", 0.6);
+      // Re-compression si toujours trop lourd
+      if (result.length > MAX_THUMB_SIZE) {
+        result = canvas.toDataURL("image/jpeg", 0.4);
+      }
+      resolve(result);
     };
     img.src = dataUrl;
   });

@@ -8,11 +8,13 @@ import CarnetArtisans from "./CarnetArtisans";
 const TAG_COLORS = { Avant: "#5290E0", Pendant: "#E8873A", "Après": "#52C37A" };
 const TAGS = ["Avant", "Pendant", "Après"];
 const MAX_PHOTOS = 10;
-const MAX_WIDTH = 400;
+const MAX_WIDTH = 300;
 const MAX_TASKS = 50;
 const TASK_STATUSES = ["todo", "progress", "done", "redo"];
 const TASK_STATUS_LABELS = { todo: "À faire", progress: "En cours", done: "Fait", redo: "À reprendre" };
 const TASK_STATUS_COLORS = { todo: "rgba(240,237,230,0.4)", progress: "#E8873A", done: "#52C37A", redo: "#E05252" };
+
+const MAX_FILE_SIZE = 100 * 1024; // 100KB max par photo en base64
 
 function resizeImage(file) {
   return new Promise((resolve) => {
@@ -26,7 +28,12 @@ function resizeImage(file) {
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.7));
+        let result = canvas.toDataURL("image/jpeg", 0.6);
+        // Re-compression si toujours trop lourd
+        if (result.length > MAX_FILE_SIZE) {
+          result = canvas.toDataURL("image/jpeg", 0.4);
+        }
+        resolve(result);
       };
       img.src = e.target.result;
     };

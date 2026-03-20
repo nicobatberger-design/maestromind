@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { IAS, DIVISIONS, PROFILS, buildSystemPrompt, getChips } from "../data/constants";
 import { streamChat } from "../utils/api";
+import { safeSetItem } from "../utils/storage";
 import { writeMsgCount } from "./useUserState";
 
 export function useChatState({ userType, msgCount, setMsgCount, isPremium, showPaywall, setShowPaywall, profilIA, apiKey, goPageRef }) {
@@ -24,6 +25,11 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
   // ── Effects ──────────────────────────────────────────────────
   useEffect(() => { if (msgsRef.current) msgsRef.current.scrollTop = msgsRef.current.scrollHeight; }, [msgs]);
 
+  // Nettoyage SpeechRecognition sur unmount (évite fuite mémoire)
+  useEffect(() => {
+    return () => { if (voiceRef.current) { try { voiceRef.current.abort(); } catch {} voiceRef.current = null; } };
+  }, []);
+
   // ── Memos ─────────────────────────────────────────────────────
   const currentIA = useMemo(() => IAS[curIA], [curIA]);
   const chips = useMemo(() => getChips(curIA, userType), [curIA, userType]);
@@ -42,7 +48,7 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
   const MAX_MESSAGES = 50;
 
   const saveConv = useCallback((iaKey, messages) => {
-    try { localStorage.setItem(STORAGE_PREFIX + iaKey, JSON.stringify(messages.slice(-MAX_MESSAGES))); } catch {}
+    try { safeSetItem(STORAGE_PREFIX + iaKey, JSON.stringify(messages.slice(-MAX_MESSAGES))); } catch {}
   }, []);
 
   const loadConv = useCallback((iaKey) => {
@@ -77,7 +83,7 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
       } else {
         updated = [{ text: msg.text, ia: iaKey, iaName: IAS[iaKey]?.name || iaKey, date: new Date().toLocaleDateString("fr-FR"), timestamp: Date.now() }, ...prev].slice(0, 50);
       }
-      localStorage.setItem("bl_favoris", JSON.stringify(updated));
+      safeSetItem("bl_favoris", JSON.stringify(updated));
       return updated;
     });
   }, []);
@@ -173,7 +179,7 @@ export function useChatState({ userType, msgCount, setMsgCount, isPremium, showP
   const rateMsg = useCallback((idx, rating) => {
     let r; try { r = JSON.parse(localStorage.getItem("bl_ratings") || "[]"); } catch { r = []; }
     r.push({ ia: curIA, rating, timestamp: Date.now(), idx });
-    localStorage.setItem("bl_ratings", JSON.stringify(r));
+    safeSetItem("bl_ratings", JSON.stringify(r));
     setMsgs(prev => prev.map((m, i) => i === idx ? { ...m, rated: rating } : m));
   }, [curIA]);
 

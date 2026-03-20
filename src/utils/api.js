@@ -17,8 +17,12 @@ export async function withRetry(fn, retries = 3) {
     try {
       return await fn();
     } catch (e) {
+      // Ne pas réessayer sur erreurs d'authentification
+      if (e.message?.includes("401") || e.message?.includes("403") || e.message?.includes("Clé API")) throw e;
       if (i === retries - 1) throw e;
-      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+      // Attente plus longue sur rate limit (429)
+      const delai = e.message?.includes("429") || e.message?.includes("Trop de requêtes") ? 5000 : 1000 * Math.pow(2, i);
+      await new Promise(r => setTimeout(r, delai));
     }
   }
 }
@@ -29,14 +33,38 @@ export async function withRetry(fn, retries = 3) {
  */
 export async function streamChat({ apiKey, body, onToken }) {
   const headers = apiHeaders(apiKey);
-  const r = await fetch(apiURL(), {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ ...body, stream: true }),
-  });
+  // Timeout 30s pour éviter les requêtes qui restent bloquées
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), 30000);
+  let r;
+  try {
+    r = await fetch(apiURL(), {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ ...body, stream: true }),
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    clearTimeout(timeout);
+    // Erreur réseau (offline, DNS, etc.)
+    if (e instanceof TypeError || e.name === "TypeError") throw new Error("Pas de connexion internet");
+    if (e.name === "AbortError") throw new Error("Délai dépassé — réessayez");
+    throw e;
+  }
   if (!r.ok) {
-    const data = await r.json().catch(() => ({}));
-    throw new Error(data?.error?.message || "Erreur API " + r.status);
+    // Tenter de lire le JSON, sinon gérer les pages HTML d'erreur
+    let msg = "";
+    try {
+      const ct = r.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        const data = await r.json();
+        msg = data?.error?.message || "";
+      }
+    } catch { /* réponse non-JSON ignorée */ }
+    if (r.status === 429) throw new Error("429 — Trop de requêtes — patientez quelques secondes");
+    if (r.status === 401 || r.status === 403) throw new Error(r.status + " — Clé API invalide ou expirée");
+    if (r.status >= 500) throw new Error(r.status + " — Serveur temporairement indisponible — réessayez");
+    throw new Error(msg || "Erreur API " + r.status);
   }
   const reader = r.body.getReader();
   const decoder = new TextDecoder();
@@ -61,6 +89,7 @@ export async function streamChat({ apiKey, body, onToken }) {
       } catch {}
     }
   }
+  clearTimeout(timeout);
   return acc || "Désolé, réessayez.";
 }
 
