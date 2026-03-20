@@ -75,7 +75,17 @@ export default function OutilsPage() {
             <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", flex: 1 }}>Pas sûr des mesures ? Le Métreur IA vous guide</div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.45)", marginBottom: 4, textTransform: "capitalize", letterSpacing: 0.5 }}>Type de travaux</div><select style={s.inp} value={calcType} onChange={e => setCalcType(e.target.value)}>{["Peinture", "Carrelage", "Parquet", "Placo BA13", "Cloison BA13", "Doublage BA13+isolant", "Faux plafond BA13", "Enduit", "Isolation murs", "Isolation combles", "Isolation rampants", "Toiture", "Béton dalle", "Ragréage", "Charpente", "Bardage"].map(t => <option key={t}>{t}</option>)}</select></div>
+            <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.45)", marginBottom: 4, textTransform: "capitalize", letterSpacing: 0.5 }}>Type de travaux</div><select style={s.inp} value={calcType} onChange={e => setCalcType(e.target.value)}>{[
+  "── MURS ──", "Peinture", "Carrelage mural", "Enduit", "Placo BA13", "Cloison BA13", "Doublage BA13+isolant", "Crépi façade", "Bardage", "Parement pierre",
+  "── SOLS ──", "Carrelage sol", "Parquet", "Parquet stratifié", "Sol vinyle/PVC", "Béton ciré", "Ragréage", "Béton dalle", "Chape",
+  "── PLAFONDS ──", "Faux plafond BA13", "Faux plafond suspendu (dalles)", "Peinture plafond", "Lambris plafond", "Plafond tendu",
+  "── ISOLATION ──", "Isolation murs (ITI)", "Isolation murs (ITE)", "Isolation combles perdus", "Isolation combles aménagés", "Isolation rampants", "Isolation plancher bas", "Isolation phonique",
+  "── TOITURE ──", "Toiture tuiles", "Toiture ardoise", "Toiture bac acier", "Étanchéité toiture terrasse", "Gouttières/descentes", "Charpente",
+  "── EXTÉRIEUR ──", "Terrasse bois", "Terrasse carrelée", "Terrasse béton", "Clôture", "Portail",
+  "── MENUISERIE ──", "Fenêtres PVC", "Fenêtres alu", "Porte intérieure", "Porte d'entrée", "Volets roulants",
+  "── PLOMBERIE ──", "Salle de bain complète", "Cuisine (plomberie)", "WC suspendu", "Chauffe-eau",
+  "── ÉLECTRICITÉ ──", "Tableau électrique", "Prises + interrupteurs", "Éclairage LED", "VMC simple flux", "VMC double flux",
+].map(t => t.startsWith("──") ? <option key={t} disabled style={{ fontWeight: 700, color: "#C9A84C" }}>{t}</option> : <option key={t}>{t}</option>)}</select></div>
             <div><div style={{ fontSize: 9, color: "rgba(240,237,230,0.45)", marginBottom: 4, textTransform: "capitalize", letterSpacing: 0.5 }}>Surface m²</div><input style={s.inp} type="number" inputMode="decimal" value={calcSurface} onChange={e => setCalcSurface(e.target.value)} placeholder="20" /></div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
