@@ -26,6 +26,19 @@ export default function ProjetChatOverlay() {
         <button onClick={() => setProjetChat(null)} style={{ background: "none", border: "none", color: "rgba(240,237,230,0.4)", fontSize: 22, cursor: "pointer", padding: 4 }}>{"\u00D7"}</button>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+        {projetChatMsgs.length === 0 && (
+          <>
+            <div style={s.msgA}>
+              <div style={s.mav}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg></div>
+              <div><div style={s.bubA}>Bonjour ! Je connais votre projet <strong>{projetChat.nom}</strong>. Posez-moi vos questions sur le planning, le budget ou les normes.</div></div>
+            </div>
+            <div style={s.chips}>
+              {["Budget prévisionnel de ce projet", "Normes DTU applicables", "Planning des travaux"].map(label => (
+                <button key={label} style={s.chip} onClick={() => setProjetChatInput(label)}>{label}</button>
+              ))}
+            </div>
+          </>
+        )}
         {projetChatMsgs.map((m, i) => (
           <div key={i} style={m.role === "ai" ? s.msgA : s.msgU}>
             <div style={s.mav}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round">{m.role === "ai" ? <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> : <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>}</svg></div>

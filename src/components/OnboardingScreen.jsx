@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 
 const PROFILS_DATA = [
-  { key: "Particulier", icon: "🏠", label: "Particulier", sub: "Bricoleur amateur ou propriétaire" },
-  { key: "Artisan Pro", icon: "⚒️", label: "Artisan Pro", sub: "Professionnel du bâtiment" },
-  { key: "Architecte", icon: "📐", label: "Architecte", sub: "Maître d'œuvre ou concepteur" },
-  { key: "Investisseur", icon: "💰", label: "Investisseur", sub: "Investissement immobilier" },
+  { key: "Particulier", icon: "🏠", label: "Particulier", sub: "Bricoleur amateur ou propriétaire", desc: "Conseils simples et accessibles" },
+  { key: "Artisan Pro", icon: "⚒️", label: "Artisan Pro", sub: "Professionnel du bâtiment", desc: "Normes DTU et outils techniques" },
+  { key: "Architecte", icon: "📐", label: "Architecte", sub: "Maître d'œuvre ou concepteur", desc: "Conception et coordination" },
+  { key: "Investisseur", icon: "💰", label: "Investisseur", sub: "Investissement immobilier", desc: "ROI et valorisation" },
 ];
 
 function AnimatedCounter({ target, suffix = "" }) {
@@ -94,6 +94,7 @@ export default function OnboardingScreen() {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: userType === p.key ? "#C9A84C" : "#F0EDE6", fontFamily: "'Syne',sans-serif" }}>{p.label}</div>
                 <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", marginTop: 1 }}>{p.sub}</div>
+                <div style={{ fontSize: 9, color: "rgba(240,237,230,0.4)", marginTop: 2 }}>{p.desc}</div>
               </div>
               {userType === p.key && <div style={{ width: 20, height: 20, borderRadius: "50%", background: "linear-gradient(135deg,#EDD060,#C9A84C)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#06080D" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>

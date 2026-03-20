@@ -3,6 +3,7 @@ import { genererOutilPDF } from "../utils/pdf";
 import MesureAssistant from "./MesureAssistant";
 import ChecklistChantier from "./ChecklistChantier";
 import Tooltip from "./Tooltip";
+import { triggerToast } from "./Toast";
 import s from "../styles/index";
 
 export default function OutilsPage() {
@@ -46,7 +47,7 @@ export default function OutilsPage() {
 
         {toolTab === "devis" && <div>
           <div style={{ fontSize: 9, color: "#C9A84C", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Coller votre devis ici</div>
-          <textarea style={{ ...s.ci, width: "100%", minHeight: 160, borderRadius: 12, padding: "12px 14px", marginBottom: 10, lineHeight: 1.6 }} value={devisText} onChange={e => setDevisText(e.target.value)} placeholder={"Exemple :\nPose carrelage sol 12m\u00B2 gr\u00E8s c\u00E9rame 60\u00D760\nFourniture : 35\u20AC/m\u00B2 = 420\u20AC\nMain d'\u0153uvre : 55\u20AC/m\u00B2 = 660\u20AC\nTotal TTC : 1 080\u20AC"} />
+          <textarea style={{ ...s.ci, width: "100%", minHeight: 160, borderRadius: 12, padding: "12px 14px", marginBottom: 10, lineHeight: 1.6 }} value={devisText} onChange={e => setDevisText(e.target.value)} onPaste={() => triggerToast("✓ Devis collé")} placeholder="Collez ou décrivez votre devis ici..." />
           <button style={devisLoading ? { ...s.greenBtn, opacity: 0.5 } : s.greenBtn} onClick={analyserDevis} disabled={devisLoading}>{devisLoading ? "Analyse en cours..." : "\u{1F50D} Analyser le devis"}</button>
           {!devisResult && !devisLoading && <div style={{ fontSize: 10, color: "rgba(240,237,230,0.3)", marginTop: 20, textAlign: "center", padding: 16 }}>{"\u{1F4CA}"} L'IA vérifie les prix, la TVA, les anomalies et génère un contre-devis</div>}
           {devisResult && <div style={{ marginTop: 12 }}>
