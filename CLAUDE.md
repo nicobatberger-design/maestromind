@@ -1,4 +1,6 @@
-# MAESTROMIND — Instructions Claude Code
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 > Ce fichier est chargé automatiquement à chaque démarrage. Ne JAMAIS le supprimer.
 
@@ -18,82 +20,98 @@
 8. **Toujours builder avant de commit** — `npm run build` doit passer sans erreur.
 9. **Toujours tester** — `npx playwright test` doit passer (35+ tests).
 
-## Le projet MAESTROMIND
+## Commandes
 
-**App React 19 — IA bâtiment pour particuliers et artisans.**
-
-### Stack technique
-- React 19 + Vite 8 + HashRouter
-- Claude API (claude-sonnet-4-20250514) via proxy serverless
-- jsPDF (lazy loaded) pour les exports PDF
-- Stripe pour les paiements
-- Playwright pour les tests E2E
-- PWA (manifest, service worker, install prompt)
-
-### Hébergement (mars 2026)
-- **Frontend prod** : GitHub Pages → `nicobatberger-design.github.io/maestromind/`
-- **API proxy** : Vercel → `maestromind.vercel.app` (serverless functions)
-- **Repo** : `nicobatberger-design/maestromind` (privé)
-- **Netlify** : ABANDONNÉ (crédits épuisés)
-
-### Déploiement
-- Frontend : `npm run build` puis `npx gh-pages -d dist`
-- API : `npx vercel --prod --yes` (ou auto sur push master)
-
-### Architecture
-- 22 composants React dans `src/components/`
-- State global : `src/context/AppContext.jsx` (hub) + 4 hooks dédiés
-- 33 IA spécialisées dans `src/data/constants.js`
-- Styles inline centralisés dans `src/styles/index.js`
-- Code splitting avec React.lazy() sur toutes les pages
-- API backend : `api/anthropic.js`, `api/stripe-checkout.js`, `api/stripe-webhook.js`
-- Netlify functions en backup : `netlify/functions/`
-
-### Pages (8)
-Home, Coach (32 IA), Scanner, Shop, Cert (DTU), Outils (12 onglets), Projets, Dashboard
-
-### Outils (12 onglets)
-Devis, Matériaux, Primes, Artisan RGE, DPE, Planning, Devis Pro, Rentabilité, Béton, Escalier, Tuyauterie, Sécurité
-
-### Features clés
-- 33 IA spécialisées en 11 divisions
-- Input vocal (SpeechRecognition) + synthèse vocale (TTS)
-- Scanner photo IA (caméra native + vision API)
-- Contre-devis IA négocié
-- Certificats DTU PDF (jsPDF dark gold)
-- Simulateur DPE + aides 2026
-- Calcul matériaux avancé (50+ types de travaux, tous corps de métier)
-- Onboarding 5 écrans (plus de PIN bloquant)
-- Paywall doux (tous les 5 messages) + Stripe checkout
-- Streaming SSE temps réel sur tous les chats
-- Rating réponses IA
-- Dashboard PDG
-- PWA installable
-- Projets chantier + CR PDF
-- Mode Chantier (gros boutons)
-- Rappels chantier programmables
-
-### Commandes utiles
 ```bash
-npm run dev          # Dev server (port 5173)
-npm run build        # Build production
-npx vite preview     # Preview build (port 4173)
-npx playwright test  # Tests E2E (35+ tests)
-npx gh-pages -d dist # Déployer frontend
-npx vercel --prod    # Déployer API
+npm run dev                              # Dev server (port 5173)
+npm run build                            # Build production (OBLIGATOIRE avant commit)
+npm run lint                             # ESLint
+npx vite preview                         # Preview build locale (port 4173)
+npx playwright test                      # Tous les tests E2E (35+)
+npx playwright test tests/03-coach.spec.js  # Un seul fichier de test
+npx playwright test -g "nom du test"     # Un seul test par nom
+npx gh-pages -d dist                     # Déployer frontend (GitHub Pages)
+npx vercel --prod --yes                  # Déployer API (Vercel)
 ```
 
+**Tests** : Les tests Playwright tournent contre `vite preview` (port 4173) avec un viewport mobile 390×844. Toujours faire `npm run build` avant de lancer les tests. Les 7 fichiers de test sont numérotés : `01-onboarding`, `02-navigation`, `03-coach`, `04-outils`, `05-projets`, `06-scanner`, `07-pwa`.
+
+## Architecture
+
+### Vue d'ensemble
+App React 19 — IA bâtiment pour particuliers et artisans. PWA installable, dark mode gold, glassmorphism.
+
+### Stack
+- React 19 + Vite 8 + HashRouter (pas BrowserRouter — GitHub Pages)
+- Claude API (`claude-sonnet-4-20250514`) via proxy serverless Vercel
+- jsPDF (lazy loaded) pour exports PDF
+- Stripe pour paiements
+- Playwright pour tests E2E
+- PWA via `vite-plugin-pwa` (service worker Workbox)
+
+### Data flow — comment une requête IA circule
+1. Composant (ex: `CoachPage`) appelle `send()` depuis `AppContext`
+2. `AppContext` construit le body avec le prompt système de l'IA sélectionnée (`IAS[key].sys` dans `src/data/constants.js`)
+3. `streamChat()` dans `src/utils/api.js` fait un fetch SSE vers `apiURL()` :
+   - **Dev** : directement `api.anthropic.com` avec clé locale
+   - **Prod** : proxy `maestromind.vercel.app/api/anthropic` (serverless function dans `api/anthropic.js`)
+4. Les tokens arrivent en streaming et mettent à jour le state via `onToken`
+
+### Structure des fichiers clés
+
+```
+src/
+├── main.jsx                  # Point d'entrée : HashRouter + ErrorBoundary
+├── App.jsx                   # Code splitting (React.lazy) de toutes les pages
+├── context/
+│   ├── AppContext.jsx         # Hub state global : navigation, chat, IA, envoi API
+│   ├── useUserState.js        # Profil utilisateur, onboarding, préférences
+│   ├── useChatState.js        # Historique chat, messages, streaming
+│   ├── useToolsState.js       # État des 12 onglets outils
+│   ├── useDiagnosticState.js  # Scanner et diagnostics photo
+│   └── useAuthState.js        # Authentification Supabase
+├── data/
+│   ├── constants.js           # 33+ IAs avec prompts systèmes dédiés (IAS object)
+│   └── index.js               # Bases de données locales (prix, DTU, etc.)
+├── utils/
+│   ├── api.js                 # apiURL(), apiHeaders(), streamChat(), withRetry()
+│   ├── pdf.js                 # Export PDF (jsPDF) — certificats, devis, CR
+│   ├── tts.js                 # Synthèse vocale
+│   ├── stripe.js              # Checkout Stripe
+│   ├── geolocation.js         # Géoloc contextuelle
+│   ├── databases.js           # Accès bases de données enrichies
+│   └── supabase.js            # Client Supabase
+├── styles/
+│   └── index.js               # Tous les styles inline centralisés (objet `s`)
+├── components/                # 26 composants (pages + UI)
+api/                           # Serverless functions Vercel
+├── anthropic.js               # Proxy Claude API
+├── stripe-checkout.js         # Création session Stripe
+└── stripe-webhook.js          # Webhook Stripe
+tests/                         # 7 fichiers Playwright E2E
+```
+
+### Pages (10)
+Home, Coach (33 IA), Scanner, Shop, Cert (DTU), Outils (12 onglets), Projets, Dashboard, Auth, Settings
+
+### Navigation
+Pas de React Router classique — navigation gérée manuellement dans `AppContext` via `page` state + `goPage()`. Les routes (`ROUTE_TO_PAGE`/`PAGE_TO_ROUTE`) synchronisent l'URL mais le rendu est conditionnel dans `App.jsx` (tous les composants sont montés, visibilité contrôlée par CSS).
+
+### Styles
+Pas de CSS modules ni styled-components. Tout est dans `src/styles/index.js` comme objet JS exporté `s`. Utiliser `style={s.xxx}` dans les composants.
+
+### Ajout d'une nouvelle IA
+Ajouter une entrée dans `IAS` dans `src/data/constants.js` avec : `name`, `division`, `rang`, `st` (sous-titre), `color`, `sys` (prompt système complet), `chips` (suggestions particulier), `chipsPro` (suggestions pro).
+
+### Hébergement
+- **Frontend prod** : GitHub Pages → `nicobatberger-design.github.io/maestromind/`
+- **API proxy** : Vercel → `maestromind.vercel.app` (serverless functions)
+- **Netlify** : ABANDONNÉ (crédits épuisés) — ne jamais proposer
+
 ### Design tokens
-- Background : `#06080D`
-- Gold accent : `#C9A84C`
-- Gradient gold : `linear-gradient(135deg,#EDD060,#C9A84C,#7A6030)`
-- Text : `#F0EDE6`
-- Green : `#52C37A`
-- Orange : `#E8873A`
-- Red : `#E05252`
-- Blue : `#5290E0`
-- Font titre : Syne (700-800)
-- Font body : DM Sans (300-500)
+- Background : `#06080D` · Gold : `#C9A84C` · Gradient gold : `linear-gradient(135deg,#EDD060,#C9A84C,#7A6030)`
+- Text : `#F0EDE6` · Green : `#52C37A` · Orange : `#E8873A` · Red : `#E05252` · Blue : `#5290E0`
+- Font titre : Syne (700-800) · Font body : DM Sans (300-500)
 - Style : Glassmorphism dark mode gold
 
 ## Au démarrage de chaque conversation
