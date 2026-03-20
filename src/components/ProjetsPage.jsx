@@ -3,6 +3,7 @@ import { useApp } from "../context/AppContext";
 import { triggerToast } from "./Toast";
 import s from "../styles/index";
 import RappelsChantier from "./RappelsChantier";
+import CarnetArtisans from "./CarnetArtisans";
 
 const TAG_COLORS = { Avant: "#5290E0", Pendant: "#E8873A", "Après": "#52C37A" };
 const TAGS = ["Avant", "Pendant", "Après"];
@@ -358,6 +359,7 @@ export default function ProjetsPage() {
         </div>)}
 
         <RappelsChantier />
+        <CarnetArtisans />
       </div>
 
       {/* === MODAL PHOTO PLEIN ECRAN === */}

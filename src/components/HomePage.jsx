@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { PROFILS } from "../data/constants";
+import { getContexteLocal, resumeMeteo } from "../utils/geolocation";
 import s from "../styles/index";
 
 function getGreeting() {
@@ -28,8 +29,18 @@ export default function HomePage() {
   const { page, goPage, userType, startUrgence, setToolTab, crJournalierLoading, showCRJournalier, setShowCRJournalier, crJournalierResult, genererCRJournalier } = useApp();
   const [lastProject, setLastProject] = useState(getLastProject);
   const [showUrgence, setShowUrgence] = useState(false);
+  const [geoContexte, setGeoContexte] = useState(null);
+  const [geoLoading, setGeoLoading] = useState(false);
 
   useEffect(() => { if (page === "home") setLastProject(getLastProject()); }, [page]);
+
+  const chargerMeteo = useCallback(async () => {
+    setGeoLoading(true);
+    try {
+      const ctx = await getContexteLocal();
+      if (!ctx.error) setGeoContexte(ctx);
+    } catch {} finally { setGeoLoading(false); }
+  }, []);
 
   const tip = TIPS[new Date().getDay() % TIPS.length];
 
@@ -89,6 +100,62 @@ export default function HomePage() {
           <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{tip.title}</div>
           <div style={{ fontSize: 11, color: "rgba(240,237,230,0.45)", lineHeight: 1.5 }}>{tip.text}</div>
         </div>
+      </div>
+
+      {/* ── Météo chantier géolocalisée ── */}
+      <div style={{ padding: "0 20px 12px" }}>
+        {!geoContexte && !geoLoading && (
+          <button onClick={chargerMeteo} className="liquid-glass" style={{ width: "100%", borderRadius: 14, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, border: "0.5px solid rgba(82,144,224,0.15)" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5290E0" strokeWidth="1.8" strokeLinecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>Météo chantier</div>
+              <div style={{ fontSize: 9, color: "rgba(240,237,230,0.35)" }}>Prévisions 3 jours + alertes BTP</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(240,237,230,0.15)" strokeWidth="2" strokeLinecap="round" style={{ marginLeft: "auto" }}><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        )}
+        {geoLoading && (
+          <div style={{ textAlign: "center", padding: 12, fontSize: 11, color: "rgba(240,237,230,0.35)" }}>Géolocalisation en cours...</div>
+        )}
+        {geoContexte && geoContexte.meteo && (() => {
+          const jours = resumeMeteo(geoContexte.meteo);
+          if (!jours) return null;
+          return (
+            <div className="liquid-glass" style={{ borderRadius: 14, padding: "14px 16px", border: "0.5px solid rgba(82,144,224,0.12)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5290E0" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/></svg>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: "#5290E0", letterSpacing: 1.5 }}>MÉTÉO CHANTIER</span>
+                </div>
+                <span style={{ fontSize: 9, color: "rgba(240,237,230,0.25)" }}>{geoContexte.ville}</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                {jours.map((j, i) => (
+                  <div key={i} style={{ textAlign: "center", padding: "8px 4px", borderRadius: 10, background: j.ok ? "rgba(82,195,122,0.06)" : "rgba(224,82,82,0.06)", border: "0.5px solid " + (j.ok ? "rgba(82,195,122,0.15)" : "rgba(224,82,82,0.15)") }}>
+                    <div style={{ fontSize: 9, color: "rgba(240,237,230,0.4)", fontWeight: 600 }}>{j.date}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: j.ok ? "#52C37A" : "#E05252", fontFamily: "'Syne',sans-serif" }}>{j.tMax}°</div>
+                    <div style={{ fontSize: 8, color: "rgba(240,237,230,0.3)" }}>{j.tMin}° min</div>
+                    {j.pluie > 0 && <div style={{ fontSize: 8, color: "#5290E0", marginTop: 2 }}>💧 {j.pluie}mm</div>}
+                    {j.vent > 40 && <div style={{ fontSize: 8, color: "#E8873A", marginTop: 1 }}>💨 {j.vent}km/h</div>}
+                    <div style={{ fontSize: 7, marginTop: 3, color: j.ok ? "#52C37A" : "#E05252", fontWeight: 700 }}>{j.ok ? "✓ OK" : "⚠ Alerte"}</div>
+                  </div>
+                ))}
+              </div>
+              {jours.some(j => j.alertes.length > 0) && (
+                <div style={{ marginTop: 8 }}>
+                  {jours.filter(j => j.alertes.length > 0).slice(0, 2).map((j, i) => (
+                    <div key={i} style={{ fontSize: 9, color: "#E8873A", padding: "2px 0" }}>⚠ {j.date} : {j.alertes[0]}</div>
+                  ))}
+                </div>
+              )}
+              {geoContexte.prixM2 && (
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: "0.5px solid rgba(255,255,255,0.04)", fontSize: 10, color: "rgba(240,237,230,0.4)" }}>
+                  Prix moyen : <strong style={{ color: "#C9A84C" }}>{geoContexte.prixM2.prixMoyenM2} €/m²</strong> ({geoContexte.prixM2.nbTransactions} ventes)
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Outils (liste compacte) ── */}
