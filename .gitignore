@@ -35,3 +35,8 @@ skills-lock.json
 
 .vercel
 .netlify/
+
+# Test artifacts
+test-results/
+screenshots/
+screenshot-*.png
