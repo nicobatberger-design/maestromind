@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { IAS, DIVISIONS } from "../data/constants";
+import Tooltip from "./Tooltip";
 import s from "../styles/index";
 
 // Format AI text: bold, numbered lists, titles, prices in color
@@ -91,10 +92,13 @@ export default function CoachPage() {
             </button>}
           </div>
         </div>
-        <div style={s.divSel}>
-          {Object.entries(DIVISIONS).map(([div, info]) => (
-            <button key={div} style={curDiv === div ? { ...s.divPill, background: info.color + "22", color: info.color, border: "0.5px solid " + info.color + "66" } : s.divPill} onClick={() => switchDiv(div)}>{div}</button>
-          ))}
+        <div style={{ position: "relative" }}>
+          <div style={s.divSel}>
+            {Object.entries(DIVISIONS).map(([div, info]) => (
+              <button key={div} style={curDiv === div ? { ...s.divPill, background: info.color + "22", color: info.color, border: "0.5px solid " + info.color + "66" } : s.divPill} onClick={() => switchDiv(div)}>{div}</button>
+            ))}
+          </div>
+          <Tooltip id="coach-divisions" text="Choisissez une division IA spécialisée ici" />
         </div>
         <div style={s.iaSel}>
           {DIVISIONS[curDiv].ias.map(k => (

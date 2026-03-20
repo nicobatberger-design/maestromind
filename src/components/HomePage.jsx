@@ -158,6 +158,23 @@ export default function HomePage() {
           </div>
         ))}
       </div>
+      <div style={s.secLbl}>Pas sûr par où commencer ?</div>
+      <div style={{ padding: "0 16px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+        {[
+          { emoji: "\u{1F4F8}", title: "J'ai un problème", sub: "Photographiez-le \u2192 diagnostic IA instantané", action: () => goPage("scanner") },
+          { emoji: "\u{1F4C4}", title: "J'ai un devis", sub: "Collez-le \u2192 analyse prix et anomalies", action: () => { goPage("outils"); setToolTab("devis"); } },
+          { emoji: "\u{1F4AC}", title: "J'ai une question", sub: "Posez-la \u2192 33 IA spécialisées répondent", action: () => goPage("coach") },
+        ].map((item, i) => (
+          <div key={i} className="bl-fc" onClick={item.action} style={{ ...s.card, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", padding: "14px 16px" }}>
+            <div style={{ fontSize: 24, flexShrink: 0 }}>{item.emoji}</div>
+            <div>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{item.title}</div>
+              <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>{item.sub}</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.4)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginLeft: "auto" }}><polyline points="9 18 15 12 9 6" /></svg>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

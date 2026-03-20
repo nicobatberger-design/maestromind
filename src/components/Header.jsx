@@ -1,9 +1,35 @@
+import { useState, useRef, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { PROFILS } from "../data/constants";
 import s from "../styles/index";
 
 export default function Header() {
-  const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, theme, setTheme, modeChantier, setModeChantier } = useApp();
+  const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, theme, setTheme, modeChantier, setModeChantier, pdgUnlocked, setShowPinOverlay, setPinInput, setPinError } = useApp();
+
+  // Easter egg: 5 rapid clicks on logo to show PIN overlay
+  const [logoClicks, setLogoClicks] = useState(0);
+  const lastClickTime = useRef(0);
+
+  const handleLogoClick = useCallback(() => {
+    if (pdgUnlocked) return; // Already unlocked, no need
+    const now = Date.now();
+    if (now - lastClickTime.current > 3000) {
+      // Reset if more than 3 seconds since last click
+      setLogoClicks(1);
+    } else {
+      setLogoClicks(prev => {
+        const next = prev + 1;
+        if (next >= 5) {
+          setPinInput("");
+          setPinError("");
+          setShowPinOverlay(true);
+          return 0;
+        }
+        return next;
+      });
+    }
+    lastClickTime.current = now;
+  }, [pdgUnlocked, setShowPinOverlay, setPinInput, setPinError]);
 
   return (
     <>
@@ -25,7 +51,7 @@ export default function Header() {
       )}
 
       <div style={s.hdr}>
-        <div style={s.logo}>
+        <div style={s.logo} onClick={handleLogoClick}>
           <div style={s.logoBox}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#080A0F" strokeWidth="2.2" strokeLinecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
           </div>
@@ -44,9 +70,11 @@ export default function Header() {
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title={theme === "dark" ? "Mode clair" : "Mode sombre"} style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>
             {theme === "dark" ? "\u2600\uFE0F" : "\uD83C\uDF19"}
           </button>
-          <button onClick={() => goPage("dashboard")} title="Dashboard PDG" style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
-          </button>
+          {pdgUnlocked && (
+            <button onClick={() => goPage("dashboard")} title="Dashboard PDG" style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+            </button>
+          )}
         </div>
       </div>
     </>

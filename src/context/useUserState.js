@@ -30,6 +30,7 @@ export function useUserState() {
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [userType, setUserType] = useState(() => localStorage.getItem("bl_user_type") || "Particulier");
   const [pdgUnlocked, setPdgUnlocked] = useState(false);
+  const [showPinOverlay, setShowPinOverlay] = useState(false);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
 
@@ -59,7 +60,7 @@ export function useUserState() {
     setPinError("");
     if (np.length === 6) {
       hashPin(np).then(hash => {
-        if (hash === PDG_PIN_HASH) { setPdgUnlocked(true); }
+        if (hash === PDG_PIN_HASH) { setPdgUnlocked(true); setShowPinOverlay(false); }
         else { setTimeout(() => { setPinInput(""); setPinError("Code incorrect \u2014 r\u00e9essayez"); }, 400); }
       });
     }
@@ -75,7 +76,7 @@ export function useUserState() {
     onboardingDone, setOnboardingDone,
     onboardingStep, setOnboardingStep,
     userType, setUserType,
-    pdgUnlocked, pinInput, pinError,
+    pdgUnlocked, showPinOverlay, setShowPinOverlay, pinInput, setPinInput, pinError, setPinError,
     profilIA, profilPDFLabel,
     handlePin, handlePinDel,
     modeChantier, setModeChantier,

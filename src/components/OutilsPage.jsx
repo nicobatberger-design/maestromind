@@ -1,6 +1,7 @@
 import { useApp } from "../context/AppContext";
 import { genererOutilPDF } from "../utils/pdf";
 import MesureAssistant from "./MesureAssistant";
+import Tooltip from "./Tooltip";
 import s from "../styles/index";
 
 export default function OutilsPage() {
@@ -31,10 +32,13 @@ export default function OutilsPage() {
       <div style={s.wrap}>
         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 3 }}>Outils IA</div>
         <div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 12 }}>Devis · Matériaux · Primes · Artisans · DPE</div>
-        <div style={{ display: "flex", gap: 5, marginBottom: 16, overflowX: "auto", scrollbarWidth: "none" }}>
-          {[["devis", "Devis"], ["mat", "Matériaux"], ["primes", "Primes"], ["rge", "Artisan RGE"], ["dpe", "DPE"], ["planning", "Planning"], ["devis_pro", "Devis Pro"], ["rentabilite", "Rentabilité"], ["beton", "Béton"], ["escalier", "Escalier"], ["tuyau", "Tuyauterie"], ["securite", "Sécurité"]].map(([k, l]) => (
-            <button key={k} onClick={() => setToolTab(k)} style={{ flexShrink: 0, padding: "6px 13px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: "none", background: toolTab === k ? "linear-gradient(135deg,#EDD060,#C9A84C,#9A7228)" : "rgba(15,19,28,0.7)", color: toolTab === k ? "#06080D" : "rgba(240,237,230,0.5)", transition: "all 0.2s" }}>{l}</button>
-          ))}
+        <div style={{ position: "relative" }}>
+          <div style={{ display: "flex", gap: 5, marginBottom: 16, overflowX: "auto", scrollbarWidth: "none" }}>
+            {[["devis", "Devis"], ["mat", "Matériaux"], ["primes", "Primes"], ["rge", "Artisan RGE"], ["dpe", "DPE"], ["planning", "Planning"], ["devis_pro", "Devis Pro"], ["rentabilite", "Rentabilité"], ["beton", "Béton"], ["escalier", "Escalier"], ["tuyau", "Tuyauterie"], ["securite", "Sécurité"]].map(([k, l]) => (
+              <button key={k} onClick={() => setToolTab(k)} style={{ flexShrink: 0, padding: "6px 13px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: "none", background: toolTab === k ? "linear-gradient(135deg,#EDD060,#C9A84C,#9A7228)" : "rgba(15,19,28,0.7)", color: toolTab === k ? "#06080D" : "rgba(240,237,230,0.5)", transition: "all 0.2s" }}>{l}</button>
+            ))}
+          </div>
+          <Tooltip id="outils-tabs" text="Collez un devis, calculez des matériaux ou simulez vos aides" />
         </div>
 
         {toolTab === "devis" && <div>

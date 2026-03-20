@@ -1,13 +1,22 @@
 import { useApp } from "../context/AppContext";
 import s from "../styles/index";
 
-export default function PinScreen() {
-  const { pinInput, pinError, handlePin, handlePinDel } = useApp();
+export default function PinScreen({ overlay }) {
+  const { pinInput, pinError, handlePin, handlePinDel, setShowPinOverlay } = useApp();
+
+  const containerStyle = overlay
+    ? { position: "fixed", inset: 0, zIndex: 1000, display: "flex", flexDirection: "column", maxWidth: 430, margin: "0 auto", background: "rgba(6,8,13,0.95)", color: "#F0EDE6", fontFamily: "'DM Sans',sans-serif", alignItems: "center", justifyContent: "center", padding: "0 32px", overflow: "hidden", backdropFilter: "blur(12px)" }
+    : { display: "flex", flexDirection: "column", height: "100vh", maxWidth: 430, margin: "0 auto", background: "#06080D", color: "#F0EDE6", fontFamily: "'DM Sans',sans-serif", alignItems: "center", justifyContent: "center", padding: "0 32px", position: "relative", overflow: "hidden" };
 
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
-      <div style={{ display: "flex", flexDirection: "column", height: "100vh", maxWidth: 430, margin: "0 auto", background: "#06080D", color: "#F0EDE6", fontFamily: "'DM Sans',sans-serif", alignItems: "center", justifyContent: "center", padding: "0 32px", position: "relative", overflow: "hidden" }}>
+      <div style={containerStyle}>
+        {overlay && (
+          <button onClick={() => setShowPinOverlay(false)} style={{ position: "absolute", top: 16, right: 16, background: "rgba(240,237,230,0.08)", border: "0.5px solid rgba(240,237,230,0.15)", borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(240,237,230,0.5)", fontSize: 18, zIndex: 1001 }}>
+            {"\u2715"}
+          </button>
+        )}
         <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle,rgba(201,168,76,0.1) 0%,transparent 68%)", pointerEvents: "none" }} />
         <div style={{ width: 72, height: 72, background: "linear-gradient(135deg,#EDD060,#C9A84C,#7A6030)", borderRadius: 22, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, boxShadow: "0 4px 32px rgba(201,168,76,0.4), inset 0 1px 0 rgba(255,255,255,0.25)" }}>
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#080A0F" strokeWidth="2" strokeLinecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>

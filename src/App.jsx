@@ -32,11 +32,10 @@ function LazyFallback() {
 }
 
 function AppContent() {
-  const { onboardingDone, pdgUnlocked, theme, modeChantier } = useApp();
+  const { onboardingDone, showPinOverlay, theme, modeChantier } = useApp();
   const { toast, dismissToast } = useRappelsToast();
 
   if (!onboardingDone) return <OnboardingScreen />;
-  if (!pdgUnlocked) return <PinScreen />;
 
   return (
     <>
@@ -69,6 +68,8 @@ function AppContent() {
         <RgpdBanner />
         <InstallPrompt />
       </Suspense>
+
+      {showPinOverlay && <PinScreen overlay />}
     </>
   );
 }
