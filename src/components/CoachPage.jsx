@@ -26,7 +26,7 @@ function formatAIText(text) {
 
 export default function CoachPage() {
   const {
-    page, goPage, curDiv, curIA, msgs, setMsgs, hist, setHist, input, setInput, loading, errMsg,
+    page, goPage, curDiv, curIA, msgs, setMsgs, hist, setHist, input, setInput, loading, errMsg, setErrMsg,
     userType, voiceActive, msgCount, isPremium, autoVoice,
     msgsRef, chips,
     switchDiv, switchIA, send, sendWithPhoto, rateMsg,
@@ -158,7 +158,12 @@ export default function CoachPage() {
             </div>
           ))}
         </div>
-        {errMsg && <div style={s.errBox}>{errMsg}</div>}
+        {errMsg && <div style={{ ...s.errBox, position: "relative", display: "flex", flexDirection: "column", gap: 6 }}>
+          <button onClick={() => setErrMsg("")} style={{ position: "absolute", top: 6, right: 8, background: "none", border: "none", color: "rgba(240,237,230,0.4)", fontSize: 14, cursor: "pointer", lineHeight: 1 }}>✕</button>
+          <div style={{ fontWeight: 700, fontSize: 11, color: "#E05252" }}>Erreur {IAS[curIA]?.name}</div>
+          <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)" }}>{errMsg}</div>
+          <button onClick={send} style={{ alignSelf: "flex-start", background: "transparent", border: "1px solid #C9A84C", borderRadius: 20, padding: "4px 14px", fontSize: 11, color: "#C9A84C", cursor: "pointer", fontWeight: 600, marginTop: 2 }}>↻ Réessayer</button>
+        </div>}
         {msgs.length <= 1 && (
           <div className="stagger-enter" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
             {[

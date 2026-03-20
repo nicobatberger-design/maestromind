@@ -10,6 +10,9 @@ export default function DashboardPage() {
   const [editPrompt, setEditPrompt] = useState("");
   const [customPrompts, setCustomPrompts] = useState({});
 
+  const [trends, setTrends] = useState({});
+  const [recentConvs, setRecentConvs] = useState([]);
+
   useEffect(() => {
     if (page !== "dashboard") return;
     // Collecter les stats depuis localStorage
@@ -31,6 +34,41 @@ export default function DashboardPage() {
     Object.keys(IAS).forEach(k => {
       try { const c = JSON.parse(localStorage.getItem("mm_chat_" + k) || "[]"); if (c.length > 1) { convCount++; totalMsgs += c.length; } } catch {}
     });
+
+    const currentStats = { msgCount, satisfaction, convCount, projetsCount: projets.length };
+
+    // Tendances vs dernier snapshot
+    try {
+      const prev = JSON.parse(localStorage.getItem("mm_dash_snapshot") || "null");
+      if (prev) {
+        const t = {};
+        for (const k of Object.keys(currentStats)) {
+          if (currentStats[k] > prev[k]) t[k] = "up";
+          else if (currentStats[k] < prev[k]) t[k] = "down";
+        }
+        setTrends(t);
+      }
+    } catch {}
+    localStorage.setItem("mm_dash_snapshot", JSON.stringify(currentStats));
+
+    // Dernière activité — 3 conversations les plus récentes
+    const convs = [];
+    const chatPrefixes = ["bl_chat_", "mm_chat_"];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!chatPrefixes.some(p => key.startsWith(p))) continue;
+      try {
+        const msgs = JSON.parse(localStorage.getItem(key) || "[]");
+        if (!Array.isArray(msgs) || msgs.length < 2) continue;
+        const lastMsg = msgs[msgs.length - 1];
+        const iaKey = key.replace("bl_chat_", "").replace("mm_chat_", "");
+        const text = lastMsg.text || lastMsg.content || "";
+        const ts = lastMsg.ts || lastMsg.timestamp || Date.now();
+        convs.push({ iaKey, text: text.slice(0, 30), ts });
+      } catch {}
+    }
+    convs.sort((a, b) => b.ts - a.ts);
+    setRecentConvs(convs.slice(0, 3));
 
     setStats({ msgCount, positives, negatives, satisfaction, topIAs, convCount, totalMsgs, projetsCount: projets.length });
     setCustomPrompts(getCustomPrompts());
@@ -58,9 +96,28 @@ export default function DashboardPage() {
 
   if (!stats) return null;
 
-  const StatCard = ({ label, value, color = "#C9A84C", sub }) => (
+  const isEmpty = stats.msgCount === 0 && stats.convCount === 0 && stats.projetsCount === 0;
+
+  const relativeDate = (ts) => {
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "à l'instant";
+    if (mins < 60) return "il y a " + mins + "min";
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return "il y a " + hrs + "h";
+    const days = Math.floor(hrs / 24);
+    if (days === 1) return "hier";
+    if (days < 7) return "il y a " + days + "j";
+    return "il y a " + Math.floor(days / 7) + " sem.";
+  };
+
+  const StatCard = ({ label, value, color = "#C9A84C", sub, trend }) => (
     <div style={{ ...s.sc, textAlign: "left", padding: "14px 16px" }}>
-      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, color }}>{value}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, color }}>{value}</div>
+        {trend === "up" && <span style={{ fontSize: 14, color: "#52C37A", fontWeight: 700 }}>↑</span>}
+        {trend === "down" && <span style={{ fontSize: 14, color: "#E05252", fontWeight: 700 }}>↓</span>}
+      </div>
       <div style={{ fontSize: 10, color: "rgba(240,237,230,0.5)", marginTop: 3 }}>{label}</div>
       {sub && <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", marginTop: 2 }}>{sub}</div>}
     </div>
@@ -72,11 +129,18 @@ export default function DashboardPage() {
         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 3 }}>Dashboard PDG</div>
         <div style={{ fontSize: 11, color: "rgba(240,237,230,0.5)", marginBottom: 16 }}>Métriques d'usage — {userType}</div>
 
+        {isEmpty && (
+          <div style={{ ...s.card, textAlign: "center", padding: "32px 20px", marginBottom: 16 }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 12 }}><path d="M3 3v18h18"/><path d="M18 9l-5 5-2-2-4 4"/></svg>
+            <div style={{ fontSize: 13, color: "rgba(240,237,230,0.6)", lineHeight: 1.6 }}>Commencez à utiliser MAESTROMIND pour voir vos statistiques ici.</div>
+          </div>
+        )}
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
-          <StatCard label="Messages envoyés" value={stats.msgCount} />
-          <StatCard label="Satisfaction" value={stats.satisfaction + "%"} color={stats.satisfaction >= 70 ? "#52C37A" : stats.satisfaction >= 40 ? "#E8873A" : "#E05252"} sub={stats.positives + " \u{1F44D} / " + stats.negatives + " \u{1F44E}"} />
-          <StatCard label="Conversations" value={stats.convCount} color="#5290E0" sub={stats.totalMsgs + " messages total"} />
-          <StatCard label="Projets actifs" value={stats.projetsCount} color="#52C37A" />
+          <StatCard label="Messages envoyés" value={stats.msgCount} trend={trends.msgCount} />
+          <StatCard label="Satisfaction" value={stats.satisfaction + "%"} color={stats.satisfaction >= 70 ? "#52C37A" : stats.satisfaction >= 40 ? "#E8873A" : "#E05252"} sub={stats.positives + " \u{1F44D} / " + stats.negatives + " \u{1F44E}"} trend={trends.satisfaction} />
+          <StatCard label="Conversations" value={stats.convCount} color="#5290E0" sub={stats.totalMsgs + " messages total"} trend={trends.convCount} />
+          <StatCard label="Projets actifs" value={stats.projetsCount} color="#52C37A" trend={trends.projetsCount} />
         </div>
 
         {stats.topIAs.length > 0 && <>
@@ -91,6 +155,20 @@ export default function DashboardPage() {
               <div style={{ height: 6, width: 60, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                 <div style={{ width: Math.round((count / stats.topIAs[0][1]) * 100) + "%", height: "100%", borderRadius: 3, background: IAS[ia]?.color || "#C9A84C" }} />
               </div>
+            </div>
+          ))}
+        </>}
+
+        {recentConvs.length > 0 && <>
+          <div style={{ fontSize: 9, color: "#C9A84C", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginTop: 16, marginBottom: 10 }}>Dernière activité</div>
+          {recentConvs.map((c, i) => (
+            <div key={i} style={{ ...s.card, marginBottom: 7, display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: (IAS[c.iaKey]?.color || "#C9A84C") + "22", border: "0.5px solid " + (IAS[c.iaKey]?.color || "#C9A84C") + "44", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>{IAS[c.iaKey]?.icon || "\u{1F4AC}"}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: IAS[c.iaKey]?.color || "#C9A84C" }}>{IAS[c.iaKey]?.name || c.iaKey}</div>
+                <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.text || "..."}</div>
+              </div>
+              <div style={{ fontSize: 9, color: "rgba(240,237,230,0.3)", flexShrink: 0, whiteSpace: "nowrap" }}>{relativeDate(c.ts)}</div>
             </div>
           ))}
         </>}

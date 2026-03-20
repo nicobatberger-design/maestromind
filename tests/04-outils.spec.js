@@ -27,19 +27,19 @@ test.describe("Outils IA", () => {
   });
 
   test("onglet Matériaux cliquable", async ({ page }) => {
-    await page.getByRole("button", { name: "Matériaux" }).first().click();
+    await page.getByRole("button", { name: "Matériaux", exact: true }).click();
     await page.waitForTimeout(800);
     await expect(page.getByText("Calculer", { exact: false }).first()).toBeVisible();
   });
 
   test("onglet Primes cliquable", async ({ page }) => {
-    await page.getByRole("button", { name: "Primes" }).click();
+    await page.getByRole("button", { name: "Primes", exact: true }).click();
     await page.waitForTimeout(800);
     await expect(page.getByText("Calculer mes aides", { exact: false }).first()).toBeVisible();
   });
 
   test("onglet Artisan RGE cliquable", async ({ page }) => {
-    await page.getByRole("button", { name: "Artisan RGE" }).click();
+    await page.getByRole("button", { name: "Artisan RGE", exact: true }).click();
     await page.waitForTimeout(800);
     await expect(page.getByText("Vérifier", { exact: false }).first()).toBeVisible();
   });

@@ -373,6 +373,12 @@ button:active:not(.bl-pin) {
   transform: translateX(100%);
 }
 
+/* ── Focus visible (accessibilité clavier) ── */
+button:focus-visible, [role="button"]:focus-visible, a:focus-visible {
+  outline: 2px solid rgba(201,168,76,0.6);
+  outline-offset: 2px;
+}
+
 /* ── Input focus glow (rim light doré subtil) ── */
 input:focus, textarea:focus, select:focus {
   border-color: rgba(201,168,76,0.35) !important;

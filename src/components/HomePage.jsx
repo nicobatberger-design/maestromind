@@ -53,7 +53,7 @@ export default function HomePage() {
         <div className="gold-text" style={{ fontFamily: "'Syne',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.1, marginBottom: 20 }}>MAESTROMIND</div>
 
         {/* CTA principal */}
-        <button className="gold-btn" style={{ ...s.cta, borderRadius: 16, padding: "16px 20px", marginBottom: 0 }} onClick={() => goPage("coach")}>
+        <button className="gold-btn" style={{ ...s.cta, borderRadius: 16, padding: "16px 20px", marginBottom: 0 }} onClick={() => goPage("coach")} aria-label="Posez votre question au coach IA">
           <span style={{ fontSize: 14 }}>Posez votre question</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
         </button>
@@ -66,7 +66,7 @@ export default function HomePage() {
           { label: "Devis", sub: "Vérifier les prix", color: "#E8873A", action: () => { goPage("outils"); setToolTab("devis"); }, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8873A" strokeWidth="1.8" strokeLinecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> },
           { label: "Matériaux", sub: "Calculer", color: "#52C37A", action: () => { goPage("outils"); setToolTab("mat"); }, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#52C37A" strokeWidth="1.8" strokeLinecap="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg> },
         ].map((a, i) => (
-          <div key={i} className="liquid-glass" onClick={a.action} style={{ borderRadius: 14, padding: "14px 8px", cursor: "pointer", textAlign: "center", border: "0.5px solid " + a.color + "1A" }}>
+          <div key={i} className="liquid-glass" onClick={a.action} role="button" tabIndex={0} aria-label={a.label + " — " + a.sub} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); a.action(); } }} style={{ borderRadius: 14, padding: "14px 8px", cursor: "pointer", textAlign: "center", border: "0.5px solid " + a.color + "1A" }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: a.color + "10", border: "0.5px solid " + a.color + "25", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>{a.icon}</div>
             <div style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Syne',sans-serif" }}>{a.label}</div>
             <div style={{ fontSize: 9, color: "rgba(240,237,230,0.35)", marginTop: 1 }}>{a.sub}</div>
@@ -77,7 +77,7 @@ export default function HomePage() {
       {/* ── Dernier projet ── */}
       {lastProject && (
         <div style={{ padding: "0 20px 12px" }}>
-          <div onClick={() => goPage("projets")} className="liquid-glass" style={{ borderRadius: 14, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
+          <div onClick={() => goPage("projets")} role="button" tabIndex={0} aria-label="Voir le projet en cours" onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goPage("projets"); } }} className="liquid-glass" style={{ borderRadius: 14, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(139,92,246,0.1)", border: "0.5px solid rgba(139,92,246,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             </div>
@@ -167,7 +167,7 @@ export default function HomePage() {
           { label: "Certificat DTU", sub: "PDF de conformité", color: "#C9A84C", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>, action: () => goPage("cert") },
           { label: "Boutique", sub: "Matériaux partenaires", color: "#C9A84C", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>, action: () => goPage("shop") },
         ].map((t, i) => (
-          <div key={i} onClick={t.action} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", cursor: "pointer", borderBottom: i < 3 ? "0.5px solid rgba(255,255,255,0.04)" : "none" }}>
+          <div key={i} onClick={t.action} role="button" tabIndex={0} aria-label={t.label + " — " + t.sub} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); t.action(); } }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", cursor: "pointer", borderBottom: i < 3 ? "0.5px solid rgba(255,255,255,0.04)" : "none" }}>
             <div style={{ width: 32, height: 32, borderRadius: 8, background: t.color + "10", border: "0.5px solid " + t.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{t.icon}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 500 }}>{t.label}</div>
@@ -188,7 +188,7 @@ export default function HomePage() {
         {showUrgence && (
           <div style={{ display: "flex", gap: 8, animation: "fadeSlideUp 0.25s ease-out" }}>
             {[["GAZ","#E05252"],["EAU","#5290E0"],["ÉLECTRICITÉ","#E8873A"]].map(([label, color]) => (
-              <button key={label} onClick={() => startUrgence(label)} style={{ flex: 1, padding: "10px 6px", borderRadius: 10, background: color + "0A", border: "0.5px solid " + color + "33", cursor: "pointer", fontSize: 10, fontWeight: 800, color, letterSpacing: 1, textAlign: "center" }}>{label}</button>
+              <button key={label} onClick={() => startUrgence(label)} aria-label={"Urgence " + label} style={{ flex: 1, padding: "10px 6px", borderRadius: 10, background: color + "0A", border: "0.5px solid " + color + "33", cursor: "pointer", fontSize: 10, fontWeight: 800, color, letterSpacing: 1, textAlign: "center" }}>{label}</button>
             ))}
           </div>
         )}
