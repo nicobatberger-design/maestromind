@@ -4,7 +4,7 @@ import { PROFILS } from "../data/constants";
 import s from "../styles/index";
 
 export default function Header({ onSearchClick }) {
-  const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, pdgUnlocked, setShowPinOverlay, setPinInput, setPinError } = useApp();
+  const { IS_DEV, showKey, keyInput, setKeyInput, keyErr, activerIA, userType, setUserType, setMsgs, setHist, goPage, pdgUnlocked, setShowPinOverlay, setPinInput, setPinError, modeChantier, setModeChantier } = useApp();
 
   // Profile dropdown
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -93,6 +93,11 @@ export default function Header({ onSearchClick }) {
           <button onClick={onSearchClick} title="Rechercher" style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
+          {userType === "Artisan Pro" && (
+            <button onClick={() => { const next = !modeChantier; setModeChantier(next); localStorage.setItem("mm_mode_chantier", next ? "1" : "0"); }} title={modeChantier ? "Désactiver mode chantier" : "Activer mode chantier"} style={{ fontSize: 12, padding: "4px 8px", borderRadius: 8, background: modeChantier ? "rgba(201,168,76,0.9)" : "transparent", border: "0.5px solid rgba(201,168,76,0.3)", color: modeChantier ? "#080A0F" : "rgba(240,237,230,0.6)", cursor: "pointer", fontWeight: 600, transition: "all 0.2s", flexShrink: 0 }}>
+              🏗️
+            </button>
+          )}
           <button onClick={() => goPage("settings")} title="Réglages" style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </button>

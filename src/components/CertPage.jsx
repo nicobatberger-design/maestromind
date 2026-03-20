@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import s from "../styles/index";
+import { triggerToast } from "./Toast";
 
 // Génère un ID court unique pour le certificat
 function certId() {
@@ -132,9 +133,16 @@ export default function CertPage() {
           </button>
         </div>
         {shareUrl && (
-          <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", borderRadius: 10, fontSize: 9, color: "rgba(240,237,230,0.5)", wordBreak: "break-all" }}>
-            {shareUrl}
-          </div>
+          <>
+            <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(82,144,224,0.06)", border: "0.5px solid rgba(82,144,224,0.2)", borderRadius: 10, fontSize: 9, color: "rgba(240,237,230,0.5)", wordBreak: "break-all" }}>
+              {shareUrl}
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              <button onClick={() => { navigator.clipboard.writeText(shareUrl).then(() => triggerToast("Lien copié")).catch(() => {}); }} style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 10, padding: "8px 4px", fontSize: 11, color: "rgba(240,237,230,0.7)", cursor: "pointer" }}>{"\uD83D\uDCCB"} Copier le lien</button>
+              <button onClick={() => { window.open("https://wa.me/?text=" + encodeURIComponent("Certificat DTU — " + certNorme.split("—")[0].trim() + " : " + shareUrl), "_blank"); }} style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 10, padding: "8px 4px", fontSize: 11, color: "rgba(240,237,230,0.7)", cursor: "pointer" }}>{"\uD83D\uDCF1"} WhatsApp</button>
+              <button onClick={() => { window.open("mailto:?subject=" + encodeURIComponent("Certificat DTU — " + certNorme.split("—")[0].trim()) + "&body=" + encodeURIComponent("Certificat de conformité MAESTROMIND\nProjet : " + (certProjet || "—") + "\nNorme : " + certNorme.split("—")[0].trim() + "\n\nVoir le certificat : " + shareUrl)); }} style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 10, padding: "8px 4px", fontSize: 11, color: "rgba(240,237,230,0.7)", cursor: "pointer" }}>{"\u2709\uFE0F"} Email</button>
+            </div>
+          </>
         )}
       </div>
     </div>
