@@ -94,7 +94,7 @@ export default function HomePage() {
   return (
     <div style={{ ...s.page, ...(page === "home" ? s.pageActive : {}) }}>
       <div style={s.hero}>
-        <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 12, marginBottom: 4 }}>{PROFILS[userType]?.icon} {userType === "Particulier" ? `${getGreeting()} !` : `${getGreeting()}, ${userType}`}</div>
+        <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 12, marginBottom: 4 }}>{PROFILS[userType]?.icon} {getGreeting()} !</div>
         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, lineHeight: 1.15, marginBottom: 5 }}>MAESTRO<span style={{ color: "#C9A84C" }}>MIND</span></div>
         <div style={{ color: "rgba(240,237,230,0.5)", fontSize: 11, marginBottom: 18 }}>33 IA spécialisées — Normes DTU — 11 divisions</div>
 
