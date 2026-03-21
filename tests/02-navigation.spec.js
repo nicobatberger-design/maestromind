@@ -35,4 +35,10 @@ test.describe("Navigation", () => {
     await page.waitForTimeout(1000);
     await expect(page.getByText("Analyser le devis")).toBeVisible();
   });
+
+  test("navigation vers Dashboard", async ({ page }) => {
+    await page.goto("/#/dashboard");
+    await page.waitForTimeout(2000);
+    await expect(page.getByText("Dashboard PDG")).toBeVisible({ timeout: 10000 });
+  });
 });

@@ -43,4 +43,12 @@ test.describe("Outils IA", () => {
     await page.waitForTimeout(800);
     await expect(page.getByText("Vérifier", { exact: false }).first()).toBeVisible();
   });
+
+  test("onglet Planning visible", async ({ page }) => {
+    await page.getByRole("button", { name: "Planning", exact: true }).click();
+    await page.waitForTimeout(800);
+    await expect(page.getByText("Planification de chantier", { exact: false })).toBeVisible();
+    await expect(page.getByText("Type de projet", { exact: false })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Générer le planning/ })).toBeVisible();
+  });
 });

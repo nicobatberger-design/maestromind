@@ -82,11 +82,6 @@ export function stop() {
   }
 }
 
-/** Vérifier si une lecture est en cours */
-export function isSpeaking() {
-  return speechSynthesis.speaking;
-}
-
 /** Vérifier si le TTS est supporté */
 export function isTTSSupported() {
   return "speechSynthesis" in window;

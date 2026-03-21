@@ -21,16 +21,6 @@ export function safeSetItem(key, value) {
   }
 }
 
-// Estimation taille localStorage en Mo
-export function getStorageSize() {
-  let total = 0;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    total += (key.length + (localStorage.getItem(key) || '').length) * 2;
-  }
-  return (total / 1024 / 1024).toFixed(2);
-}
-
 // Nettoyage intelligent — supprime les vieux chats puis les vieilles photos
 function cleanOldData() {
   // 1. Trouver les conversations les plus anciennes (prefix mm_chat_)

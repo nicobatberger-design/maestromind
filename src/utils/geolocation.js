@@ -3,7 +3,7 @@
  * Récupère la position + enrichit avec les APIs (météo, risques, prix)
  */
 
-import { geocodeAdresse, reverseGeocode, getMeteoChantier, getRisquesByCommune, getPrixMoyenM2 } from "./databases";
+import { reverseGeocode, getMeteoChantier, getRisquesByCommune, getPrixMoyenM2 } from "./databases";
 
 const GEO_CACHE_KEY = "mm_geo_cache";
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes

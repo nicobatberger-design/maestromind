@@ -175,7 +175,7 @@ const pillStyle = {
   color: "rgba(201,168,76,0.7)"
 };
 
-export default function SearchOverlay({ visible, onClose, onSelectIA, onSelectTool }) {
+export default function SearchOverlay({ visible, onClose, onSelectIA }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);

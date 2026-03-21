@@ -5,12 +5,12 @@ import { getContexteLocal, resumeMeteo } from "../utils/geolocation";
 import s from "../styles/index";
 
 /* ── Keyframes pour le spinner pull-to-refresh ── */
-const pullRefreshStyle = document.getElementById("pull-refresh-style") || (() => {
+(() => {
+  if (document.getElementById("pull-refresh-style")) return;
   const el = document.createElement("style");
   el.id = "pull-refresh-style";
   el.textContent = `@keyframes ptr-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
   document.head.appendChild(el);
-  return el;
 })();
 
 function getGreeting() {

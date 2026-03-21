@@ -70,7 +70,7 @@ export default function DashboardPage() {
     convs.sort((a, b) => b.ts - a.ts);
     setRecentConvs(convs.slice(0, 3));
 
-    setStats({ msgCount, positives, negatives, satisfaction, topIAs, convCount, totalMsgs, projetsCount: projets.length });
+    setStats({ msgCount, positives, negatives, satisfaction, ratingsCount: ratings.length, topIAs, convCount, totalMsgs, projetsCount: projets.length });
     setCustomPrompts(getCustomPrompts());
   }, [page, projets]);
 
@@ -138,7 +138,7 @@ export default function DashboardPage() {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
           <StatCard label="Messages envoyés" value={stats.msgCount} trend={trends.msgCount} />
-          <StatCard label="Satisfaction" value={stats.satisfaction + "%"} color={stats.satisfaction >= 70 ? "#52C37A" : stats.satisfaction >= 40 ? "#E8873A" : "#E05252"} sub={stats.positives + " \u{1F44D} / " + stats.negatives + " \u{1F44E}"} trend={trends.satisfaction} />
+          <StatCard label="Satisfaction" value={stats.ratingsCount > 0 ? stats.satisfaction + "%" : "\u2014"} color={stats.ratingsCount > 0 ? (stats.satisfaction >= 70 ? "#52C37A" : stats.satisfaction >= 40 ? "#E8873A" : "#E05252") : "rgba(240,237,230,0.3)"} sub={stats.ratingsCount > 0 ? stats.positives + " \u{1F44D} / " + stats.negatives + " \u{1F44E}" : "Aucun avis"} trend={trends.satisfaction} />
           <StatCard label="Conversations" value={stats.convCount} color="#5290E0" sub={stats.totalMsgs + " messages total"} trend={trends.convCount} />
           <StatCard label="Projets actifs" value={stats.projetsCount} color="#52C37A" trend={trends.projetsCount} />
         </div>

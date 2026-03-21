@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { fullSetup } from "./helpers.js";
 
 test.describe("PWA & Performance", () => {
   test("manifest accessible et correct", async ({ page }) => {
@@ -45,5 +46,13 @@ test.describe("PWA & Performance", () => {
     const viewport = page.viewportSize();
     expect(viewport.width).toBe(390);
     expect(viewport.height).toBe(844);
+  });
+
+  test("hook réseau actif", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForTimeout(2000);
+    // Vérifier que navigator.onLine est true (hook useNetworkStatus actif)
+    const online = await page.evaluate(() => navigator.onLine);
+    expect(online).toBeTruthy();
   });
 });

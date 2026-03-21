@@ -30,7 +30,7 @@ export default function CoachPage() {
     userType, voiceActive, msgCount, isPremium, autoVoice,
     msgsRef, chips,
     switchDiv, switchIA, send, sendWithPhoto, rateMsg,
-    startVoice, startUrgence, exportChatPDF, rangColor, saveConv, welcomeMsg, clearHistory, toggleFavori, isFavori,
+    startVoice, startUrgence, exportChatPDF, rangColor, clearHistory, toggleFavori, isFavori,
   } = useApp();
 
   const [copiedIdx, setCopiedIdx] = useState(null);
@@ -80,7 +80,6 @@ export default function CoachPage() {
   }, [input]);
 
   // Message counter for paywall
-  const userMsgCount = msgs.filter(m => m.role === "user").length;
   const msgsBeforePaywall = isPremium ? null : (5 - (msgCount % 5));
 
   return (
