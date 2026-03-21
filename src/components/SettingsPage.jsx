@@ -22,7 +22,7 @@ function SettingSection({ title, children }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 9, color: "#C9A84C", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, paddingLeft: 2 }}>{title}</div>
-      <div className="liquid-glass" style={{ borderRadius: 16, overflow: "hidden" }}>{children}</div>
+      <div className="liquid-glass" style={{ borderRadius: 16, overflow: "visible" }}>{children}</div>
     </div>
   );
 }
@@ -70,10 +70,13 @@ function PillSelector({ options, value, onChange }) {
       {options.map(o => (
         <button key={o.key || o} onClick={() => onChange(o.key || o)} style={{
           padding: "8px 14px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", minHeight: 36,
-          border: (o.key || o) === value ? "0.5px solid #C9A84C" : "0.5px solid rgba(255,255,255,0.06)",
-          background: (o.key || o) === value ? "rgba(201,168,76,0.15)" : "transparent",
-          color: (o.key || o) === value ? "#C9A84C" : "rgba(240,237,230,0.4)",
+          border: (o.key || o) === value ? "1px solid #C9A84C" : "1px solid rgba(255,255,255,0.08)",
+          background: (o.key || o) === value ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.03)",
+          color: (o.key || o) === value ? "#C9A84C" : "rgba(240,237,230,0.5)",
           transition: "all 0.2s",
+          WebkitTapHighlightColor: "rgba(201,168,76,0.2)",
+          touchAction: "manipulation",
+          position: "relative", zIndex: 2,
         }}>{o.flag ? o.flag + " " : ""}{o.label || o}</button>
       ))}
     </div>

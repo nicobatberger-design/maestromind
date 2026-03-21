@@ -86,9 +86,11 @@ export default function OnboardingScreen() {
             <button key={p.key} onClick={() => setUserType(p.key)} style={{
               display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 14,
               background: userType === p.key ? "rgba(201,168,76,0.1)" : "rgba(15,19,28,0.5)",
-              border: userType === p.key ? "1px solid rgba(201,168,76,0.4)" : "0.5px solid rgba(255,255,255,0.06)",
+              border: userType === p.key ? "1px solid rgba(201,168,76,0.4)" : "1px solid rgba(255,255,255,0.08)",
               cursor: "pointer", transition: "all 0.25s", textAlign: "left",
               boxShadow: userType === p.key ? "0 0 20px rgba(201,168,76,0.08)" : "none",
+              WebkitTapHighlightColor: "rgba(201,168,76,0.2)",
+              touchAction: "manipulation", position: "relative", zIndex: 2,
             }}>
               <div style={{ fontSize: 24, flexShrink: 0 }}>{p.icon}</div>
               <div style={{ flex: 1 }}>
