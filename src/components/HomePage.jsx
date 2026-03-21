@@ -62,7 +62,7 @@ const TIPS = [
 ];
 
 export default function HomePage() {
-  const { page, goPage, userType, startUrgence, setToolTab, crJournalierLoading, showCRJournalier, setShowCRJournalier, crJournalierResult, genererCRJournalier } = useApp();
+  const { page, goPage, userType, startUrgence, setToolTab, switchIA, crJournalierLoading, showCRJournalier, setShowCRJournalier, crJournalierResult, genererCRJournalier } = useApp();
   const [lastProject, setLastProject] = useState(getLastProject);
   const [showUrgence, setShowUrgence] = useState(false);
   const [geoContexte, setGeoContexte] = useState(null);
@@ -110,6 +110,30 @@ export default function HomePage() {
   }, [ptrActive, chargerMeteo]);
 
   const tip = TIPS[new Date().getDay() % TIPS.length];
+
+  // ── Rappels sécurité BTP (rotation 3 par jour) ──
+  const RAPPELS_SECURITE = [
+    { icon: "🪖", text: "Port du casque obligatoire sur toute zone à risque de chute d'objets" },
+    { icon: "🦺", text: "Gilet haute visibilité obligatoire à proximité de la circulation" },
+    { icon: "🧤", text: "Gants adaptés au poste : anti-coupure, nitrile ou cuir selon les tâches" },
+    { icon: "👢", text: "Chaussures de sécurité S3 obligatoires — jamais de baskets sur chantier" },
+    { icon: "🔒", text: "Harnais EN 361 + longe obligatoire dès 3 mètres de hauteur" },
+    { icon: "🧯", text: "Extincteur accessible à moins de 15 mètres de tout poste de travail" },
+    { icon: "⚠️", text: "Balisage et signalisation des zones dangereuses avant intervention" },
+    { icon: "🪜", text: "Échafaudage : vérifier garde-corps, stabilité et charge maximale" },
+    { icon: "😷", text: "Masque FFP2 minimum pour ponçage, découpe et démolition" },
+    { icon: "🔌", text: "Consignation électrique : disjoncteur OFF + cadenas + pancarte" },
+    { icon: "👓", text: "Lunettes de protection pour meulage, perçage et découpe" },
+    { icon: "🚧", text: "Trémies et ouvertures au sol : garde-corps ou couverture rigide" },
+    { icon: "🧹", text: "Nettoyage quotidien du chantier — sol dégagé = zéro chute" },
+    { icon: "📋", text: "Vérifier le plan de prévention avant chaque nouvelle intervention" },
+    { icon: "🩹", text: "Trousse de premiers secours complète et accessible sur le chantier" },
+    { icon: "🎧", text: "Protections auditives dès 85 dB — marteau-piqueur, disqueuse" },
+    { icon: "🚱", text: "Produits chimiques : lire la FDS, ventiler, porter les EPI adaptés" },
+    { icon: "☀️", text: "Forte chaleur : pause toutes les heures, eau fraîche à disposition" },
+  ];
+  const dayIndex = new Date().getDay();
+  const rappelsDuJour = [0, 1, 2].map(i => RAPPELS_SECURITE[(dayIndex * 3 + i) % RAPPELS_SECURITE.length]);
 
   return (
     <div ref={ptrContainer} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} style={{ ...s.page, ...(page === "home" ? s.pageActive : {}) }}>
@@ -251,6 +275,25 @@ export default function HomePage() {
           </div>
         ))}
       </div>
+
+      {/* ── Sécurité Chantier (Pro uniquement) ── */}
+      {userType === "Artisan Pro" && (
+        <div style={{ padding: "0 20px 12px" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "rgba(240,237,230,0.3)", marginBottom: 8 }}>🛡️ Sécurité du jour</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {rappelsDuJour.map((r, i) => (
+              <div key={i} className="liquid-glass" style={{ borderRadius: 14, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, border: "0.5px solid rgba(82,195,122,0.12)" }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(82,195,122,0.08)", border: "0.5px solid rgba(82,195,122,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16 }}>{r.icon}</div>
+                <div style={{ fontSize: 11, color: "rgba(240,237,230,0.65)", lineHeight: 1.5 }}>{r.text}</div>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => { goPage("coach"); switchIA("securite"); }} style={{ width: "100%", marginTop: 10, padding: "12px 16px", borderRadius: 12, background: "rgba(82,195,122,0.06)", border: "0.5px solid rgba(82,195,122,0.25)", color: "#52C37A", fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            Voir la checklist complète
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#52C37A" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      )}
 
       {/* ── Urgence (compact, collapsed) ── */}
       <div style={{ padding: "0 20px 16px" }}>

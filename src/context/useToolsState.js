@@ -36,8 +36,10 @@ export function useToolsState({ apiKey, profilIA }) {
   const [primesLoading, setPrimesLoading] = useState(false);
   const [counterDevis, setCounterDevis] = useState(null);
   const [counterLoading, setCounterLoading] = useState(false);
-  const [planningType, setPlanningType] = useState("R\u00e9novation salle de bain");
+  const [planningType, setPlanningType] = useState("Rénovation appartement");
   const [planningBudget, setPlanningBudget] = useState("5000");
+  const [planningSurface, setPlanningSurface] = useState("50");
+  const [planningCP, setPlanningCP] = useState("");
   const [planningResult, setPlanningResult] = useState(null);
   const [planningLoading, setPlanningLoading] = useState(false);
   const [devisProDesc, setDevisProDesc] = useState("");
@@ -201,12 +203,12 @@ Réponds UNIQUEMENT en JSON valide : {"materiaux":[{"nom":"Produit précis avec 
         method: "POST", headers: apiHeaders(apiKey),
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1400,
           system: `Tu es expert certifi\u00e9 en planification de chantier b\u00e2timent France 2026. ${profilIA()} DUR\u00c9ES R\u00c9ALISTES (1 artisan qualifi\u00e9) : d\u00e9pose/d\u00e9molition = 1j/pi\u00e8ce \u00b7 gros \u0153uvre/ragr\u00e9age = 2-3j (+ s\u00e9chage b\u00e9ton 28j) \u00b7 plomberie brute = 1-2j \u00b7 \u00e9lectricit\u00e9 brute = 1-2j \u00b7 isolation murs = 1j/50m\u00b2 \u00b7 cloisons placo = 1j/25m\u00b2 \u00b7 carrelage = 1j/8-12m\u00b2 \u00b7 peinture 2 couches = 1j/40m\u00b2 \u00b7 menuiseries = 0.5j/unit\u00e9 \u00b7 sanitaires = 0.5j/appareil. ORDRE IMP\u00c9RATIF DES LOTS (NE JAMAIS INVERSER) : 1-D\u00e9pose/d\u00e9molition 2-Gros \u0153uvre 3-Plomberie brute 4-\u00c9lectricit\u00e9 brute 5-Isolation 6-Cloisons/doublages 7-Enduits/ragr\u00e9ages (s\u00e9chage 7-28j) 8-Carrelage/parquet 9-Peintures 10-Menuiseries 11-Sanitaires/appareillage 12-Nettoyage/r\u00e9ception. ERREURS FATALES : carrelage sur b\u00e9ton frais (<28j) \u00b7 peinture sur enduit humide (<48h) \u00b7 parquet avant carrelage SDB \u00b7 branchement sous tension. R\u00e9ponds UNIQUEMENT en JSON valide : {"duree_totale":"X semaines","semaines":[{"numero":1,"titre":"Titre court","taches":["t\u00e2che 1","t\u00e2che 2"],"materiaux_a_commander":["mat\u00e9riau 1"],"attention":"point critique","nb_artisans":"X"}],"ordre_metiers":["1. Corps de m\u00e9tier"],"chemin_critique":"\u00e9tapes limitantes","conseils":"conseil global","budget_detail":"r\u00e9partition budget par poste"}`,
-          messages: [{ role: "user", content: "Projet : " + planningType + ", budget " + planningBudget + "\u20ac. Planning complet semaine par semaine." }] })}));
+          messages: [{ role: "user", content: "Projet : " + planningType + ", surface " + planningSurface + " m²" + (planningCP ? ", code postal " + planningCP + " (adapte le planning à la météo locale)" : "") + ". Planning complet semaine par semaine." }] })}));
       const data = await r.json(); if (data.error) throw new Error(data.error.message);
       setPlanningResult(parseAIJson(data?.content?.[0]?.text));
     } catch (e) { setPlanningResult({ duree_totale: "?", semaines: [], ordre_metiers: [], conseils: e.message, budget_detail: "" }); }
     finally { setPlanningLoading(false); }
-  }, [apiKey, profilIA, planningType, planningBudget]);
+  }, [apiKey, profilIA, planningType, planningSurface, planningCP]);
 
   // ── G\u00e9n\u00e9rer Devis Pro ───────────────────────────────────────
   const genererDevisPro = useCallback(async () => {
@@ -384,7 +386,7 @@ Réponds UNIQUEMENT en JSON valide : {"materiaux":[{"nom":"Produit précis avec 
     artisanNom, setArtisanNom, artisanSpec, setArtisanSpec, artisanResult, artisanLoading,
     primesRev, setPrimesRev, primesTrav, setPrimesTrav, primesSurf, setPrimesSurf, primesResult, primesLoading,
     counterDevis, setCounterDevis, counterLoading,
-    planningType, setPlanningType, planningBudget, setPlanningBudget, planningResult, planningLoading,
+    planningType, setPlanningType, planningBudget, setPlanningBudget, planningSurface, setPlanningSurface, planningCP, setPlanningCP, planningResult, planningLoading,
     devisProDesc, setDevisProDesc, devisProClient, setDevisProClient, devisProSurface, setDevisProSurface, devisProResult, devisProLoading,
     rentaSurface, setRentaSurface, rentaTaux, setRentaTaux, rentaMat, setRentaMat, rentaDep, setRentaDep, rentaResult, rentaType, setRentaType, rentaStatut, setRentaStatut,
     analyserDevis, genererContreDevis, calculerMateriaux, calculerPrimes, verifierArtisan,
