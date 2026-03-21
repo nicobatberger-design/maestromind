@@ -148,7 +148,7 @@ export default function HomePage() {
       {/* ── Hero ── */}
       <div style={{ padding: "28px 20px 20px" }}>
         <div style={{ color: "rgba(240,237,230,0.4)", fontSize: 13, marginBottom: 6 }}>{PROFILS[userType]?.icon} {getGreeting()} !</div>
-        <div className="gold-text" style={{ fontFamily: "'Syne',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.1, marginBottom: 20 }}>MAESTROMIND</div>
+        <div className="gold-text" style={{ fontFamily: "'Syne',sans-serif", fontSize: 24, fontWeight: 800, lineHeight: 1.1, letterSpacing: -0.5, marginBottom: 20 }}>MAESTROMIND</div>
 
         {/* CTA principal */}
         <button className="gold-btn" style={{ ...s.cta, borderRadius: 16, padding: "16px 20px", marginBottom: 0 }} onClick={() => goPage("coach")} aria-label="Posez votre question au coach IA">

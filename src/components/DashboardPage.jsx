@@ -185,7 +185,7 @@ export default function DashboardPage() {
 
         {/* Éditeur System Prompts */}
         <div style={{ fontSize: 9, color: "#C9A84C", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginTop: 20, marginBottom: 10 }}>Éditeur IA — System Prompts</div>
-        <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", marginBottom: 10 }}>Modifiez les prompts des 33 IA en temps réel. Les changements sont appliqués immédiatement.</div>
+        <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", marginBottom: 10 }}>{"Modifiez les prompts des " + Object.keys(IAS).length + " IA en temps réel"}. Les changements sont appliqués immédiatement.</div>
 
         {editIA ? (
           <div style={{ ...s.card, border: "0.5px solid rgba(201,168,76,0.4)" }}>

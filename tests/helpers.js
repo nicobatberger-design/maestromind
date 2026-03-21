@@ -30,8 +30,10 @@ export async function fullSetup(page) {
 
 /** Naviguer via la navbar */
 export async function navTo(page, label) {
-  // Les labels navbar : Accueil, 32 IA, Scanner, Outils, Projets
-  const navLabel = page.locator("div").filter({ hasText: new RegExp("^" + label + "$", "i") }).last();
+  // Les labels navbar : Accueil, XX IA (dynamique), Scanner, Outils, Projets
+  // Support "XX IA" pattern pour matcher n'importe quel nombre
+  const pattern = label.match(/\d+ IA/i) ? /^\d+ IA$/i : new RegExp("^" + label + "$", "i");
+  const navLabel = page.locator("div").filter({ hasText: pattern }).last();
   await navLabel.click({ timeout: 5000 });
   await page.waitForTimeout(2000);
 }

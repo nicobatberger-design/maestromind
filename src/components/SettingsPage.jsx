@@ -66,10 +66,10 @@ function Toggle({ value, onChange }) {
 
 function PillSelector({ options, value, onChange }) {
   return (
-    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
       {options.map(o => (
         <button key={o.key || o} onClick={() => onChange(o.key || o)} style={{
-          padding: "5px 10px", borderRadius: 20, fontSize: 10, fontWeight: 600, cursor: "pointer",
+          padding: "8px 14px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", minHeight: 36,
           border: (o.key || o) === value ? "0.5px solid #C9A84C" : "0.5px solid rgba(255,255,255,0.06)",
           background: (o.key || o) === value ? "rgba(201,168,76,0.15)" : "transparent",
           color: (o.key || o) === value ? "#C9A84C" : "rgba(240,237,230,0.4)",
@@ -215,7 +215,7 @@ export default function SettingsPage() {
         {/* ── Profil ── */}
         <SettingSection title="Profil IA">
           <div style={{ padding: "12px 16px" }}>
-            <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", marginBottom: 8 }}>Ces informations personnalisent les conseils des 33 IA</div>
+            <div style={{ fontSize: 10, color: "rgba(240,237,230,0.4)", marginBottom: 8 }}>{"Ces informations personnalisent les conseils des " + Object.keys(IAS).length + " IA"}</div>
             <input type="text" placeholder="Votre nom" value={profilNom} onChange={e => setProfilNom(e.target.value)} style={{ ...s.inp, marginBottom: 8 }} />
             <div style={{ fontSize: 9, color: "rgba(240,237,230,0.35)", marginBottom: 4 }}>TYPE DE PROFIL</div>
             <PillSelector options={["Particulier", "Artisan Pro", "Architecte", "Investisseur"]} value={userType} onChange={(v) => { setUserType(v); localStorage.setItem("bl_user_type", v); }} />
@@ -249,7 +249,7 @@ export default function SettingsPage() {
         {/* ── À propos ── */}
         <SettingSection title="À propos">
           <SettingRow label="Version" right={<span style={{ fontSize: 12, color: "rgba(240,237,230,0.35)", fontFamily: "'DM Sans',monospace" }}>1.0.0</span>} />
-          <SettingRow label="33 IA spécialisées" right={<span style={{ fontSize: 12, color: "#C9A84C", fontWeight: 700 }}>11 divisions</span>} />
+          <SettingRow label={Object.keys(IAS).length + " IA spécialisées"} right={<span style={{ fontSize: 12, color: "#C9A84C", fontWeight: 700 }}>11 divisions</span>} />
           <SettingRow label="Plateforme" right={<span style={{ fontSize: 12, color: "rgba(240,237,230,0.35)" }}>React 19 + Vite 8</span>} last />
         </SettingSection>
 

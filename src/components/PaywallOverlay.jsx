@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from "react";
 import { useApp } from "../context/AppContext";
+import { IAS } from "../data/constants";
 
 export default function PaywallOverlay() {
   const { showPaywall, setShowPaywall, msgCount } = useApp();
@@ -41,7 +42,7 @@ export default function PaywallOverlay() {
         <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3, background: "linear-gradient(135deg,#EDD060,#C9A84C,#7A6030)", transition: "width 0.4s ease" }} />
       </div>
 
-      <div style={{ fontSize: 13, color: "rgba(240,237,230,0.55)", textAlign: "center", marginBottom: 6, lineHeight: 1.7, maxWidth: 280 }}>Passez Premium pour un accès illimité aux 33 IA expertes bâtiment.</div>
+      <div style={{ fontSize: 13, color: "rgba(240,237,230,0.55)", textAlign: "center", marginBottom: 6, lineHeight: 1.7, maxWidth: 280 }}>Passez Premium pour un accès illimité {"aux " + Object.keys(IAS).length + " IA expertes bâtiment."}</div>
       <div style={{ fontSize: 12, fontWeight: 600, color: "#C9A84C", textAlign: "center", marginBottom: 24 }}>Illimité + toutes les IA + exports PDF</div>
 
       <button onClick={async () => { try { const { checkoutPremium } = await import("../utils/stripe"); await checkoutPremium(); } catch { setShowPaywall(false); } }} style={{ width: "100%", maxWidth: 320, background: "linear-gradient(135deg,#EDD060,#C9A84C,#8A6820)", border: "none", borderRadius: 14, padding: "15px", fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 800, color: "#06080D", cursor: "pointer", marginBottom: 6, boxShadow: "0 4px 28px rgba(201,168,76,0.4)" }}>Débloquer Premium</button>
