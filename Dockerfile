@@ -16,4 +16,4 @@ RUN sed -i 's|^user  nginx;||; s|pid\s*/run/nginx.pid;|pid /tmp/nginx.pid;|' /et
 USER appuser
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD wget --spider -q http://localhost:3000 || exit 1
+    CMD wget --spider -q http://127.0.0.1:3000 || exit 1
