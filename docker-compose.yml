@@ -1,0 +1,67 @@
+services:
+  maestromind-front:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: maestromind-front
+    ports:
+      - "${MAESTROMIND_FRONT_PORT:-3000}:3000"
+    depends_on:
+      maestromind-api:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - maestro-network
+
+  maestromind-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: maestromind-api
+    ports:
+      - "${MAESTROMIND_API_PORT:-3001}:3001"
+    env_file:
+      - .env
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - maestro-network
+
+  maestromind-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: maestromind-dev
+    command: npx vite --host 0.0.0.0 --port 3000
+    ports:
+      - "${MAESTROMIND_FRONT_PORT:-3000}:3000"
+    volumes:
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+      - ./index.html:/app/index.html:ro
+      - ./vite.config.js:/app/vite.config.js:ro
+    env_file:
+      - .env
+    profiles:
+      - dev
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - maestro-network
+
+networks:
+  maestro-network:
+    driver: bridge
