@@ -225,6 +225,26 @@ export const PRODS = {
     { n: "Scie sauteuse 650W", q: "Avec 3 lames", p: "34,90€", cat: "Outillage", s: "brico-depot.fr", url: "https://www.brico-depot.fr/outillage-electroportatif/scies/?utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
     { n: "Béton prêt à l'emploi", q: "Sac 30kg", p: "5,90€", cat: "Gros œuvre", s: "brico-depot.fr", url: "https://www.brico-depot.fr/gros-oeuvre/beton-ciment-mortier/?utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
   ],
+  manomano: [
+    { n: "Perceuse visseuse sans fil 20V", q: "2 batteries + coffret", p: "79,99€", cat: "Outillage", s: "manomano.fr", url: "https://www.manomano.fr/recherche/perceuse+visseuse+20v?utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Échafaudage aluminium 4m", q: "Plateforme pliable", p: "189,00€", cat: "Échafaudage", s: "manomano.fr", url: "https://www.manomano.fr/recherche/echafaudage+aluminium?utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Pompe de relevage eaux usées", q: "750W submersible", p: "89,90€", cat: "Plomberie", s: "manomano.fr", url: "https://www.manomano.fr/recherche/pompe+relevage+eaux+usees?utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Kit VMC double flux", q: "4 bouches + gaine", p: "349,00€", cat: "Ventilation", s: "manomano.fr", url: "https://www.manomano.fr/recherche/vmc+double+flux?utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Panneau solaire 400W", q: "Monocristallin + câbles", p: "159,00€", cat: "Énergie", s: "manomano.fr", url: "https://www.manomano.fr/recherche/panneau+solaire+400w?utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Portail aluminium coulissant", q: "3,5m motorisé", p: "899,00€", cat: "Menuiserie", s: "manomano.fr", url: "https://www.manomano.fr/recherche/portail+coulissant+aluminium?utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Radiateur électrique inertie", q: "1500W programmable", p: "199,00€", cat: "Chauffage", s: "manomano.fr", url: "https://www.manomano.fr/recherche/radiateur+inertie+1500w?utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Bétonnière électrique 160L", q: "650W sur roues", p: "229,00€", cat: "Gros œuvre", s: "manomano.fr", url: "https://www.manomano.fr/recherche/betonniere+electrique+160l?utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+  ],
+  amazon: [
+    { n: "Multimètre numérique pro", q: "CAT III 600V", p: "34,99€", cat: "Électricité", s: "amazon.fr", url: "https://www.amazon.fr/s?k=multimetre+professionnel+cat+iii&utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Détecteur de métaux mural", q: "Bois/métal/câbles", p: "29,99€", cat: "Outillage", s: "amazon.fr", url: "https://www.amazon.fr/s?k=detecteur+metaux+mural+professionnel&utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Caméra thermique smartphone", q: "USB-C Android/iPhone", p: "199,00€", cat: "Diagnostic", s: "amazon.fr", url: "https://www.amazon.fr/s?k=camera+thermique+smartphone&utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Laser rotatif auto-nivelant", q: "Portée 30m + trépied", p: "89,90€", cat: "Outillage", s: "amazon.fr", url: "https://www.amazon.fr/s?k=laser+rotatif+auto+nivelant&utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Kit plomberie PER/multicouche", q: "Sertisseuse + raccords", p: "149,00€", cat: "Plomberie", s: "amazon.fr", url: "https://www.amazon.fr/s?k=kit+sertisseuse+per+multicouche&utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Thermostat connecté WiFi", q: "Compatible chaudière", p: "49,90€", cat: "Domotique", s: "amazon.fr", url: "https://www.amazon.fr/s?k=thermostat+connecte+wifi+chaudiere&utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Casque anti-bruit chantier", q: "SNR 34dB + radio FM", p: "39,90€", cat: "Sécurité", s: "amazon.fr", url: "https://www.amazon.fr/s?k=casque+anti+bruit+chantier+radio&utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+    { n: "Humidimètre bois/murs", q: "Digital LCD précision", p: "24,99€", cat: "Diagnostic", s: "amazon.fr", url: "https://www.amazon.fr/s?k=humidimetre+bois+mur+professionnel&utm_source=maestromind&utm_medium=app&utm_campaign=shop" },
+  ],
 };
 
 export const PROFILS = {

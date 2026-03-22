@@ -48,9 +48,10 @@ export default function ShopPage() {
 
         {/* Onglets magasins */}
         <div style={s.storeTabs}>
-          {["leroy", "casto", "brico"].map(k => (
-            <button key={k} style={store === k ? s.stabOn : s.stab} onClick={() => { setStore(k); setCatFilter("Tout"); }}>{k === "leroy" ? "Leroy Merlin" : k === "casto" ? "Castorama" : "Brico Dépôt"}</button>
-          ))}
+          {["leroy", "casto", "brico", "manomano", "amazon"].map(k => {
+            const labels = { leroy: "Leroy Merlin", casto: "Castorama", brico: "Brico Dépôt", manomano: "ManoMano", amazon: "Amazon" };
+            return <button key={k} style={store === k ? s.stabOn : s.stab} onClick={() => { setStore(k); setCatFilter("Tout"); }}>{labels[k]}</button>;
+          })}
         </div>
 
         {/* Filtres catégories */}
