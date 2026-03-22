@@ -1,0 +1,11 @@
+node_modules
+dist
+data
+.env
+.git
+.github
+.netlify
+.vercel
+*.md
+tests
+debug_tests
